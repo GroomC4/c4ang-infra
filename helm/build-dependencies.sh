@@ -4,8 +4,12 @@ set -e
 echo "🔨 Building Helm chart dependencies..."
 
 # Base charts
+echo "📦 Building Airflow base dependencies..."
+cd management-base/airflow
+helm dependency build
+
 echo "📦 Building PostgreSQL dependencies..."
-cd base/postgresql
+cd ../../statefulset-base/postgresql
 helm dependency build
 
 echo "📦 Building Redis dependencies..."

@@ -1,0 +1,64 @@
+# PostgreSQL for k3d local environment
+# helm/statefulset-base/postgresql 차트를 사용하며, k3d 환경에 맞게 경량화된 설정
+
+postgresql:
+  image:
+    registry: docker.io
+    repository: postgres
+    tag: "17"
+    digest: ""
+    pullPolicy: IfNotPresent
+
+  auth:
+    username: application
+    password: application
+    database: groom
+    replicationUsername: repl_user
+    replicationPassword: repl_password
+
+  architecture: replication
+
+  primary:
+    persistence:
+      enabled: false
+    service:
+      type: ClusterIP
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+    podAffinityPreset: ""
+    nodeAffinityPreset:
+      type: ""
+    tolerations: []
+
+  readReplicas:
+    replicaCount: 1
+    persistence:
+      enabled: false
+    service:
+      type: ClusterIP
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+    podAffinityPreset: ""
+    nodeAffinityPreset:
+      type: ""
+    tolerations: []
+
+  volumePermissions:
+    enabled: false
+
+  shmVolume:
+    enabled: true
+
+  metrics:
+    enabled: false
+

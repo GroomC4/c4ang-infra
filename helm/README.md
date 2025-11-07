@@ -8,9 +8,11 @@
 
 ```
 helm/
-├── base/
-│   ├── postgresql/    # PostgreSQL (Primary-Replica)
-│   └── redis/         # Redis
+├── management-base/
+│   └── airflow/           # Apache Airflow 공통 베이스
+├── statefulset-base/
+│   ├── postgresql/        # PostgreSQL (Primary-Replica)
+│   └── redis/             # Redis Statefulset
 ├── services/
 │   └── customer-service/  # Customer Service
 └── test-infrastructure/   # 테스트용 인프라
@@ -30,12 +32,16 @@ cd c4ang-infra/helm
 또는 개별적으로:
 
 ```bash
+# Airflow base (필요 시)
+cd management-base/airflow
+helm dependency build
+
 # PostgreSQL
-cd base/postgresql
+cd ../../statefulset-base/postgresql
 helm dependency build
 
 # Redis
-cd base/redis
+cd ../redis
 helm dependency build
 
 # Test Infrastructure
@@ -145,7 +151,7 @@ class MyK8sTest {
 
 ## 📊 차트별 설정
 
-### PostgreSQL (base/postgresql)
+### PostgreSQL (statefulset-base/postgresql)
 
 기본 설정:
 - Primary-Replica 아키텍처
@@ -157,13 +163,13 @@ class MyK8sTest {
 커스터마이징:
 
 ```bash
-helm install my-postgres ./base/postgresql \
+helm install my-postgres ./statefulset-base/postgresql \
   --set postgresql.auth.database=mydb \
   --set postgresql.readReplicas.replicaCount=2 \
   --set postgresql.primary.persistence.size=20Gi
 ```
 
-### Redis (base/redis)
+### Redis (statefulset-base/redis)
 
 기본 설정:
 - Standalone 모드
@@ -173,7 +179,7 @@ helm install my-postgres ./base/postgresql \
 커스터마이징:
 
 ```bash
-helm install my-redis ./base/redis \
+helm install my-redis ./statefulset-base/redis \
   --set redis.auth.enabled=true \
   --set redis.auth.password=mypassword \
   --set redis.master.persistence.size=10Gi
