@@ -38,9 +38,10 @@ class K8sContainerExtension : BeforeAllCallback {
          * Kubernetes 클라이언트를 반환합니다.
          */
         @JvmStatic
-        fun getKubernetesClient() = KubernetesClientBuilder()
-            .withConfig(Config.fromKubeconfig(kubeConfigYaml))
-            .build()
+        fun getKubernetesClient() =
+            KubernetesClientBuilder()
+                .withConfig(Config.fromKubeconfig(kubeConfigYaml))
+                .build()
 
         /**
          * Kubeconfig YAML을 반환합니다.
@@ -52,7 +53,10 @@ class K8sContainerExtension : BeforeAllCallback {
          * K8s API Server URL을 반환합니다.
          */
         @JvmStatic
-        fun getApiServerUrl(): String = k3sContainer.kubernetesUrl
+        fun getApiServerUrl(): String {
+            val config = Config.fromKubeconfig(kubeConfigYaml)
+            return config.masterUrl
+        }
 
         /**
          * Helm 차트를 배포합니다.
@@ -62,22 +66,26 @@ class K8sContainerExtension : BeforeAllCallback {
             chartPath: String,
             releaseName: String,
             namespace: String = "default",
-            values: Map<String, Any> = emptyMap()
+            values: Map<String, Any> = emptyMap(),
         ) {
-            val valuesArgs = values.entries.joinToString(" ") { (k, v) ->
-                "--set $k=$v"
-            }
+            val valuesArgs =
+                values.entries.joinToString(" ") { (k, v) ->
+                    "--set $k=$v"
+                }
 
-            val helmInstallCmd = """
+            val helmInstallCmd =
+                """
                 helm install $releaseName $chartPath \
                     --namespace $namespace \
                     --create-namespace \
                     $valuesArgs \
                     --wait
-            """.trimIndent()
+                """.trimIndent()
 
             k3sContainer.execInContainer(
-                "/bin/sh", "-c", helmInstallCmd
+                "/bin/sh",
+                "-c",
+                helmInstallCmd,
             )
         }
 
@@ -85,10 +93,14 @@ class K8sContainerExtension : BeforeAllCallback {
          * Helm 차트를 제거합니다.
          */
         @JvmStatic
-        fun uninstallHelmChart(releaseName: String, namespace: String = "default") {
+        fun uninstallHelmChart(
+            releaseName: String,
+            namespace: String = "default",
+        ) {
             k3sContainer.execInContainer(
-                "/bin/sh", "-c",
-                "helm uninstall $releaseName --namespace $namespace"
+                "/bin/sh",
+                "-c",
+                "helm uninstall $releaseName --namespace $namespace",
             )
         }
     }
@@ -98,8 +110,9 @@ class K8sContainerExtension : BeforeAllCallback {
             if (!initialized) {
                 println("🚀 Starting shared K3s container for integration tests...")
 
-                k3sContainer = K3sContainer(DockerImageName.parse("rancher/k3s:v1.28.5-k3s1"))
-                    .withStartupTimeout(Duration.ofMinutes(2))
+                k3sContainer =
+                    K3sContainer(DockerImageName.parse("rancher/k3s:v1.28.5-k3s1"))
+                        .withStartupTimeout(Duration.ofMinutes(2))
 
                 k3sContainer.start()
                 kubeConfigYaml = k3sContainer.kubeConfigYaml
@@ -110,11 +123,12 @@ class K8sContainerExtension : BeforeAllCallback {
                     Thread {
                         println("🛑 Stopping shared K3s container...")
                         k3sContainer.stop()
-                    }
+                    },
                 )
 
                 println("✅ K3s container started successfully")
-                println("📍 API Server: ${k3sContainer.kubernetesUrl}")
+                val config = Config.fromKubeconfig(kubeConfigYaml)
+                println("📍 API Server: ${config.masterUrl}")
             }
         }
     }

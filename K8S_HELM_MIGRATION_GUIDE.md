@@ -507,7 +507,7 @@ import java.time.Duration
  *         // 테스트 로직
  *     }
  * }
- * ```
+ * 
  */
 class K8sContainerExtension : BeforeAllCallback {
     companion object {
