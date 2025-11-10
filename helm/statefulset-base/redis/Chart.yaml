@@ -16,3 +16,7 @@ home: https://redis.io
 sources:
   - https://github.com/redis/redis
 
+dependencies:
+  - name: redis
+    version: "23.2.12"
+    repository: https://charts.bitnami.com/bitnami
