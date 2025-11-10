@@ -28,3 +28,24 @@ replay_pid*
 
 # intelij
 .idea
+
+# Helm
+charts/
+*.tgz
+Chart.lock
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local development files
+**/values-*.local.yaml
+**/values.local.yaml
+*.local.yaml
