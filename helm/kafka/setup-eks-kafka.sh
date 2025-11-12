@@ -7,7 +7,7 @@ set -euo pipefail
 KAFKA_NS="kafka"
 STRIMZI_VERSION="latest"
 KAFKA_VERSION="4.1.0"
-CLUSTER_NAME="my-kafka"
+CLUSTER_NAME="  c4-kafka"
 CLIENT_IMAGE="quay.io/strimzi/kafka:latest-kafka-${KAFKA_VERSION}"
 
 echo "🚀 Start Kafka Installation on EKS"
