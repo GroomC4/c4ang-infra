@@ -1,64 +1,44 @@
 # PostgreSQL for k3d local environment
-# helm/statefulset-base/postgresql 차트를 사용하며, k3d 환경에 맞게 경량화된 설정
+# bitnami/postgresql 차트를 사용하며, k3d 환경에 최적화된 설정
 
-postgresql:
-  image:
-    registry: docker.io
-    repository: postgres
-    tag: "17"
-    digest: ""
-    pullPolicy: IfNotPresent
+# Global settings
+global:
+  storageClass: local-path
 
-  auth:
-    username: application
-    password: application
-    database: groom
-    replicationUsername: repl_user
-    replicationPassword: repl_password
+# Authentication
+auth:
+  username: application
+  password: application
+  postgresPassword: postgres
+  database: groom
 
-  architecture: replication
-
-  primary:
-    persistence:
-      enabled: false
-    service:
-      type: ClusterIP
-    resources:
-      requests:
-        memory: "256Mi"
-        cpu: "250m"
-      limits:
-        memory: "512Mi"
-        cpu: "500m"
-    podAffinityPreset: ""
-    nodeAffinityPreset:
-      type: ""
-    tolerations: []
-
-  readReplicas:
-    replicaCount: 1
-    persistence:
-      enabled: false
-    service:
-      type: ClusterIP
-    resources:
-      requests:
-        memory: "256Mi"
-        cpu: "250m"
-      limits:
-        memory: "512Mi"
-        cpu: "500m"
-    podAffinityPreset: ""
-    nodeAffinityPreset:
-      type: ""
-    tolerations: []
-
-  volumePermissions:
-    enabled: false
-
-  shmVolume:
+# Primary configuration
+primary:
+  persistence:
     enabled: true
+    storageClass: local-path
+    size: 20Gi
+  podSecurityContext:
+    fsGroup: 1000
+  containerSecurityContext:
+    runAsUser: 1000
+  # k3d 환경에 맞게 리소스 축소
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
 
-  metrics:
-    enabled: false
+# Service configuration
+service:
+  type: ClusterIP
 
+# Metrics (k3d 환경에서는 비활성화)
+metrics:
+  enabled: false
+
+# Volume permissions (k3d 환경에서는 비활성화)
+volumePermissions:
+  enabled: false

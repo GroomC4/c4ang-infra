@@ -12,6 +12,7 @@ postgresql:
     persistence:
       enabled: true
       size: 10Gi
+      storageClassName: gp2
     resources:
       requests:
         memory: 256Mi
@@ -25,6 +26,7 @@ postgresql:
     persistence:
       enabled: true
       size: 10Gi
+      storageClassName: gp2
     resources:
       requests:
         memory: 256Mi

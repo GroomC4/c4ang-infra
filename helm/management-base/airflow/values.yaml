@@ -17,6 +17,7 @@ airflow:
     persistence:
       enabled: true
       size: 20Gi
+      storageClassName: gp2
     primary:
       resources:
         requests:
@@ -33,6 +34,7 @@ airflow:
     persistence:
       enabled: true
       size: 5Gi
+      storageClassName: gp2
     gitSync:
       enabled: false
 
@@ -40,6 +42,7 @@ airflow:
     persistence:
       enabled: true
       size: 10Gi
+      storageClassName: gp2
 
   webserver:
     replicas: 1
