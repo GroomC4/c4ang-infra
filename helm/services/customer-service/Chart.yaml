@@ -8,9 +8,9 @@ appVersion: "1.0.0"
 dependencies:
   - name: postgresql
     version: "1.0.0"
-    repository: "file://../../base/postgresql"
+    repository: "file://../../statefulset-base/postgresql"
     condition: postgresql.enabled
-  - name: redis
+  - name: redis-base
     version: "1.0.0"
-    repository: "file://../../base/redis"
+    repository: "file://../../statefulset-base/redis"
     condition: redis.enabled
