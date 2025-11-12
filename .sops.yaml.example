@@ -1,0 +1,8 @@
+# SOPS 설정 파일 예시
+# 프로젝트 루트에 .sops.yaml로 복사하여 사용
+# KMS_KEY_ARN을 실제 값으로 변경하세요
+
+creation_rules:
+  - kms: 'arn:aws:kms:ap-northeast-2:ACCOUNT_ID:key/KMS_KEY_ID'
+    path_regex: .*secrets\.enc\.yaml$
+

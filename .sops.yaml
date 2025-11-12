@@ -1,0 +1,19 @@
+# SOPS 설정 파일
+# 
+# 로컬 개발 환경 (k3d): Age 키 사용
+# 프로덕션 환경 (EKS): AWS KMS 사용
+#
+# Age 키 생성 방법:
+# age-keygen -o ~/.config/sops/age/keys.txt
+# cat ~/.config/sops/age/keys.txt | grep "public key" | awk '{print $4}'
+
+creation_rules:
+  # 로컬 개발 환경 (k3d): Age 키 사용
+  - age: 'age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'  # Age 공개 키로 변경
+    path_regex: k8s-dev-k3d/values/.*secrets\.enc\.yaml$
+    encrypted_regex: ^(data|stringData|password|secret|token|key|username|host|url)$
+  
+  # 프로덕션 환경 (EKS): AWS KMS 사용
+  - kms: 'arn:aws:kms:ap-northeast-2:ACCOUNT_ID:key/KMS_KEY_ID'  # KMS 키 ARN으로 변경
+    path_regex: .*secrets\.enc\.yaml$
+    encrypted_regex: ^(data|stringData|password|secret|token|key|username|host|url)$
