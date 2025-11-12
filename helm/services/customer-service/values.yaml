@@ -1,9 +1,13 @@
+fullnameOverride: customer-api
+
 replicaCount: 2
 
 image:
-  repository: c4ang/customer-service
+  repository: 963403601423.dkr.ecr.ap-northeast-2.amazonaws.com/c4ang-customer-service
   pullPolicy: IfNotPresent
-  tag: "latest"
+  tag: "v0.0.1-RC1"
+
+imagePullSecrets: []
 
 service:
   type: ClusterIP
@@ -44,9 +48,9 @@ env:
   - name: SPRING_PROFILES_ACTIVE
     value: "prod"
   - name: SPRING_DATASOURCE_PRIMARY_URL
-    value: "jdbc:postgresql://postgresql-primary:5432/customer_db"
+    value: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/customer_db"
   - name: SPRING_DATASOURCE_REPLICA_URL
-    value: "jdbc:postgresql://postgresql-replica:5432/customer_db"
+    value: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/customer_db"
   - name: SPRING_DATASOURCE_USERNAME
     valueFrom:
       secretKeyRef:

@@ -21,3 +21,4 @@ Thumbs.db
 **/values-*.local.yaml
 **/values.local.yaml
 *.local.yaml
+helm/services/customer-service/apiVersion: v1.yaml

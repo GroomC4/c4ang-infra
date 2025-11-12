@@ -11,6 +11,7 @@ dependencies:
     repository: "file://../../statefulset-base/postgresql"
     condition: postgresql.enabled
   - name: redis-base
+    alias: redis
     version: "1.0.0"
     repository: "file://../../statefulset-base/redis"
     condition: redis.enabled
