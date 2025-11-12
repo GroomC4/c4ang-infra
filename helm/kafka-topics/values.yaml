@@ -1,0 +1,86 @@
+clusterName: c4-kafka
+namespace: kafka
+
+# 기본 파티션/레플리카
+defaultPartitions: 3
+defaultReplicas: 3
+
+topics:
+  # ========= ORDER =========
+  - name: order.created
+  - name: order.canceled
+  - name: order.updated
+  - name: order.retry
+    partitions: 1
+  - name: order.dlq
+    partitions: 1
+
+  # ========= PAYMENT =========
+  - name: payment.completed
+  - name: payment.failed
+  - name: payment.refunded
+  - name: payment.retry
+    partitions: 1
+  - name: payment.dlq
+    partitions: 1
+
+  # ========= REVIEW =========
+  - name: review.created
+  - name: review.updated
+  - name: review.deleted
+  - name: review.retry
+    partitions: 1
+  - name: review.dlq
+    partitions: 1
+
+  # ========= STORE =========
+  - name: store.created
+  - name: store.updated
+  - name: store.deleted
+  - name: store.retry
+    partitions: 1
+  - name: store.dlq
+    partitions: 1
+
+  # ========= USER =========
+  - name: user.created
+  - name: user.updated
+  - name: user.deleted
+  - name: user.retry
+    partitions: 1
+  - name: user.dlq
+    partitions: 1
+
+  # ========= SAGA FAILURE =========
+  - name: saga.order-creation.failed
+    partitions: 1
+  - name: saga.stock-reservation.failed
+    partitions: 1
+  - name: saga.order-confirmation.failed
+    partitions: 1
+  - name: saga.payment-initialization.failed
+    partitions: 1
+  - name: saga.payment-completion.failed
+    partitions: 1
+  - name: saga.stock-confirmation.failed
+    partitions: 1
+
+  # ========= SAGA COMPENSATION =========
+  - name: saga.order-creation.compensate
+    partitions: 1
+  - name: saga.stock-reservation.compensate
+    partitions: 1
+  - name: saga.order-confirmation.compensate
+    partitions: 1
+  - name: saga.payment-initialization.compensate
+    partitions: 1
+  - name: saga.payment-completion.compensate
+    partitions: 1
+  - name: saga.stock-confirmation.compensate
+    partitions: 1
+
+  # ========= TRACKING =========
+  - name: saga.tracker
+    partitions: 1
+  - name: tracking.log
+    partitions: 1
