@@ -17,7 +17,7 @@ airflow:
     persistence:
       enabled: true
       size: 20Gi
-      storageClassName: gp2
+      storageClassName: gp2-immediate
     primary:
       resources:
         requests:
@@ -29,20 +29,20 @@ airflow:
 
   redis:
     enabled: true
+    persistence:
+      storageClassName: gp2-immediate
 
   dags:
     persistence:
       enabled: true
       size: 5Gi
-      storageClassName: gp2
+      storageClassName: gp2-immediate
     gitSync:
       enabled: false
 
   logs:
     persistence:
-      enabled: true
-      size: 10Gi
-      storageClassName: gp2
+      enabled: false
 
   webserver:
     replicas: 1
