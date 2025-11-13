@@ -14,5 +14,5 @@ spec:
   partitions: {{ .partitions | default $.Values.defaultPartitions }}
   replicas: {{ .replicas | default $.Values.defaultReplicas }}
   config:
-    retention.ms: {{ .retentionMs | default 604800000 }}
+    retention.ms: {{ .retentionMs | default $.Values.defaultRetentionMs }}
 {{- end }}
