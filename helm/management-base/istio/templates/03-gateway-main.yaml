@@ -1,0 +1,72 @@
+{{- if .Values.gateway.main.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ include "istio.gateway.main.name" . }}
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+  {{- with .Values.gateway.main.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  gatewayClassName: istio
+  listeners:
+    {{- if .Values.gateway.main.listeners.https.enabled }}
+    - name: https
+      hostname: "{{ .Values.gateway.main.hostname }}"
+      port: {{ .Values.gateway.main.listeners.https.port }}
+      protocol: HTTPS
+      {{- if .Values.gateway.main.listeners.https.tls }}
+      tls:
+        mode: {{ .Values.gateway.main.listeners.https.tls.mode }}
+        {{- if .Values.gateway.main.listeners.https.tls.certificateRefs }}
+        certificateRefs:
+          {{- range .Values.gateway.main.listeners.https.tls.certificateRefs }}
+          - name: {{ .name }}
+            kind: {{ .kind }}
+            namespace: {{ $.Values.namespace.name }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+    {{- end }}
+    
+    {{- if .Values.gateway.main.listeners.http.enabled }}
+    - name: http-redirect
+      hostname: "{{ .Values.gateway.main.hostname }}"
+      port: {{ .Values.gateway.main.listeners.http.port }}
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Same
+    {{- end }}
+
+---
+{{- if .Values.gateway.main.listeners.http.redirectToHttps }}
+# HTTP to HTTPS 리다이렉트
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: http-redirect
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: {{ include "istio.gateway.main.name" . }}
+      sectionName: http-redirect
+  hostnames:
+    - "{{ .Values.gateway.main.hostname }}"
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+{{- end }}
+{{- end }}
+

@@ -1,0 +1,38 @@
+{{- if .Values.gateway.webhook.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ include "istio.gateway.webhook.name" . }}
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+  {{- with .Values.gateway.webhook.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  gatewayClassName: istio
+  listeners:
+    {{- if .Values.gateway.webhook.listeners.https.enabled }}
+    - name: https-webhook
+      hostname: "{{ .Values.gateway.webhook.hostname }}"
+      port: {{ .Values.gateway.webhook.listeners.https.port }}
+      protocol: HTTPS
+      {{- if .Values.gateway.webhook.listeners.https.tls }}
+      tls:
+        mode: {{ .Values.gateway.webhook.listeners.https.tls.mode }}
+        {{- if .Values.gateway.webhook.listeners.https.tls.certificateRefs }}
+        certificateRefs:
+          {{- range .Values.gateway.webhook.listeners.https.tls.certificateRefs }}
+          - name: {{ .name }}
+            kind: {{ .kind }}
+            namespace: {{ $.Values.namespace.name }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+    {{- end }}
+{{- end }}
+

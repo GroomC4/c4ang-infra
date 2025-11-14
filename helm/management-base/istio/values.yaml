@@ -1,0 +1,187 @@
+# Istio Configuration Values
+# 이 Helm 차트는 Istio 설정 리소스들(Gateway, HTTPRoute 등)을 관리합니다.
+# Istio Control Plane은 별도로 istioctl로 설치해야 합니다.
+
+# CRD 설치 설정
+crds:
+  install: false  # CRD는 Helm 차트 설치 전에 별도로 설치해야 합니다
+  gatewayAPI:
+    install: false
+    version: "v1.0.0"  # Gateway API CRD 버전
+
+# Namespace 설정
+namespace:
+  name: ecommerce
+  create: true
+  istioInjection: enabled  # Sidecar 자동 주입 활성화
+
+# Gateway 설정
+gateway:
+  main:
+    enabled: true
+    name: ecommerce-gateway
+    hostname: api.ecommerce.com
+    # NLB 설정
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+      service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    listeners:
+      https:
+        enabled: true
+        port: 443
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - name: ecommerce-tls-cert
+              kind: Secret
+      http:
+        enabled: true
+        port: 80
+        redirectToHttps: true
+  
+  webhook:
+    enabled: true
+    name: webhook-gateway
+    hostname: webhook.ecommerce.com
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+      service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    listeners:
+      https:
+        enabled: true
+        port: 443
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - name: webhook-tls-cert
+              kind: Secret
+
+# Security 설정
+security:
+  mTLS:
+    enabled: true
+    mode: STRICT  # STRICT, PERMISSIVE, DISABLE
+  
+  jwt:
+    enabled: true
+    issuer: "https://api.ecommerce.com"
+    jwksUri: "https://api.ecommerce.com/.well-known/jwks.json"
+    audiences:
+      - "ecommerce-api"
+  
+  # Webhook IP Whitelist (PG사, 파트너사 IP)
+  webhook:
+    ipWhitelist: []
+      # - "203.0.113.0/24"  # PG사 IP 대역 (실제 IP로 변경 필요)
+      # - "198.51.100.5/32"  # PG사 Backup IP (실제 IP로 변경 필요)
+      # - "198.51.100.0/24"  # 파트너사 IP 대역 (실제 IP로 변경 필요)
+  
+  # Public endpoints (인증 불필요)
+  publicEndpoints:
+    - /api/v1/users/register
+    - /api/v1/users/login
+    - /api/v1/users/refresh-token
+    - /api/v1/auth/login
+    - /api/v1/auth/refresh
+    - /actuator/health
+    - /actuator/prometheus
+
+# HTTPRoute 설정
+httpRoute:
+  enabled: true
+  services:
+    # 각 서비스별 라우팅 설정
+    # 배포 시 자동으로 활성화
+    order:
+      enabled: true
+      path: /api/v1/orders
+      serviceName: order-service
+      servicePort: 8080
+    product:
+      enabled: true
+      path: /api/v1/products
+      serviceName: product-service
+      servicePort: 8080
+    payment:
+      enabled: true
+      path: /api/v1/payments
+      serviceName: payment-service
+      servicePort: 8080
+    user:
+      enabled: true
+      path: /api/v1/users
+      serviceName: user-service
+      servicePort: 8080
+    auth:
+      enabled: true
+      path: /api/v1/auth
+      serviceName: auth-service
+      servicePort: 8080
+    store:
+      enabled: true
+      path: /api/v1/stores
+      serviceName: store-service
+      servicePort: 8080
+    review:
+      enabled: true
+      path: /api/v1/reviews
+      serviceName: review-service
+      servicePort: 8080
+    recommendation:
+      enabled: true
+      path: /api/v1/recommendations
+      serviceName: recommendation-service
+      servicePort: 8080
+    analytics:
+      enabled: true
+      path: /api/v1/analytics
+      serviceName: analytics-service
+      servicePort: 8080
+
+# Traffic Management 설정
+trafficManagement:
+  destinationRules:
+    enabled: true
+    # Circuit Breaker 설정
+    circuitBreaker:
+      enabled: true
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 40
+  
+  virtualServices:
+    enabled: true
+    # 재시도 설정
+    retries:
+      attempts: 3
+      perTryTimeout: 5s
+      timeout: 5s
+
+# EnvoyFilter 설정
+envoyFilter:
+  rateLimit:
+    enabled: true
+    redis:
+      host: redis.ecommerce.svc.cluster.local
+      port: 6379
+    limits:
+      user: 100  # 초당 100 요청
+      ip: 50     # 초당 50 요청
+  
+  tokenBlacklist:
+    enabled: true
+    redis:
+      host: redis.ecommerce.svc.cluster.local
+      port: 6379
+
+# Gateway API CRD 설치
+gatewayAPI:
+  enabled: true
+  version: "v1.0.0"
+

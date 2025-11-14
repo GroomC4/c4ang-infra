@@ -1,0 +1,30 @@
+{{- if .Values.httpRoute.enabled }}
+{{- range $serviceName, $serviceConfig := .Values.httpRoute.services }}
+{{- if $serviceConfig.enabled }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $serviceName }}-service-route
+  namespace: {{ include "istio.namespace" $ }}
+  labels:
+    {{- include "istio.labels" $ | nindent 4 }}
+    service: {{ $serviceName }}
+spec:
+  parentRefs:
+    - name: {{ include "istio.gateway.main.name" $ }}
+  hostnames:
+    - "{{ $.Values.gateway.main.hostname }}"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ $serviceConfig.path }}
+      backendRefs:
+        - name: {{ $serviceConfig.serviceName }}
+          port: {{ $serviceConfig.servicePort }}
+          weight: 100
+{{- end }}
+{{- end }}
+{{- end }}
+

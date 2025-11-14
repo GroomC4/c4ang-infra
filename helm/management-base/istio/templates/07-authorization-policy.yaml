@@ -1,0 +1,66 @@
+{{- if .Values.security.jwt.enabled }}
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: require-jwt
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  action: ALLOW
+  rules:
+    # Public endpoints (인증 불필요)
+    {{- if .Values.security.publicEndpoints }}
+    - to:
+        - operation:
+            paths:
+              {{- range .Values.security.publicEndpoints }}
+              - {{ . | quote }}
+              {{- end }}
+    {{- end }}
+    
+    # Authenticated endpoints (JWT 필수)
+    - from:
+        - source:
+            requestPrincipals: ["*"]
+      to:
+        - operation:
+            paths:
+              - /api/v1/*
+{{- end }}
+
+{{- if .Values.gateway.webhook.enabled }}
+---
+# Webhook Gateway IP Whitelist 정책
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: webhook-ip-whitelist
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      istio.io/gateway-name: {{ include "istio.gateway.webhook.name" . }}
+  action: ALLOW
+  rules:
+    {{- if .Values.security.webhook.ipWhitelist }}
+    {{- range .Values.security.webhook.ipWhitelist }}
+    - from:
+        - source:
+            ipBlocks:
+              - {{ . | quote }}
+      to:
+        - operation:
+            paths:
+              - /webhooks/*
+            methods:
+              - POST
+    {{- end }}
+    {{- end }}
+{{- end }}
+

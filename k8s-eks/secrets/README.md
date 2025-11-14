@@ -55,6 +55,10 @@ aws secretsmanager create-secret \
 kubectl apply -f external-secrets/customer-service-db.yaml
 ```
 
+## 🧪 테스트
+
+EKS에서 시크릿 관리를 테스트하는 방법은 [TEST.md](./TEST.md)를 참고하세요.
+
 ## 📝 참고
 
 더 자세한 내용은 [docs/secrets-management-eks.md](../../docs/secrets-management-eks.md)를 참고하세요.

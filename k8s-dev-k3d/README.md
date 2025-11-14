@@ -11,13 +11,16 @@ k8s-dev-k3d/
 │   ├── start-environment.sh    # 로컬 환경 시작
 │   ├── stop-environment.sh     # 로컬 환경 중지
 │   ├── cleanup.sh              # k3d 리소스 정리
-│   └── setup-sops-age.sh       # SOPS Age 키 설정 (로컬 환경용)
+│   ├── setup-sops-age.sh       # SOPS Age 키 설정 (로컬 환경용)
+│   ├── install-istio.sh        # Istio 설치 스크립트
+│   └── uninstall-istio.sh      # Istio 제거 스크립트
 ├── values/
 │   ├── airflow.yaml            # (선택) Airflow values
 │   ├── postgresql.yaml         # PostgreSQL values
 │   ├── postgresql.secrets.yaml.example  # PostgreSQL 시크릿 예시
 │   ├── redis.yaml              # Redis values
-│   └── redis.secrets.yaml.example       # Redis 시크릿 예시
+│   ├── redis.secrets.yaml.example       # Redis 시크릿 예시
+│   └── istio.yaml              # Istio values (Helm 차트용)
 ├── kubeconfig/                 # kubeconfig 파일 저장 디렉토리
 └── README.md
 ```
@@ -223,7 +226,24 @@ k3d 환경은 저장소의 Helm 베이스 차트를 직접 사용합니다:
 - `helm/statefulset-base/redis/` - Redis Statefulset 베이스 차트
 - `helm/statefulset-base/postgresql/` - PostgreSQL Statefulset 베이스 차트
 - `helm/management-base/airflow/` - (선택) Airflow 관리용 베이스 차트
+- `helm/management-base/istio/` - Istio Service Mesh 및 Gateway 설정
 - `k8s-dev-k3d/values/*.yaml` - 로컬 환경 최적화 values 파일
+
+### Istio 설치
+
+Istio를 설치하려면:
+
+```bash
+# Istio 설치 (Helm 차트 방식)
+cd k8s-dev-k3d/scripts
+./install-istio.sh
+
+# Istio 제거
+./uninstall-istio.sh
+```
+
+**설정 파일**: `k8s-dev-k3d/values/istio.yaml`
+**Helm 차트**: `helm/management-base/istio/`
 
 ### k8s-deployments와의 차이
 

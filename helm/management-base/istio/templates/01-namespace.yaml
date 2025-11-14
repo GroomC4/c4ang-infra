@@ -1,0 +1,12 @@
+{{- if .Values.namespace.create }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+    {{- if eq .Values.namespace.istioInjection "enabled" }}
+    istio-injection: enabled
+    {{- end }}
+{{- end }}
+
