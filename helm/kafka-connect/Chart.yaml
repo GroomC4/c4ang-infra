@@ -1,0 +1,4 @@
+apiVersion: v2
+name: kafka-connect
+description: Deploy Kafka Connect using Strimzi
+version: 0.1.0

@@ -1,0 +1,54 @@
+# Namespace 설정
+namespace: kafka
+
+# Kafka Connect 설정
+replicas: 1
+bootstrapServers: c4-kafka-kafka-bootstrap:9092
+
+# Build 설정을 사용하지 않으면 기본 이미지 사용
+build:
+  enabled: false
+  # ECR 레지스트리 정보 (build.enabled=true일 때 사용)
+  registry: 963403601423.dkr.ecr.ap-northeast-2.amazonaws.com
+  outputImage: 963403601423.dkr.ecr.ap-northeast-2.amazonaws.com/kafka-connect-s3:latest
+  # ECR 푸시를 위한 시크릿 (필요시)
+  # pushSecret: ecr-push-secret
+
+# Docker 이미지 (build.enabled=false일 때 사용)
+# 이 값은 setup-kafka-connect.sh 스크립트가 자동으로 업데이트합니다
+image: 963403601423.dkr.ecr.ap-northeast-2.amazonaws.com/kafka-connect-s3:latest
+
+# ServiceAccount 설정
+serviceAccountName: c4-kafka-connect-connect
+serviceAccountArn: arn:aws:iam::963403601423:role/eksctl-c4-eks-cluster-addon-iamserviceaccount-Role1-YQcLCkIlCmbK
+
+# KafkaConnector 설정
+connector:
+  enabled: true
+  name: s3-sink-connector
+  cluster: c4-kafka-connect
+  class: io.confluent.connect.s3.S3SinkConnector
+  tasksMax: 1
+  config:
+    # Kafka
+    topics: tracking.log
+    keyConverter: org.apache.kafka.connect.storage.StringConverter
+    valueConverter: org.apache.kafka.connect.json.JsonConverter
+    valueConverterSchemasEnable: false
+    
+    # S3 설정
+    s3Region: ap-northeast-2
+    s3BucketName: c4-tracking-log
+    s3PartSize: 5242880
+    
+    # 파일 형식
+    formatClass: io.confluent.connect.s3.format.json.JsonFormat
+    flushSize: 1
+    
+    # IAM 인증 (IRSA 사용)
+    awsRegion: ap-northeast-2
+    behaviorOnNullValues: ignore
+    storageClass: io.confluent.connect.s3.storage.S3Storage
+    
+    # S3 URL (선택사항, 필요시 주석 해제)
+    # storeUrl: s3://c4-tracking-log
