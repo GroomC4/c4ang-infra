@@ -96,7 +96,245 @@ s3://c4-tracking-log/
 }
 ```
 
+### 메시지 발행 방법 (Producer 예시)
+
+애플리케이션에서 `tracking.log` 토픽으로 메시지를 보내는 방법:
+
+#### 1. Java (Spring Kafka)
+
+```java
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Service;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@Service
+public class TrackingEventProducer {
+    
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
+    
+    public TrackingEventProducer(KafkaTemplate<String, String> kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+        this.objectMapper = new ObjectMapper();
+    }
+    
+    public void sendTrackingEvent(String userId, String eventType, Map<String, Object> data) {
+        try {
+            Map<String, Object> event = new HashMap<>();
+            event.put("userId", userId);
+            event.put("eventType", eventType);
+            event.put("timestamp", Instant.now().toString());
+            event.putAll(data);
+            
+            String jsonMessage = objectMapper.writeValueAsString(event);
+            
+            // Key는 userId, Value는 JSON 문자열
+            kafkaTemplate.send("tracking.log", userId, jsonMessage);
+            
+        } catch (Exception e) {
+            // 에러 처리
+        }
+    }
+}
+```
+
+**application.yml 설정:**
+```yaml
+spring:
+  kafka:
+    bootstrap-servers: c4-kafka-kafka-bootstrap.kafka:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+```
+
+#### 2. Python (kafka-python)
+
+```python
+from kafka import KafkaProducer
+import json
+from datetime import datetime
+
+# Producer 생성
+producer = KafkaProducer(
+    bootstrap_servers=['c4-kafka-kafka-bootstrap.kafka:9092'],
+    key_serializer=lambda k: k.encode('utf-8') if k else None,
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
+
+# 메시지 발행
+def send_tracking_event(user_id: str, event_type: str, **kwargs):
+    event = {
+        "userId": user_id,
+        "eventType": event_type,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        **kwargs
+    }
+    
+    # Key는 userId, Value는 JSON 객체
+    producer.send('tracking.log', key=user_id, value=event)
+    producer.flush()  # 즉시 전송
+
+# 사용 예시
+send_tracking_event(
+    user_id="user-123",
+    event_type="page_view",
+    page="/products/123",
+    userAgent="Mozilla/5.0...",
+    ipAddress="192.168.1.1"
+)
+```
+
+#### 3. Node.js (kafkajs)
+
+```javascript
+const { Kafka } = require('kafkajs');
+
+const kafka = new Kafka({
+  clientId: 'tracking-producer',
+  brokers: ['c4-kafka-kafka-bootstrap.kafka:9092']
+});
+
+const producer = kafka.producer();
+
+async function sendTrackingEvent(userId, eventType, data) {
+  await producer.connect();
+  
+  const event = {
+    userId,
+    eventType,
+    timestamp: new Date().toISOString(),
+    ...data
+  };
+  
+  await producer.send({
+    topic: 'tracking.log',
+    messages: [
+      {
+        key: userId,           // Key는 userId (String)
+        value: JSON.stringify(event)  // Value는 JSON 문자열
+      }
+    ]
+  });
+  
+  await producer.disconnect();
+}
+
+// 사용 예시
+sendTrackingEvent('user-123', 'page_view', {
+  page: '/products/123',
+  userAgent: 'Mozilla/5.0...',
+  ipAddress: '192.168.1.1'
+});
+```
+
+#### 4. Kotlin (Kotlinx Serialization)
+
+```kotlin
+import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.ProducerRecord
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.Serializable
+import java.util.Properties
+
+@Serializable
+data class TrackingEvent(
+    val userId: String,
+    val eventType: String,
+    val timestamp: String,
+    val page: String? = null,
+    val userAgent: String? = null,
+    val ipAddress: String? = null
+)
+
+class TrackingEventProducer {
+    private val producer: KafkaProducer<String, String>
+    private val json = Json { ignoreUnknownKeys = true }
+    
+    init {
+        val props = Properties().apply {
+            put("bootstrap.servers", "c4-kafka-kafka-bootstrap.kafka:9092")
+            put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+            put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+        }
+        producer = KafkaProducer(props)
+    }
+    
+    fun sendEvent(event: TrackingEvent) {
+        val record = ProducerRecord(
+            "tracking.log",
+            event.userId,  // Key
+            json.encodeToString(TrackingEvent.serializer(), event)  // Value (JSON 문자열)
+        )
+        producer.send(record)
+    }
+    
+    fun close() {
+        producer.close()
+    }
+}
+```
+
+#### 5. curl로 직접 테스트 (Kafka REST API 사용 시)
+
+```bash
+# Kafka REST Proxy가 있다면
+curl -X POST http://kafka-rest-proxy:8082/topics/tracking.log \
+  -H "Content-Type: application/vnd.kafka.json.v2+json" \
+  -d '{
+    "records": [
+      {
+        "key": "user-123",
+        "value": {
+          "userId": "user-123",
+          "eventType": "page_view",
+          "timestamp": "2024-01-15T10:30:00Z",
+          "page": "/products/123"
+        }
+      }
+    ]
+  }'
+```
+
+#### 6. Kafka Console Producer로 직접 테스트
+
+```bash
+# Kubernetes에서 직접 테스트
+kubectl exec -it kafka-client -n kafka -- \
+  /opt/kafka/bin/kafka-console-producer.sh \
+  --bootstrap-server c4-kafka-kafka-bootstrap.kafka:9092 \
+  --topic tracking.log \
+  --property "parse.key=true" \
+  --property "key.separator=:"
+
+# 입력 형식: key:value
+# 예시:
+user-123:{"userId":"user-123","eventType":"page_view","timestamp":"2024-01-15T10:30:00Z","page":"/products/123"}
+```
+
+### 중요 사항
+
+1. **Key는 선택사항**: Key를 보내지 않으면 `null`이 됩니다
+   ```java
+   // Key 없이 발행
+   kafkaTemplate.send("tracking.log", jsonMessage);
+   ```
+
+2. **Value는 반드시 JSON 문자열**: 객체를 직렬화해서 문자열로 보내야 합니다
+   ```java
+   // ❌ 잘못된 예시 (객체를 직접 보냄)
+   kafkaTemplate.send("tracking.log", eventObject);
+   
+   // ✅ 올바른 예시 (JSON 문자열로 변환)
+   String jsonMessage = objectMapper.writeValueAsString(eventObject);
+   kafkaTemplate.send("tracking.log", jsonMessage);
+   ```
+
+3. **타임스탬프 형식**: ISO 8601 형식 권장 (`2024-01-15T10:30:00Z`)
+
 #### S3 저장 파일 형식
+
+Kafka에 발행된 메시지는 S3에 다음과 같이 저장됩니다:
 
 각 JSON 파일은 **한 줄에 하나의 JSON 객체**로 저장됩니다 (JSON Lines 형식).
 
@@ -109,6 +347,7 @@ s3://c4-tracking-log/
 - 각 파일은 **한 줄에 하나의 JSON 객체**입니다
 - 여러 메시지가 하나의 파일에 저장될 수 있습니다 (현재는 `flushSize: 1`로 1개씩 저장)
 - 파일을 읽을 때는 **줄 단위로 파싱**해야 합니다
+- Kafka의 Key는 S3 파일에는 저장되지 않습니다 (Value만 저장됨)
 
 ---
 
