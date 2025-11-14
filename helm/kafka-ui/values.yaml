@@ -1,0 +1,70 @@
+# Kafka UI 설정
+
+# Namespace
+namespace: kafka
+
+# 이미지 설정
+image:
+  repository: provectuslabs/kafka-ui
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Replica 설정
+replicas: 1
+
+# 리소스 설정
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1Gi"
+    cpu: "500m"
+
+# Kafka 클러스터 설정
+kafka:
+  clusterName: c4-kafka
+  bootstrapServers: c4-kafka-kafka-bootstrap:9092
+
+# Service 설정
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+# Ingress 설정 (선택사항)
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: kafka-ui.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# 환경 변수 (추가 설정)
+env:
+  # 동적 설정 활성화
+  DYNAMIC_CONFIG_ENABLED: "true"
+  # 로깅 레벨
+  LOGGING_LEVEL_COM_PROVECTUS: "INFO"
+  # Kafka Connect 설정 (선택사항)
+  KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: "c4-kafka-connect"
+  KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: "http://c4-kafka-connect-connect-api:8083"
+
+# ServiceAccount 설정 (선택사항)
+serviceAccount:
+  create: false
+  name: ""
+
+# Pod 설정
+podAnnotations: {}
+podLabels: {}
+
+# NodeSelector, Tolerations, Affinity (선택사항)
+nodeSelector: {}
+tolerations: []
+affinity: {}
+

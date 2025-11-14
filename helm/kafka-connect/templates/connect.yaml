@@ -1,0 +1,50 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnect
+metadata:
+  name: c4-kafka-connect
+  namespace: {{ .Values.namespace | default "kafka" }}
+  annotations:
+    strimzi.io/use-connector-resources: "true"
+  labels:
+    strimzi.io/cluster: c4-kafka
+spec:
+  replicas: {{ .Values.replicas }}
+  bootstrapServers: {{ .Values.bootstrapServers }}
+  {{- if .Values.build.enabled }}
+  build:
+    output:
+      type: docker
+      image: {{ .Values.build.outputImage }}
+      {{- if .Values.build.pushSecret }}
+      pushSecret: {{ .Values.build.pushSecret }}
+      {{- end }}
+    plugins:
+      - name: s3-sink-connector
+        artifacts:
+          - type: zip
+            url: https://hub-downloads.confluent.io/api/plugins/confluentinc/kafka-connect-s3/versions/10.6.11/confluentinc-kafka-connect-s3-10.6.11.zip
+            {{- if .Values.build.s3ConnectorSha512sum }}
+            sha512sum: {{ .Values.build.s3ConnectorSha512sum }}
+            {{- end }}
+  {{- else }}
+  image: {{ .Values.image }}
+  {{- end }}
+  config:
+    group.id: c4-connect-group
+    offset.storage.topic: c4-connect-offsets
+    config.storage.topic: c4-connect-configs
+    status.storage.topic: c4-connect-status
+    config.storage.replication.factor: 1
+    offset.storage.replication.factor: 1
+    status.storage.replication.factor: 1
+  template:
+    serviceAccount:
+      metadata:
+        annotations:
+          eks.amazonaws.com/role-arn: {{ .Values.serviceAccountArn }}
+    pod:
+      metadata:
+        annotations:
+          iam.amazonaws.com/role: {{ .Values.serviceAccountArn }}
+      spec:
+        serviceAccountName: {{ .Values.serviceAccountName }}

@@ -1,0 +1,146 @@
+clusterName: c4-kafka
+namespace: kafka
+
+# 기본 파티션/레플리카
+defaultPartitions: 3
+defaultReplicas: 3
+defaultRetentionMs: 604800000   # 기본 7일
+
+topics:
+  # ========= ORDER =========
+  - name: order.created
+    retentionMs: 604800000  # 7일
+  - name: order.canceled
+    retentionMs: 604800000
+  - name: order.updated
+    retentionMs: 604800000
+  - name: order.retry
+    partitions: 1
+    retentionMs: 604800000
+  - name: order.dlq
+    partitions: 1
+    retentionMs: 604800000
+
+  # ========= PAYMENT =========
+  - name: payment.completed
+    retentionMs: 2592000000   # 30일
+  - name: payment.failed
+    retentionMs: 2592000000
+  - name: payment.refunded
+    retentionMs: 2592000000
+  - name: payment.retry
+    partitions: 1
+    retentionMs: 2592000000
+  - name: payment.dlq
+    partitions: 1
+    retentionMs: 2592000000
+
+  # ========= REVIEW =========
+  - name: review.created
+    retentionMs: 604800000
+  - name: review.updated
+    retentionMs: 604800000
+  - name: review.deleted
+    retentionMs: 604800000
+  - name: review.retry
+    partitions: 1
+    retentionMs: 604800000
+  - name: review.dlq
+    partitions: 1
+    retentionMs: 604800000
+
+  # ========= STORE =========
+  - name: store.created
+    retentionMs: 604800000
+  - name: store.updated
+    retentionMs: 604800000
+  - name: store.deleted
+    retentionMs: 604800000
+  - name: store.retry
+    partitions: 1
+    retentionMs: 604800000
+  - name: store.dlq
+    partitions: 1
+    retentionMs: 604800000
+
+  # ========= USER =========
+  - name: user.created
+    retentionMs: 604800000
+  - name: user.updated
+    retentionMs: 604800000
+  - name: user.deleted
+    retentionMs: 604800000
+  - name: user.retry
+    partitions: 1
+    retentionMs: 604800000
+  - name: user.dlq
+    partitions: 1
+    retentionMs: 604800000
+
+  # ========= SAGA FAILURE =========
+  - name: saga.order-creation.failed
+    partitions: 1
+    retentionMs: 604800000
+  - name: saga.stock-reservation.failed
+    partitions: 1
+    retentionMs: 604800000
+  - name: saga.order-confirmation.failed
+    partitions: 1
+    retentionMs: 604800000
+  - name: saga.payment-initialization.failed
+    partitions: 1
+    retentionMs: 604800000
+  - name: saga.payment-completion.failed
+    partitions: 1
+    retentionMs: 604800000
+  - name: saga.stock-confirmation.failed
+    partitions: 1
+    retentionMs: 604800000
+
+  # ========= SAGA COMPENSATION =========
+  - name: saga.order-creation.compensate
+    partitions: 1
+    retentionMs: 604800000
+  - name: saga.stock-reservation.compensate
+    partitions: 1
+    retentionMs: 604800000
+  - name: saga.order-confirmation.compensate
+    partitions: 1
+    retentionMs: 604800000
+  - name: saga.payment-initialization.compensate
+    partitions: 1
+    retentionMs: 604800000
+  - name: saga.payment-completion.compensate
+    partitions: 1
+    retentionMs: 604800000
+  - name: saga.stock-confirmation.compensate
+    partitions: 1
+    retentionMs: 604800000
+
+  # ========= TRACKING =========
+  - name: saga.tracker
+    partitions: 1
+    retentionMs: 604800000
+  - name: tracking.log
+    partitions: 1
+    retentionMs: 604800000
+
+    # ========= view =========
+    # 조회 이벤트 수집용
+  - name: view.created
+    partitions: 3
+    retentionMs: 604800000
+    # 사용자 행동 로그를 통합해서 저장
+  - name: action.user-event
+    partitions: 3
+    retentionMs: 604800000
+
+    # AI 추천 요청을 Kafka로 넘기는 방식(비동기 처리 강화) 먼지 잘 모르겠음
+  - name: recommendation.request
+    partitions: 3
+    retentionMs: 86400000     # 1일
+
+    # AI 서버가 추천 결과를 반환하는 Topic (선택적)
+  - name: recommendation.result
+    partitions: 3
+    retentionMs: 86400000
