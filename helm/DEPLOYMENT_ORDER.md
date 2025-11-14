@@ -35,6 +35,22 @@ cd helm/kafka-connect
 **중요**: `setup-kafka-connect.sh`는 이미 Helm 배포를 포함하고 있으므로
 별도로 `helm upgrade --install`을 실행할 필요가 없습니다.
 
+### 4️⃣ Kafka UI 배포 (선택사항)
+```bash
+helm upgrade --install kafka-ui ./helm/kafka-ui -n kafka
+```
+- Kafka 클러스터를 웹 UI로 관리 및 모니터링
+- Topics, Messages, Consumer Groups 확인 가능
+- Kafka Connect 상태 확인 가능
+
+**접속 방법:**
+```bash
+# 포트 포워딩
+kubectl port-forward -n kafka svc/kafka-ui 8080:8080
+
+# 브라우저에서 http://localhost:8080 접속
+```
+
 ## 전체 배포 스크립트 예시
 
 ```bash
@@ -42,17 +58,22 @@ cd helm/kafka-connect
 set -euo pipefail
 
 # 1. Kafka Operator + Cluster
-echo "📌 [1/3] Kafka Operator + Cluster 배포 중..."
+echo "📌 [1/4] Kafka Operator + Cluster 배포 중..."
 ./helm/setup-eks-kafka.sh
 
 # 2. Kafka Topics (선택사항)
-echo "📌 [2/3] Kafka Topics 배포 중..."
+echo "📌 [2/4] Kafka Topics 배포 중..."
 helm upgrade --install kafka-topics ./helm/kafka-topics -n kafka
 
 # 3. Kafka Connect + S3 Sink Connector
-echo "📌 [3/3] Kafka Connect + S3 Sink Connector 배포 중..."
+echo "📌 [3/4] Kafka Connect + S3 Sink Connector 배포 중..."
 cd helm/kafka-connect
 ./setup-kafka-connect.sh
+cd ../..
+
+# 4. Kafka UI (선택사항)
+echo "📌 [4/4] Kafka UI 배포 중..."
+helm upgrade --install kafka-ui ./helm/kafka-ui -n kafka
 ```
 
 ## 확인 명령어
@@ -73,5 +94,9 @@ kubectl get pods -n kafka -l strimzi.io/name=c4-kafka-connect-connect
 
 # S3 Sink Connector
 kubectl get kafkaconnector -n kafka
+
+# Kafka UI
+kubectl get pods -n kafka -l app.kubernetes.io/name=kafka-ui
+kubectl get svc -n kafka kafka-ui
 ```
 

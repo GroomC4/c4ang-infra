@@ -25,26 +25,117 @@
 
 ## 아키텍처 및 데이터 흐름
 
-```
-애플리케이션 → Kafka Topic (tracking.log) → Kafka Connect → S3 Sink Connector → S3 Bucket (c4-tracking-log)
+### 전체 아키텍처 다이어그램
+
+```mermaid
+graph TB
+    subgraph "애플리케이션 레이어"
+        App1[애플리케이션 1<br/>Java/Spring]
+        App2[애플리케이션 2<br/>Python/Node.js]
+        App3[기타 애플리케이션]
+    end
+
+    subgraph "Kubernetes Cluster (EKS)"
+        subgraph "Kafka Namespace"
+            subgraph "Strimzi Operator"
+                SO[Strimzi Operator<br/>관리자]
+            end
+            
+            subgraph "Kafka Cluster (c4-kafka)"
+                K1[Kafka Broker 1]
+                K2[Kafka Broker 2]
+                K3[Kafka Broker 3]
+                Topic[Kafka Topic<br/>tracking.log]
+            end
+            
+            subgraph "Kafka Connect"
+                KC[Kafka Connect<br/>c4-kafka-connect]
+                Connector[S3 Sink Connector<br/>s3-sink-connector]
+            end
+        end
+        
+        subgraph "ECR"
+            ECR[ECR Registry<br/>kafka-connect-s3:latest]
+        end
+    end
+
+    subgraph "AWS Services"
+        subgraph "IAM"
+            IAM[IAM Role<br/>IRSA<br/>S3 접근 권한]
+        end
+        
+        subgraph "S3"
+            S3[S3 Bucket<br/>c4-tracking-log<br/>ap-northeast-2]
+            Files[JSON Files<br/>topics/tracking.log/partition=0/]
+        end
+    end
+
+    App1 -->|Producer| Topic
+    App2 -->|Producer| Topic
+    App3 -->|Producer| Topic
+    
+    SO -.->|관리| K1
+    SO -.->|관리| K2
+    SO -.->|관리| K3
+    SO -.->|관리| KC
+    
+    K1 --> Topic
+    K2 --> Topic
+    K3 --> Topic
+    
+    Topic -->|Consume| KC
+    KC --> Connector
+    Connector -->|Write| S3
+    
+    KC -.->|Pull Image| ECR
+    KC -.->|Assume Role| IAM
+    IAM -.->|권한| S3
+    
+    S3 --> Files
+
+    style App1 fill:#e1f5ff
+    style App2 fill:#e1f5ff
+    style App3 fill:#e1f5ff
+    style SO fill:#fff4e1
+    style K1 fill:#ffe1f5
+    style K2 fill:#ffe1f5
+    style K3 fill:#ffe1f5
+    style Topic fill:#ffe1f5
+    style KC fill:#e1ffe1
+    style Connector fill:#e1ffe1
+    style ECR fill:#f0e1ff
+    style IAM fill:#ffe1e1
+    style S3 fill:#e1ffff
+    style Files fill:#e1ffff
 ```
 
 ### 데이터 흐름 상세
 
 1. **애플리케이션에서 메시지 발행**
-   - Kafka의 `tracking.log` 토픽에 JSON 메시지 발행
-   - Key: String 형식
+   - 다양한 애플리케이션(Java, Python, Node.js 등)에서 Kafka의 `tracking.log` 토픽에 JSON 메시지 발행
+   - Key: String 형식 (예: userId)
    - Value: JSON 형식 (Schema 없음)
 
-2. **Kafka Connect가 메시지 수집**
-   - `tracking.log` 토픽에서 메시지를 읽음
+2. **Kafka Cluster에서 메시지 저장**
+   - Strimzi Operator가 Kafka Cluster를 관리
+   - 3개의 Kafka Broker에 메시지가 분산 저장
+   - `tracking.log` 토픽에 메시지가 저장됨
+
+3. **Kafka Connect가 메시지 수집**
+   - Kafka Connect가 `tracking.log` 토픽에서 메시지를 읽음
+   - S3 Sink Connector 플러그인 사용 (ECR에서 커스텀 이미지 pull)
    - `flushSize: 1` 설정으로 메시지 1개마다 즉시 S3에 저장
 
-3. **S3에 저장**
+4. **IAM 역할을 통한 인증 (IRSA)**
+   - Kafka Connect Pod가 IAM 역할을 Assume
+   - S3 접근 권한 획득
+
+5. **S3에 저장**
    - S3 버킷: `c4-tracking-log`
    - 리전: `ap-northeast-2` (서울)
-   - 파일 형식: JSON
+   - 파일 형식: JSON (JSON Lines)
    - 파일명: 자동 생성 (토픽명, 파티션, 오프셋 기반)
+   - 경로: `topics/tracking.log/partition=0/`
 
 ---
 
