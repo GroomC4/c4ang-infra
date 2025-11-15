@@ -1,6 +1,6 @@
 apiVersion: v2
-name: customer-service
-description: Customer Service Microservice
+name: payment-service
+description: Payment Service Microservice
 type: application
 version: 1.0.0
 appVersion: "1.0.0"
@@ -13,3 +13,4 @@ dependencies:
     version: "1.0.0"
     repository: "file://../../statefulset-base/redis"
     condition: redis.enabled
+

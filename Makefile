@@ -203,6 +203,36 @@ sops-decrypt: ## SOPS로 시크릿 파일 복호화 (사용법: make sops-decryp
 	@echo "$(BLUE)🔓 파일 복호화 중: $(FILE)$(NC)"
 	@sops -d "$(FILE)"
 
+##@ EKS 배포
+
+eks-deploy-airflow: ## EKS에 Airflow 배포
+	@echo "$(BLUE)🚀 EKS에 Airflow 배포 중...$(NC)"
+	@cd k8s-eks/scripts && ./deploy-airflow.sh
+	@echo "$(GREEN)✅ Airflow 배포 완료$(NC)"
+
+eks-install-istio: ## EKS에 Istio 설치
+	@echo "$(BLUE)🕸️  EKS에 Istio 설치 중...$(NC)"
+	@cd k8s-eks/istio && ./install-istio.sh
+	@echo "$(GREEN)✅ Istio 설치 완료$(NC)"
+
+eks-access-airflow: ## Airflow UI 접속 (포트포워딩)
+	@echo "$(BLUE)🌐 Airflow UI 접속 중...$(NC)"
+	@cd k8s-eks/scripts && ./access-airflow-ui.sh
+
+eks-create-airflow-user: ## Airflow 사용자 생성
+	@echo "$(BLUE)👤 Airflow 사용자 생성 중...$(NC)"
+	@cd k8s-eks/scripts && ./create-airflow-user.sh
+
+eks-upload-dags: ## Airflow DAG 파일 업로드
+	@echo "$(BLUE)📤 Airflow DAG 파일 업로드 중...$(NC)"
+	@cd k8s-eks/scripts && ./upload-dag.sh ../airflow/dags/*.py ../airflow/dags/utils/*.py
+	@echo "$(GREEN)✅ DAG 업로드 완료$(NC)"
+
+eks-deploy-lambda: ## Lambda 감정분석 함수 배포
+	@echo "$(BLUE)🚀 Lambda 함수 배포 중...$(NC)"
+	@cd k8s-eks/scripts && ./deploy-lambda.sh
+	@echo "$(GREEN)✅ Lambda 배포 완료$(NC)"
+
 ##@ 기타
 
 clean-helm-cache: ## Helm 캐시 정리

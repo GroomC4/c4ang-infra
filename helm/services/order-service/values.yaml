@@ -1,0 +1,73 @@
+fullnameOverride: order-api
+
+replicaCount: 3
+
+image:
+  repository: 963403601423.dkr.ecr.ap-northeast-2.amazonaws.com/c4ang-order-service
+  pullPolicy: IfNotPresent
+  tag: "v0.0.1-RC1"
+
+imagePullSecrets: []
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: api.c4ang.com
+      paths:
+        - path: /api/v1/orders
+          pathType: Prefix
+  tls:
+    - secretName: order-service-tls
+      hosts:
+        - api.c4ang.com
+
+resources:
+  requests:
+    memory: 1Gi
+    cpu: 500m
+  limits:
+    memory: 2Gi
+    cpu: 1000m
+
+autoscaling:
+  enabled: false
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+env:
+  - name: SPRING_PROFILES_ACTIVE
+    value: "prod"
+  - name: SPRING_DATASOURCE_PRIMARY_URL
+    value: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/order_db"
+  - name: SPRING_DATASOURCE_REPLICA_URL
+    value: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/order_db"
+  - name: SPRING_DATASOURCE_USERNAME
+    valueFrom:
+      secretKeyRef:
+        name: order-service-db-secret
+        key: username
+  - name: SPRING_DATASOURCE_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: order-service-db-secret
+        key: password
+  - name: SPRING_DATA_REDIS_HOST
+    value: "redis-master"
+  - name: SPRING_DATA_REDIS_PORT
+    value: "6379"
+
+# Redis dependency - disabled by default for EKS (use ElastiCache)
+# Set to true for local/dev environments
+redis:
+  enabled: false
+

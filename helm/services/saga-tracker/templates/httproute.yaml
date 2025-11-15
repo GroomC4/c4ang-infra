@@ -1,0 +1,27 @@
+{{- if and .Values.istio.enabled .Values.istio.gatewayAPI.enabled }}
+# Kubernetes Gateway API HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "saga-tracker.fullname" . }}-route
+  labels:
+    {{- include "saga-tracker.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: {{ .Values.istio.gatewayAPI.gatewayName | default "ecommerce-gateway" }}
+      namespace: {{ .Values.istio.gatewayAPI.gatewayNamespace | default "ecommerce" }}
+  hostnames:
+    {{- range .Values.istio.gatewayAPI.hostnames }}
+    - {{ . | quote }}
+    {{- end }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ .Values.istio.pathPrefix | default "/api/v1/saga" }}
+      backendRefs:
+        - name: {{ include "saga-tracker.fullname" . }}
+          port: {{ .Values.service.port }}
+          weight: 100
+{{- end }}
+
