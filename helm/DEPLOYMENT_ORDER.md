@@ -2,16 +2,38 @@
 
 ## 배포 순서
 
-### 1️⃣ Strimzi Operator + Kafka Cluster 배포
+### 1️⃣ Strimzi Operator + Kafka Cluster + Schema Registry 배포
 ```bash
 ./helm/setup-eks-kafka.sh
 ```
 - Strimzi Operator 설치
 - Kafka Cluster (`c4-kafka`) 배포
 - Kafka Client Pod 생성
+- **Schema Registry 자동 배포** (신규 추가!)
 
-**참고**: `kafka-cluster.yaml`은 `setup-eks-kafka.sh`에 이미 포함되어 있습니다.
-별도로 apply할 필요는 없습니다. (다른 설정이 필요하면 수정 후 apply)
+**참고**:
+- `kafka-cluster.yaml`은 `setup-eks-kafka.sh`에 이미 포함되어 있습니다.
+- Schema Registry도 자동으로 설치되므로 별도 설치 불필요합니다.
+- 별도로 apply할 필요는 없습니다. (다른 설정이 필요하면 수정 후 apply)
+
+**Schema Registry 확인:**
+```bash
+# Pod 상태 확인
+kubectl get pods -n kafka -l app=cp-schema-registry
+
+# Service 확인
+kubectl get svc -n kafka schema-registry-cp-schema-registry
+
+# _schemas 토픽 생성 확인
+kubectl exec -n kafka kafka-client -- \
+  /opt/kafka/bin/kafka-topics.sh \
+  --bootstrap-server c4-kafka-kafka-bootstrap:9092 \
+  --list | grep _schemas
+```
+
+**연결 정보:**
+- 같은 네임스페이스: `http://schema-registry-cp-schema-registry:8081`
+- 다른 네임스페이스: `http://schema-registry-cp-schema-registry.kafka:8081`
 
 ### 2️⃣ Kafka Topics 배포 (선택사항)
 ```bash
@@ -87,6 +109,16 @@ kubectl get pods -n kafka
 
 # Kafka Topics
 kubectl get kafkatopic -n kafka
+
+# Schema Registry
+kubectl get pods -n kafka -l app=cp-schema-registry
+kubectl get svc -n kafka schema-registry-cp-schema-registry
+
+# _schemas 토픽 확인
+kubectl exec -n kafka kafka-client -- \
+  /opt/kafka/bin/kafka-topics.sh \
+  --bootstrap-server c4-kafka-kafka-bootstrap:9092 \
+  --list | grep _schemas
 
 # Kafka Connect
 kubectl get kafkaconnect -n kafka
