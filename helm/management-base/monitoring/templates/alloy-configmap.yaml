@@ -1,0 +1,213 @@
+{{- if .Values.alloy.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alloy-config
+  namespace: {{ include "monitoring.namespace" . }}
+  labels:
+    {{- include "monitoring.alloy.labels" . | nindent 4 }}
+data:
+  config.alloy: |
+    // ============================================
+    // Grafana Alloy Configuration
+    // 메트릭, 로그, 트레이스 통합 수집
+    // ============================================
+
+    {{- if .Values.alloy.config.logs.enabled }}
+    // ============================================
+    // Logs Collection (Kubernetes Container Logs)
+    // ============================================
+    discovery.kubernetes "pods" {
+      role = "pod"
+    }
+
+    discovery.relabel "logs" {
+      targets = discovery.kubernetes.pods.targets
+
+      // 네임스페이스 레이블
+      rule {
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label  = "namespace"
+      }
+
+      // 파드 이름 레이블
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "pod"
+      }
+
+      // 컨테이너 이름 레이블
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_name"]
+        target_label  = "container"
+      }
+
+      // 로그 경로 설정
+      rule {
+        source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
+        separator     = "/"
+        target_label  = "__path__"
+        replacement   = "/var/log/pods/*$1/*.log"
+      }
+    }
+
+    loki.source.kubernetes "pods" {
+      targets    = discovery.relabel.logs.output
+      forward_to = [loki.write.default.receiver]
+    }
+
+    loki.write "default" {
+      endpoint {
+        url = "http://loki.{{ include "monitoring.namespace" . }}.svc.cluster.local:3100/loki/api/v1/push"
+      }
+    }
+    {{- end }}
+
+    {{- if .Values.alloy.config.metrics.enabled }}
+    // ============================================
+    // Metrics Collection (Prometheus)
+    // ============================================
+    
+    // Kubernetes API 서버 메트릭
+    discovery.kubernetes "kube_apiserver" {
+      role = "endpoints"
+    }
+
+    discovery.relabel "kube_apiserver" {
+      targets = discovery.kubernetes.kube_apiserver.targets
+
+      rule {
+        source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_service_name"]
+        separator     = "/"
+        regex         = "default/kubernetes"
+        action        = "keep"
+      }
+
+      rule {
+        source_labels = ["__meta_kubernetes_endpoint_port_name"]
+        regex         = "https"
+        action        = "keep"
+      }
+    }
+
+    // Kubernetes 노드 메트릭
+    discovery.kubernetes "nodes" {
+      role = "node"
+    }
+
+    discovery.relabel "nodes" {
+      targets = discovery.kubernetes.nodes.targets
+
+      rule {
+        source_labels = ["__meta_kubernetes_node_name"]
+        target_label  = "node"
+      }
+
+      rule {
+        source_labels = ["__address__"]
+        regex         = "([^:]+)(?::\\d+)?"
+        replacement   = "$1:10250"
+        target_label  = "__address__"
+      }
+
+      rule {
+        replacement  = "/metrics/cadvisor"
+        target_label = "__metrics_path__"
+      }
+    }
+
+    prometheus.scrape "nodes" {
+      targets    = discovery.relabel.nodes.output
+      forward_to = [prometheus.remote_write.default.receiver]
+      scrape_interval = "{{ .Values.alloy.config.metrics.scrapeInterval }}"
+    }
+
+    // Kubernetes 파드 메트릭
+    discovery.kubernetes "pod_metrics" {
+      role = "pod"
+    }
+
+    discovery.relabel "pod_metrics" {
+      targets = discovery.kubernetes.pod_metrics.targets
+
+      // /metrics 엔드포인트가 있는 파드만 수집
+      rule {
+        source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scrape"]
+        regex         = "true"
+        action        = "keep"
+      }
+
+      // 포트 재정의
+      rule {
+        source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_port"]
+        regex         = "(.+)"
+        target_label  = "__meta_kubernetes_pod_container_port_number"
+        action        = "replace"
+      }
+
+      // 메트릭 경로 재정의
+      rule {
+        source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_path"]
+        regex         = "(.+)"
+        target_label  = "__metrics_path__"
+        action        = "replace"
+      }
+
+      rule {
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label  = "namespace"
+      }
+
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "pod"
+      }
+
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_name"]
+        target_label  = "container"
+      }
+    }
+
+    prometheus.scrape "pod_metrics" {
+      targets    = discovery.relabel.pod_metrics.output
+      forward_to = [prometheus.remote_write.default.receiver]
+      scrape_interval = "{{ .Values.alloy.config.metrics.scrapeInterval }}"
+    }
+
+    prometheus.remote_write "default" {
+      endpoint {
+        url = "http://prometheus.{{ include "monitoring.namespace" . }}.svc.cluster.local:9090/api/v1/write"
+      }
+    }
+    {{- end }}
+
+    {{- if .Values.alloy.config.traces.enabled }}
+    // ============================================
+    // Traces Collection (OTLP)
+    // ============================================
+    otelcol.receiver.otlp "default" {
+      grpc {
+        endpoint = "0.0.0.0:{{ .Values.alloy.config.traces.otlpGrpcPort }}"
+      }
+
+      http {
+        endpoint = "0.0.0.0:{{ .Values.alloy.config.traces.otlpHttpPort }}"
+      }
+
+      output {
+        traces = [otelcol.exporter.otlp.tempo.input]
+      }
+    }
+
+    otelcol.exporter.otlp "tempo" {
+      client {
+        endpoint = "tempo.{{ include "monitoring.namespace" . }}.svc.cluster.local:{{ .Values.tempo.service.otlpGrpcPort }}"
+        tls {
+          insecure = true
+        }
+      }
+    }
+    {{- end }}
+{{- end }}
+

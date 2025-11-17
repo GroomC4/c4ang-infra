@@ -8,6 +8,7 @@
 .PHONY: kubectl-config kubectl-ns kubectl-pods kubectl-svc
 .PHONY: sops-setup sops-encrypt sops-decrypt
 .PHONY: eks-deploy-airflow eks-install-istio
+.PHONY: perf-smoke perf-load perf-stress perf-all perf-install
 .DEFAULT_GOAL := help
 
 # 색상 정의
@@ -233,6 +234,55 @@ eks-deploy-lambda: ## Lambda 감정분석 함수 배포
 	@cd k8s-eks/scripts && ./deploy-lambda.sh
 	@echo "$(GREEN)✅ Lambda 배포 완료$(NC)"
 
+##@ 성능 테스트 (k6)
+
+perf-install: ## k6 성능 테스트 도구 설치
+	@echo "$(BLUE)📦 k6 설치 확인 중...$(NC)"
+	@if ! command -v k6 &> /dev/null; then \
+		echo "$(YELLOW)k6가 설치되지 않았습니다. 설치 중...$(NC)"; \
+		if [[ "$(shell uname)" == "Darwin" ]]; then \
+			brew install k6; \
+		elif [[ "$(shell uname)" == "Linux" ]]; then \
+			sudo gpg -k; \
+			sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69; \
+			echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list; \
+			sudo apt-get update; \
+			sudo apt-get install k6; \
+		fi; \
+	else \
+		echo "$(GREEN)✅ k6가 이미 설치되어 있습니다$(NC)"; \
+		k6 version; \
+	fi
+
+perf-smoke: ## 스모크 테스트 실행 (빠른 헬스 체크)
+	@echo "$(BLUE)🔥 스모크 테스트 실행 중...$(NC)"
+	@cd performance-tests && ./scripts/run-smoke.sh
+	@echo "$(GREEN)✅ 스모크 테스트 완료$(NC)"
+
+perf-load: ## 부하 테스트 실행 (사용법: make perf-load SERVICE=customer|product|order|all)
+	@echo "$(BLUE)🚀 부하 테스트 실행 중...$(NC)"
+	@cd performance-tests && ./scripts/run-load.sh $(SERVICE)
+	@echo "$(GREEN)✅ 부하 테스트 완료$(NC)"
+
+perf-stress: ## 스트레스 테스트 실행 (시스템 한계 테스트)
+	@echo "$(RED)⚠️  스트레스 테스트 실행 중...$(NC)"
+	@cd performance-tests && ./scripts/run-stress.sh
+	@echo "$(GREEN)✅ 스트레스 테스트 완료$(NC)"
+
+perf-all: ## 전체 성능 테스트 실행 (Smoke → Load → Stress)
+	@echo "$(BLUE)🎯 전체 성능 테스트 실행 중...$(NC)"
+	@cd performance-tests && ./scripts/run-all.sh
+	@echo "$(GREEN)✅ 전체 성능 테스트 완료$(NC)"
+
+perf-results: ## 성능 테스트 결과 확인
+	@echo "$(BLUE)📊 성능 테스트 결과:$(NC)"
+	@echo ""
+	@if [ -d "performance-tests/results" ]; then \
+		ls -lht performance-tests/results/ | head -20; \
+	else \
+		echo "$(YELLOW)결과 파일이 없습니다. 테스트를 먼저 실행하세요.$(NC)"; \
+	fi
+
 ##@ 기타
 
 clean-helm-cache: ## Helm 캐시 정리
@@ -240,6 +290,11 @@ clean-helm-cache: ## Helm 캐시 정리
 	@find helm -type f -name "*.tgz" -delete
 	@find helm -type d -name "charts" -exec rm -rf {} + 2>/dev/null || true
 	@echo "$(GREEN)✅ Helm 캐시 정리 완료$(NC)"
+
+clean-perf-results: ## 성능 테스트 결과 정리
+	@echo "$(BLUE)🧹 성능 테스트 결과 정리 중...$(NC)"
+	@rm -rf performance-tests/results/*.json
+	@echo "$(GREEN)✅ 성능 테스트 결과 정리 완료$(NC)"
 
 version: ## 설치된 도구 버전 표시
 	@echo "$(BLUE)📋 설치된 도구 버전:$(NC)"

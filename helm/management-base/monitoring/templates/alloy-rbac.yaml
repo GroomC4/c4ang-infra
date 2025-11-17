@@ -1,0 +1,73 @@
+{{- if and .Values.alloy.enabled .Values.alloy.rbac.create }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "monitoring.alloy.serviceAccountName" . }}
+  namespace: {{ include "monitoring.namespace" . }}
+  labels:
+    {{- include "monitoring.alloy.labels" . | nindent 4 }}
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "monitoring.fullname" . }}-alloy
+  labels:
+    {{- include "monitoring.alloy.labels" . | nindent 4 }}
+rules:
+  # 노드 메트릭 수집
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/proxy
+      - nodes/metrics
+      - services
+      - endpoints
+      - pods
+    verbs: ["get", "list", "watch"]
+  
+  # 네임스페이스 정보
+  - apiGroups: [""]
+    resources:
+      - namespaces
+    verbs: ["get", "list", "watch"]
+  
+  # ConfigMap 읽기 (서비스 디스커버리)
+  - apiGroups: [""]
+    resources:
+      - configmaps
+    verbs: ["get"]
+  
+  # Ingress 메트릭
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - ingresses
+    verbs: ["get", "list", "watch"]
+  
+  # Deployment, StatefulSet, DaemonSet 메트릭
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - statefulsets
+      - daemonsets
+      - replicasets
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "monitoring.fullname" . }}-alloy
+  labels:
+    {{- include "monitoring.alloy.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "monitoring.fullname" . }}-alloy
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "monitoring.alloy.serviceAccountName" . }}
+    namespace: {{ include "monitoring.namespace" . }}
+{{- end }}
+

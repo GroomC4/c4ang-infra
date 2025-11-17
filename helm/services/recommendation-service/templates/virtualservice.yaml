@@ -6,8 +6,11 @@ metadata:
   labels:
     {{- include "recommendation-service.labels" . | nindent 4 }}
 spec:
+  gateways:
+    - {{ .Values.istio.gatewayAPI.gatewayName | default "ecommerce-gateway" }}
   hosts:
-    - {{ include "recommendation-service.fullname" . }}
+    - {{ .Values.istio.gatewayAPI.hostnames | default (list "api.c4ang.com" "*") | first }}
+    - "*"
   http:
     - match:
         - uri:
