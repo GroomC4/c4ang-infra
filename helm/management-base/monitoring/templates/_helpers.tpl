@@ -129,6 +129,45 @@ app.kubernetes.io/component: grafana
 {{- end }}
 
 {{/*
+Kube State Metrics labels
+*/}}
+{{- define "monitoring.kubeStateMetrics.labels" -}}
+{{ include "monitoring.labels" . }}
+app.kubernetes.io/component: kube-state-metrics
+{{- end }}
+
+{{- define "monitoring.kubeStateMetrics.selectorLabels" -}}
+{{ include "monitoring.selectorLabels" . }}
+app.kubernetes.io/component: kube-state-metrics
+{{- end }}
+
+{{/*
+Node Exporter labels
+*/}}
+{{- define "monitoring.nodeExporter.labels" -}}
+{{ include "monitoring.labels" . }}
+app.kubernetes.io/component: node-exporter
+{{- end }}
+
+{{- define "monitoring.nodeExporter.selectorLabels" -}}
+{{ include "monitoring.selectorLabels" . }}
+app.kubernetes.io/component: node-exporter
+{{- end }}
+
+{{/*
+Redis Exporter labels
+*/}}
+{{- define "monitoring.redisExporter.labels" -}}
+{{ include "monitoring.labels" . }}
+app.kubernetes.io/component: redis-exporter
+{{- end }}
+
+{{- define "monitoring.redisExporter.selectorLabels" -}}
+{{ include "monitoring.selectorLabels" . }}
+app.kubernetes.io/component: redis-exporter
+{{- end }}
+
+{{/*
 Create the name of the service account to use for Alloy
 */}}
 {{- define "monitoring.alloy.serviceAccountName" -}}

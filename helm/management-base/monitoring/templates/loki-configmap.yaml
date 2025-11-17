@@ -16,10 +16,6 @@ data:
 
     common:
       path_prefix: /loki
-      storage:
-        filesystem:
-          chunks_directory: /loki/chunks
-          rules_directory: /loki/rules
       replication_factor: 1
       ring:
         instance_addr: 127.0.0.1
@@ -30,19 +26,34 @@ data:
       configs:
         - from: 2024-01-01
           store: boltdb-shipper
+          {{- if .Values.loki.s3.enabled }}
+          object_store: s3
+          {{- else }}
           object_store: filesystem
+          {{- end }}
           schema: v11
           index:
             prefix: index_
             period: 24h
 
     storage_config:
+      {{- if .Values.loki.s3.enabled }}
+      aws:
+        s3: s3://{{ .Values.loki.s3.region }}/{{ .Values.loki.s3.bucketName }}
+        bucketnames: {{ .Values.loki.s3.bucketName }}
+        region: {{ .Values.loki.s3.region }}
+        s3forcepathstyle: false
+      {{- end }}
       boltdb_shipper:
         active_index_directory: /loki/index
         cache_location: /loki/cache
+        {{- if .Values.loki.s3.enabled }}
+        shared_store: s3
+        {{- else }}
         shared_store: filesystem
       filesystem:
         directory: /loki/chunks
+        {{- end }}
 
     {{- if .Values.loki.retention.enabled }}
     limits_config:
@@ -54,7 +65,11 @@ data:
 
     compactor:
       working_directory: /loki/compactor
+      {{- if .Values.loki.s3.enabled }}
+      shared_store: s3
+      {{- else }}
       shared_store: filesystem
+      {{- end }}
       compaction_interval: 10m
       {{- if .Values.loki.retention.enabled }}
       retention_enabled: true

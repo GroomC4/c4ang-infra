@@ -1,0 +1,67 @@
+{{- if and .Values.grafana.enabled .Values.grafana.dashboards.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-ecommerce-overview
+  namespace: {{ include "monitoring.namespace" . }}
+  labels:
+    {{- include "monitoring.grafana.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  ecommerce-overview.json: |-
+{{ .Files.Get "dashboards/ecommerce-overview.json" | indent 4 }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-ecommerce-service-detail
+  namespace: {{ include "monitoring.namespace" . }}
+  labels:
+    {{- include "monitoring.grafana.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  ecommerce-service-detail.json: |-
+{{ .Files.Get "dashboards/ecommerce-service-detail.json" | indent 4 }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-ecommerce-resources
+  namespace: {{ include "monitoring.namespace" . }}
+  labels:
+    {{- include "monitoring.grafana.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  ecommerce-resources.json: |-
+{{ .Files.Get "dashboards/ecommerce-resources.json" | indent 4 }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-ecommerce-logs-visual
+  namespace: {{ include "monitoring.namespace" . }}
+  labels:
+    {{- include "monitoring.grafana.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  ecommerce-logs-visual.json: |-
+{{ .Files.Get "dashboards/ecommerce-logs-visual.json" | indent 4 }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-cache-redis
+  namespace: {{ include "monitoring.namespace" . }}
+  labels:
+    {{- include "monitoring.grafana.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  cache-redis.json: |-
+{{ .Files.Get "dashboards/cache-redis.json" | indent 4 }}
+{{- end }}
+

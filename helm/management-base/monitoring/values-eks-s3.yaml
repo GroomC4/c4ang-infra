@@ -1,0 +1,148 @@
+# EKS + S3 스토리지 설정
+namespace: monitoring
+
+# Grafana Alloy - 로그 수집 에이전트
+alloy:
+  enabled: true
+  resources:
+    limits:
+      cpu: "300m"
+      memory: "256Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+  daemonset:
+    tolerations:
+      - key: "workload"
+        operator: "Equal"
+        value: "stateful"
+        effect: "NoSchedule"
+
+# Prometheus - 메트릭 저장소
+prometheus:
+  enabled: true
+  storage:
+    size: 20Gi
+    storageClassName: "gp2"
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+
+# Loki - 로그를 S3에 저장
+loki:
+  enabled: true
+  storage:
+    size: 10Gi  # 인덱스용 로컬 스토리지
+    storageClassName: "gp2"
+  
+  # S3 스토리지 설정
+  s3:
+    enabled: true
+    bucketName: "c4ang-loki-logs"  # S3 버킷 이름
+    region: "ap-northeast-2"
+  
+  # ServiceAccount with IRSA (IAM Roles for Service Accounts)
+  serviceAccount:
+    create: true
+    name: "loki"
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::963403601423:role/LokiS3AccessRole"
+    
+  # Retention 일시 비활성화 (compactor 초기화 타임아웃 방지)
+  # S3에 로그는 계속 저장되며, 버킷 Lifecycle 정책으로 90일 후 삭제
+  retention:
+    enabled: false
+    period: 90d
+  
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+
+# Tempo - 트레이스 저장소
+tempo:
+  enabled: true
+  storage:
+    size: 10Gi
+    storageClassName: "gp2"
+  retention:
+    period: 720h  # 30일
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+
+# Grafana - 시각화
+grafana:
+  enabled: true
+  admin:
+    password: "admin"
+  storage:
+    size: 5Gi
+    storageClassName: "gp2"
+  
+  # 대시보드 자동 프로비저닝
+  dashboards:
+    enabled: true
+  
+  resources:
+    limits:
+      cpu: "300m"
+      memory: "256Mi"
+    requests:
+      cpu: "150m"
+      memory: "128Mi"
+
+# kube-state-metrics & node-exporter 활성화
+kubeStateMetrics:
+  enabled: true
+  resources:
+    limits:
+      cpu: "150m"
+      memory: "192Mi"
+    requests:
+      cpu: "75m"
+      memory: "96Mi"
+
+nodeExporter:
+  enabled: true
+  resources:
+    limits:
+      cpu: "150m"
+      memory: "96Mi"
+    requests:
+      cpu: "75m"
+      memory: "64Mi"
+
+redisExporter:
+  enabled: true
+  redisAddress: "redis://airflow-redis.airflow.svc.cluster.local:6379"
+  auth:
+    enabled: true
+    sourceSecret:
+      enabled: true
+      namespace: "airflow"
+      name: "airflow-redis-password"
+      key: "password"
+
+# 알림 비활성화
+alerting:
+  enabled: false
+
+# Tolerations
+tolerations:
+  - key: "workload"
+    operator: "Equal"
+    value: "stateful"
+    effect: "NoSchedule"
+

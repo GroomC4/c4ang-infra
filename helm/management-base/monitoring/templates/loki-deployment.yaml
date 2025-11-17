@@ -18,6 +18,9 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/loki-configmap.yaml") . | sha256sum }}
     spec:
+      {{- if or .Values.loki.serviceAccount.create .Values.loki.s3.enabled }}
+      serviceAccountName: {{ default "loki" .Values.loki.serviceAccount.name }}
+      {{- end }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}

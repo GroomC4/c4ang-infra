@@ -90,6 +90,21 @@ spec:
             {{- if .Values.grafana.dashboards.enabled }}
             - name: dashboards-provisioning
               mountPath: /etc/grafana/provisioning/dashboards
+            - name: dashboard-ecommerce-overview
+              mountPath: /var/lib/grafana/dashboards/ecommerce-overview.json
+              subPath: ecommerce-overview.json
+            - name: dashboard-ecommerce-service-detail
+              mountPath: /var/lib/grafana/dashboards/ecommerce-service-detail.json
+              subPath: ecommerce-service-detail.json
+            - name: dashboard-ecommerce-resources
+              mountPath: /var/lib/grafana/dashboards/ecommerce-resources.json
+              subPath: ecommerce-resources.json
+            - name: dashboard-ecommerce-logs-visual
+              mountPath: /var/lib/grafana/dashboards/ecommerce-logs-visual.json
+              subPath: ecommerce-logs-visual.json
+            - name: dashboard-cache-redis
+              mountPath: /var/lib/grafana/dashboards/cache-redis.json
+              subPath: cache-redis.json
             {{- end }}
       
       volumes:
@@ -103,6 +118,21 @@ spec:
         - name: dashboards-provisioning
           configMap:
             name: grafana-dashboards
+        - name: dashboard-ecommerce-overview
+          configMap:
+            name: grafana-dashboard-ecommerce-overview
+        - name: dashboard-ecommerce-service-detail
+          configMap:
+            name: grafana-dashboard-ecommerce-service-detail
+        - name: dashboard-ecommerce-resources
+          configMap:
+            name: grafana-dashboard-ecommerce-resources
+        - name: dashboard-ecommerce-logs-visual
+          configMap:
+            name: grafana-dashboard-ecommerce-logs-visual
+        - name: dashboard-cache-redis
+          configMap:
+            name: grafana-dashboard-cache-redis
         {{- end }}
       
       {{- with .Values.nodeSelector }}

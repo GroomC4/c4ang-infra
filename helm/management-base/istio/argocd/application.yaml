@@ -1,0 +1,68 @@
+# ArgoCD Application for Istio Configuration
+# 
+# 이 파일은 Helm 차트와 함께 버전 관리됩니다.
+# Helm 차트를 업데이트하면 이 Application 정의도 함께 업데이트됩니다.
+#
+# 배포:
+#   kubectl apply -f helm/management-base/istio/argocd/application.yaml
+#
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: istio-config
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"  # 첫 번째로 배포
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  source:
+    # 동일한 Git 리포지토리의 이 Helm 차트를 참조
+    repoURL: https://github.com/your-org/c4ang-infra.git  # 실제 리포지토리로 변경
+    targetRevision: HEAD
+    path: helm/management-base/istio  # 이 차트의 경로
+    helm:
+      # values.yaml의 기본값 사용
+      # 필요시 환경별로 오버라이드
+      values: |
+        # 네임스페이스 생성 (istio-injection 라벨 포함)
+        namespace:
+          name: ecommerce
+          create: true
+          istioInjection: enabled
+        
+        # Gateway 설정
+        gateway:
+          main:
+            enabled: true
+            name: ecommerce-gateway
+            hostname: api.ecommerce.com
+        
+        # Security
+        security:
+          mTLS:
+            enabled: true
+            mode: STRICT
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      # 중요: Helm 템플릿이 네임스페이스를 생성하므로 false!
+      - CreateNamespace=false
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+

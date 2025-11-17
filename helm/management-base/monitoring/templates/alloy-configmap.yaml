@@ -53,6 +53,37 @@ data:
 
     loki.source.kubernetes "pods" {
       targets    = discovery.relabel.logs.output
+      forward_to = [loki.process.filter_healthcheck.receiver]
+    }
+
+    // 로그 필터링 및 처리
+    loki.process "filter_healthcheck" {
+      // 헬스체크 로그 필터링 (단, 500번대 에러는 제외)
+      stage.match {
+        selector = "{namespace=\"ecommerce\"}"
+        
+        // 500번대 에러는 항상 수집
+        stage.match {
+          pipeline_name = "keep_5xx_errors"
+          selector      = "{} |~ \"(?i)(status[=:\\s]*(5[0-9]{2})|HTTP/[0-9.]* 5[0-9]{2})\""
+          action        = "keep"
+        }
+
+        // 헬스체크 로그 드롭 (200 OK 응답)
+        stage.drop {
+          source               = ""
+          expression           = "(?i)(GET|POST).*(health|healthz|healthcheck|livez|readyz|ping).*?(200|OK)"
+          drop_counter_reason  = "healthcheck"
+        }
+
+        // Istio 프록시 헬스체크 드롭
+        stage.drop {
+          source               = ""
+          expression           = "(?i)envoy.*health.*200"
+          drop_counter_reason  = "envoy_healthcheck"
+        }
+      }
+
       forward_to = [loki.write.default.receiver]
     }
 

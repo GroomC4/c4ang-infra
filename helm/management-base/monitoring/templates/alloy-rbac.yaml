@@ -27,6 +27,12 @@ rules:
       - pods
     verbs: ["get", "list", "watch"]
   
+  # Pod 로그 수집 (모든 네임스페이스)
+  - apiGroups: [""]
+    resources:
+      - pods/log
+    verbs: ["get", "list"]
+  
   # 네임스페이스 정보
   - apiGroups: [""]
     resources:

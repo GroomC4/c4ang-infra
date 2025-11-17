@@ -112,6 +112,19 @@ loki:
     size: 20Gi
     storageClassName: ""
   
+  # S3 스토리지 설정 (선택적)
+  s3:
+    enabled: false
+    bucketName: ""
+    region: "ap-northeast-2"
+  
+  # ServiceAccount (S3 사용 시 IRSA 필요)
+  serviceAccount:
+    create: false
+    name: "loki"
+    annotations: {}
+      # eks.amazonaws.com/role-arn: "arn:aws:iam::ACCOUNT_ID:role/LokiS3AccessRole"
+  
   # 로그 보존 기간
   retention:
     enabled: true
@@ -228,6 +241,79 @@ grafana:
     tempo:
       enabled: true
       url: http://tempo:3200
+
+# kube-state-metrics (클러스터 리소스 상태 메트릭)
+kubeStateMetrics:
+  enabled: true
+  image:
+    repository: registry.k8s.io/kube-state-metrics/kube-state-metrics
+    tag: v2.12.0
+    pullPolicy: IfNotPresent
+  replicas: 1
+  resources:
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+  service:
+    port: 8080
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/path: /metrics
+      prometheus.io/port: "8080"
+
+# node-exporter (노드 리소스 메트릭)
+nodeExporter:
+  enabled: true
+  image:
+    repository: quay.io/prometheus/node-exporter
+    tag: v1.8.1
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: "200m"
+      memory: "128Mi"
+    requests:
+      cpu: "100m"
+      memory: "64Mi"
+  service:
+    port: 9100
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9100"
+
+# Redis exporter (선택적)
+redisExporter:
+  enabled: false
+  image:
+    repository: oliver006/redis_exporter
+    tag: v1.62.0
+    pullPolicy: IfNotPresent
+  redisAddress: "redis://redis:6379"
+  auth:
+    enabled: false
+    password: ""
+    existingSecret: ""
+    existingSecretKey: "password"
+    sourceSecret:
+      enabled: false
+      namespace: ""
+      name: ""
+      key: "password"
+  resources:
+    limits:
+      cpu: "100m"
+      memory: "128Mi"
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+  service:
+    port: 9121
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9121"
 
 # Alerting 설정
 alerting:

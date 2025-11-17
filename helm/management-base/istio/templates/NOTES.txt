@@ -1,0 +1,38 @@
+Istio 구성이 배포되었습니다!
+
+네임스페이스: {{ .Values.namespace.name }}
+Istio 자동 주입: {{ .Values.namespace.istioInjection }}
+
+다음 명령어로 상태를 확인하세요:
+
+  # 네임스페이스 라벨 확인
+  kubectl get namespace {{ .Values.namespace.name }} --show-labels
+
+  # Gateway 확인
+  kubectl get gateway -n {{ .Values.namespace.name }}
+
+  # HTTPRoute 확인
+  kubectl get httproute -n {{ .Values.namespace.name }}
+
+  # PeerAuthentication 확인
+  kubectl get peerauthentication -n {{ .Values.namespace.name }}
+
+{{- if eq .Values.namespace.istioInjection "enabled" }}
+
+✅ Istio 사이드카 자동 주입이 활성화되었습니다!
+
+새로운 Pod를 배포하면 자동으로 istio-proxy 컨테이너가 추가됩니다.
+
+기존 Pod에 사이드카를 주입하려면:
+  kubectl rollout restart deployment -n {{ .Values.namespace.name }}
+
+{{- else }}
+
+⚠️  Istio 사이드카 자동 주입이 비활성화되어 있습니다.
+
+활성화하려면:
+  kubectl label namespace {{ .Values.namespace.name }} istio-injection=enabled --overwrite
+  kubectl rollout restart deployment -n {{ .Values.namespace.name }}
+
+{{- end }}
+
