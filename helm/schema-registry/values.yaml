@@ -1,0 +1,160 @@
+##############################################
+# Schema Registry Helm Chart Values
+# c4ang-infra Kafka Schema Registry
+##############################################
+
+# === 기본 설정 ===
+cp-schema-registry:
+  replicaCount: 3  # 고가용성을 위해 3개
+
+  image: confluentinc/cp-schema-registry
+  imageTag: 7.5.1
+  imagePullPolicy: IfNotPresent
+
+  # === Kafka 연결 설정 (중요!) ===
+  kafka:
+    # Strimzi Kafka 클러스터 (c4-kafka) 연결 정보
+    # kafka 네임스페이스의 c4-kafka 클러스터 사용
+    bootstrapServers: "PLAINTEXT://c4-kafka-kafka-bootstrap.kafka:9092"
+
+  # === Schema Registry 설정 ===
+  configurationOverrides:
+    # _schemas 토픽 복제 설정 (중요)
+    "kafkastore.topic": "_schemas"
+    "kafkastore.topic.replication.factor": "3"
+    "kafkastore.bootstrap.servers": "PLAINTEXT://c4-kafka-kafka-bootstrap.kafka:9092"
+
+    # 스키마 호환성 정책
+    "schema.compatibility.level": "BACKWARD"  # 하위 호환성
+    # 옵션: BACKWARD, FORWARD, FULL, NONE
+
+    # 타임아웃 설정
+    "kafkastore.timeout.ms": "10000"
+    "kafkastore.init.timeout.ms": "60000"
+
+    # 마스터 선출 설정
+    "schema.registry.group.id": "schema-registry"
+    "master.eligibility": "true"
+
+    # 로그 레벨
+    "log4j.root.loglevel": "INFO"
+
+  # === 서비스 설정 ===
+  service:
+    type: ClusterIP
+    port: 8081
+    annotations: {}
+
+  # === 리소스 설정 ===
+  resources:
+    requests:
+      memory: "768Mi"
+      cpu: "250m"
+    limits:
+      memory: "1536Mi"  # 1.5Gi
+      cpu: "1000m"
+
+  # === JVM 메모리 설정 ===
+  heapOptions: "-Xms512m -Xmx1g"
+
+  # === Health Checks ===
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 8081
+    initialDelaySeconds: 45
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  readinessProbe:
+    httpGet:
+      path: /subjects
+      port: 8081
+    initialDelaySeconds: 30
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+  # === 고가용성 설정 ===
+  affinity:
+    # Pod들을 서로 다른 노드에 배포
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - cp-schema-registry
+          topologyKey: kubernetes.io/hostname
+
+  # === PodDisruptionBudget ===
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 2  # 3개 중 최소 2개는 항상 실행
+
+  # === SecurityContext ===
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+
+  # === ServiceAccount ===
+  serviceAccount:
+    create: true
+    name: schema-registry
+    annotations: {}
+
+  # === Prometheus 모니터링 ===
+  prometheus:
+    jmx:
+      enabled: true
+      port: 5555
+
+  # === 환경 변수 (추가 설정) ===
+  customEnv:
+    SCHEMA_REGISTRY_HEAP_OPTS: "-Xms512m -Xmx1g"
+    SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: "INFO"
+    SCHEMA_REGISTRY_KAFKASTORE_TIMEOUT_MS: "10000"
+    SCHEMA_REGISTRY_KAFKASTORE_INIT_TIMEOUT_MS: "60000"
+
+  # === NodeSelector (선택사항) ===
+  nodeSelector: {}
+    # 특정 노드 그룹에 배포하려면:
+    # node.kubernetes.io/node-group: kafka-services
+
+  # === Tolerations (선택사항) ===
+  tolerations: []
+    # Spot Instance 사용 시:
+    # - key: "spot"
+    #   operator: "Exists"
+    #   effect: "NoSchedule"
+
+# === 네임스페이스 설정 ===
+# Kafka와 동일한 네임스페이스에 배포
+namespace: kafka
+
+# === Ingress 설정 (선택사항) ===
+ingress:
+  enabled: false
+  # 필요시 활성화
+  # className: "nginx"
+  # annotations:
+  #   cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  # hosts:
+  #   - host: schema-registry.c4ang.com
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix
+  # tls:
+  #   - secretName: schema-registry-tls
+  #     hosts:
+  #       - schema-registry.c4ang.com

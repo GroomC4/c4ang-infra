@@ -108,12 +108,48 @@ echo
 
 
 #################################
-# 5) Show status
+# 5) Install Schema Registry
 #################################
+echo "📌 Installing Schema Registry..."
+
+# Confluent Helm Repo 추가
+echo "Adding Confluent Helm Repository..."
+helm repo add confluentinc https://confluentinc.github.io/cp-helm-charts/ 2>/dev/null || true
+helm repo update
+
+# Schema Registry Helm dependencies 빌드
+echo "Building Schema Registry Helm dependencies..."
+cd "$(dirname "$0")/schema-registry"
+helm dependency build
+cd - >/dev/null
+
+# Schema Registry 배포
+echo "Deploying Schema Registry..."
+helm upgrade --install schema-registry \
+  "$(dirname "$0")/schema-registry" \
+  --namespace ${KAFKA_NS} \
+  --wait \
+  --timeout 5m
+
+echo "⏳ Waiting for Schema Registry pods..."
+kubectl wait --for=condition=ready pod \
+  -l app=cp-schema-registry \
+  -n ${KAFKA_NS} \
+  --timeout=300s || echo "⚠️  Schema Registry pods may still be starting..."
+
+echo "✅ Schema Registry deployed"
+echo
+
+
+#################################
+# 6) Show status
+#################################
+echo "📊 Current Status:"
+echo
 kubectl get pods -n ${KAFKA_NS}
 
 echo
-echo "🚀✅ Kafka installation complete!"
+echo "🚀✅ Kafka + Schema Registry installation complete!"
 echo
 
 echo "
@@ -144,4 +180,23 @@ kubectl exec -it kafka-client -n ${KAFKA_NS} -- bash
   --bootstrap-server ${CLUSTER_NAME}-kafka-bootstrap.${KAFKA_NS}:9092 \
   --topic test-topic \
   --from-beginning
+
+========================
+Schema Registry Usage
+========================
+# Check Schema Registry health
+kubectl port-forward -n ${KAFKA_NS} svc/schema-registry-cp-schema-registry 8081:8081 &
+curl http://localhost:8081/
+
+# List subjects (schemas)
+curl http://localhost:8081/subjects
+
+# Check _schemas topic (created automatically)
+kubectl exec -it kafka-client -n ${KAFKA_NS} -- \
+  /opt/kafka/bin/kafka-topics.sh \
+  --bootstrap-server ${CLUSTER_NAME}-kafka-bootstrap.${KAFKA_NS}:9092 \
+  --list | grep _schemas
+
+# Application connection URL
+# http://schema-registry-cp-schema-registry.${KAFKA_NS}:8081
 "
