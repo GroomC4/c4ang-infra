@@ -1,0 +1,70 @@
+# Active Service (Blue): Points to the stable, production version.
+# Argo Rollouts manages the endpoints of this service to point to the blue pods.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}-active
+  labels:
+    {{- include "customer-service.labels" . | nindent 4 }}
+spec:
+  type: { { .Values.service.type } }
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: http
+  # No selector is needed. Argo Rollouts will manage the Endpoints.
+  selector:
+    { { - include "customer-service.selectorLabels" . | nindent 4 } }
+---
+
+# Preview Service (Green): Points to the new version for testing.
+# Argo Rollouts manages the endpoints of this service to point to the green pods.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}-preview
+  labels:
+    {{- include "customer-service.labels" . | nindent 4 }}
+spec:
+  type: { { .Values.service.type } }
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: http
+  # No selector is needed. Argo Rollouts will manage the Endpoints.
+  selector:
+    { { - include "customer-service.selectorLabels" . | nindent 4 } }
+---
+
+# VirtualService: Directs traffic from the Istio gateway to the active service.
+# This is the single entry point for user traffic.
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: {{ .Chart.Name }}-virtualservice
+  labels:
+    {{- include "customer-service.labels" . | nindent 4 }}
+spec:
+  # 중요: values.yaml 파일의 ingress.hosts 설정에 맞게 호스트를 지정해야 합니다.
+  # 예: hosts: [ "customer.example.com" ]
+  hosts:
+    { { - if and .Values.ingress .Values.ingress.hosts } }
+      { { - range .Values.ingress.hosts } }
+      - { { .host | quote } }
+      { { - end } }
+      { { - else } }
+      - "{{ .Chart.Name }}.ecommerce.com" # ⬅️ hosts 설정이 없으면 기본값 사용
+      { { - end } }
+  gateways:
+    - ecommerce-gateway
+  http:
+    - route:
+        - destination:
+            # Traffic is always sent to the active service.
+            # Argo Rollouts performs the blue-green switch by changing
+            # which pods this service points to.
+            host: {{ .Chart.Name }}-active
+            port:
+              number: {{ .Values.service.port }}
