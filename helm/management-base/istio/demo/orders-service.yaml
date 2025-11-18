@@ -1,0 +1,137 @@
+# 데모용 Orders 서비스
+# istio-gateway-demo.md 기반 샘플 서비스
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-v1
+  namespace: ecommerce
+  labels:
+    app: orders
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: orders
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: orders
+        version: v1
+      annotations:
+        # Prometheus 메트릭 수집
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: orders
+        # 실제 서비스 이미지로 교체 필요
+        # image: your-registry/orders-service:v1
+        # 데모용으로 httpbin 사용
+        image: docker.io/kennethreitz/httpbin:latest
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        env:
+        - name: SERVICE_NAME
+          value: "orders"
+        - name: SERVICE_VERSION
+          value: "v1"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /status/200
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /status/200
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders
+  namespace: ecommerce
+  labels:
+    app: orders
+    service: orders
+spec:
+  selector:
+    app: orders
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+    protocol: TCP
+  type: ClusterIP
+---
+# HTTPRoute for orders service
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: orders-route
+  namespace: ecommerce
+  labels:
+    app: orders
+spec:
+  parentRefs:
+  - name: ecommerce-gateway
+    namespace: ecommerce
+  hostnames:
+  - "api.ecommerce.com"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /api/v1/orders
+    backendRefs:
+    - name: orders
+      port: 80
+      weight: 100
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /
+---
+# DestinationRule for Circuit Breaker
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: orders-circuit-breaker
+  namespace: ecommerce
+  labels:
+    app: orders
+spec:
+  host: orders.ecommerce.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 50
+      http:
+        http1MaxPendingRequests: 100
+        maxRequestsPerConnection: 1
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 5s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+    loadBalancer:
+      simple: LEAST_REQUEST
+    tls:
+      mode: ISTIO_MUTUAL
