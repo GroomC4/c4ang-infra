@@ -127,11 +127,25 @@ security:
     audiences:
       - "ecommerce-api"
 
-  # Public 엔드포인트 (인증 불필요)
+  # Public 엔드포인트 (인증/인가 불필요)
   publicEndpoints:
+    # 인증 관련
+    - /api/v1/auth/login
+    - /api/v1/auth/register
+    - /api/v1/auth/refresh
     - /api/v1/users/login
     - /api/v1/users/register
+    - /api/v1/users/refresh-token
+    - /api/v1/users/verify-email
+    - /api/v1/users/reset-password
+
+    # Health Check
     - /actuator/health
+    - /actuator/prometheus
+
+    # API 문서 (선택사항)
+    - /swagger-ui/*
+    - /v3/api-docs/*
 
   # 역할 기반 인가 (RBAC)
   authorization:

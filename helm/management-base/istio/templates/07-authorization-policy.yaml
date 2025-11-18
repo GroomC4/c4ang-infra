@@ -32,6 +32,31 @@ spec:
               - /api/v1/*
 
 ---
+# Public Endpoints - 인증/인가 없이 접근 가능
+{{- if .Values.security.publicEndpoints }}
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: public-endpoints
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  action: ALLOW
+  rules:
+    # 인증/인가 불필요한 Public API
+    - to:
+        - operation:
+            paths:
+              {{- range .Values.security.publicEndpoints }}
+              - {{ . | quote }}
+              {{- end }}
+{{- end }}
+
+---
 # 역할 기반 인가 정책 (RBAC)
 {{- if .Values.security.authorization.enabled }}
 # CUSTOMER 역할 - 자신의 주문만 조회 가능
@@ -58,6 +83,12 @@ spec:
               {{- range .Values.security.authorization.paths.customer }}
               - {{ . | quote }}
               {{- end }}
+            {{- if .Values.security.publicEndpoints }}
+            notPaths:
+              {{- range .Values.security.publicEndpoints }}
+              - {{ . | quote }}
+              {{- end }}
+            {{- end }}
             methods:
               - GET
               - POST
