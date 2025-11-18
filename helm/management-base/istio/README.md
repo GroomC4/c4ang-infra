@@ -132,7 +132,29 @@ security:
     - /api/v1/users/login
     - /api/v1/users/register
     - /actuator/health
+
+  # 역할 기반 인가 (RBAC)
+  authorization:
+    enabled: true
+    roleClaim: "role"  # JWT claim 이름
+    paths:
+      customer:  # 고객 - 자신의 주문만
+        - /api/v1/orders/my/*
+        - /api/v1/orders
+      owner:     # 가게 주인 - 자신의 가게 관리
+        - /api/v1/stores/my/*
+        - /api/v1/orders/store/*
+      manager:   # 관리자 - 모든 리소스
+        - /api/v1/stores/*
+        - /api/v1/orders/*
+      # MASTER - 모든 권한 (/api/v1/*)
 ```
+
+**역할 구조:**
+- **CUSTOMER**: 자신의 주문 내역만 조회
+- **OWNER**: 자신의 가게 주문, 가게 정보, 주문 처리, 메뉴 수정
+- **MANAGER**: 모든 가게 및 주문 관리 (MASTER 제외한 사용자 관리)
+- **MASTER**: 최고 관리자 (MANAGER 생성/수정/삭제 포함 모든 권한)
 
 ### Rate Limiting 설정 (신규 추가!)
 

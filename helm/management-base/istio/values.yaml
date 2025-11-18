@@ -90,6 +90,40 @@ security:
     - /actuator/health
     - /actuator/prometheus
 
+  # 역할 기반 인가 (Authorization)
+  authorization:
+    enabled: true
+    # JWT Claims 필드명
+    roleClaim: "role"  # JWT에서 역할 정보가 담긴 claim 이름 (예: "role": "CUSTOMER")
+
+    # 역할별 접근 가능한 API 경로 (템플릿 - 나중에 업데이트)
+    paths:
+      # CUSTOMER - 자신의 주문 내역만 조회
+      customer:
+        - /api/v1/orders/my/*        # 자신의 주문 조회
+        - /api/v1/orders              # 주문 생성
+        - /api/v1/stores              # 가게 목록 조회
+        - /api/v1/products            # 상품 목록 조회
+        # TODO: 실제 API 경로로 업데이트 필요
+
+      # OWNER - 자신의 가게 주문, 가게 정보, 주문 처리, 메뉴 수정
+      owner:
+        - /api/v1/stores/my/*         # 자신의 가게 관리
+        - /api/v1/orders/store/*      # 자신의 가게 주문 내역
+        - /api/v1/products/store/*    # 자신의 가게 메뉴/상품 관리
+        - /api/v1/orders/*/status     # 주문 상태 변경
+        # TODO: 실제 API 경로로 업데이트 필요
+
+      # MANAGER - 모든 가게 및 주문 관리 (MASTER 제외한 사용자 관리)
+      manager:
+        - /api/v1/stores/*            # 모든 가게 관리
+        - /api/v1/orders/*            # 모든 주문 관리
+        - /api/v1/products/*          # 모든 상품 관리
+        - /api/v1/users/*             # 사용자 관리 (MASTER 제외)
+        - /api/v1/analytics/*         # 분석 데이터
+        # TODO: 실제 API 경로로 업데이트 필요
+        # 단, /api/v1/managers/* 는 접근 불가 (MASTER만 가능)
+
 # HTTPRoute 설정
 httpRoute:
   enabled: true

@@ -21,7 +21,7 @@ spec:
               - {{ . | quote }}
               {{- end }}
     {{- end }}
-    
+
     # Authenticated endpoints (JWT 필수)
     - from:
         - source:
@@ -30,6 +30,143 @@ spec:
         - operation:
             paths:
               - /api/v1/*
+
+---
+# 역할 기반 인가 정책 (RBAC)
+{{- if .Values.security.authorization.enabled }}
+# CUSTOMER 역할 - 자신의 주문만 조회 가능
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: customer-authz
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  action: ALLOW
+  rules:
+    # 고객 - 자신의 주문 내역 조회
+    - from:
+        - source:
+            requestPrincipals: ["{{ .Values.security.jwt.issuer }}/*"]
+      to:
+        - operation:
+            paths:
+              {{- range .Values.security.authorization.paths.customer }}
+              - {{ . | quote }}
+              {{- end }}
+            methods:
+              - GET
+              - POST
+      when:
+        - key: request.auth.claims[{{ .Values.security.authorization.roleClaim | default "role" }}]
+          values: ["CUSTOMER"]
+
+---
+# OWNER 역할 - 자신의 가게 관리
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: owner-authz
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  action: ALLOW
+  rules:
+    # 가게 주인 - 자신의 가게 및 주문 관리
+    - from:
+        - source:
+            requestPrincipals: ["{{ .Values.security.jwt.issuer }}/*"]
+      to:
+        - operation:
+            paths:
+              {{- range .Values.security.authorization.paths.owner }}
+              - {{ . | quote }}
+              {{- end }}
+            methods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+      when:
+        - key: request.auth.claims[{{ .Values.security.authorization.roleClaim | default "role" }}]
+          values: ["OWNER"]
+
+---
+# MANAGER 역할 - 모든 가게 및 주문 관리
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: manager-authz
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  action: ALLOW
+  rules:
+    # 관리자 - 모든 리소스 접근 가능 (MASTER 제외한 사용자 관리)
+    - from:
+        - source:
+            requestPrincipals: ["{{ .Values.security.jwt.issuer }}/*"]
+      to:
+        - operation:
+            paths:
+              {{- range .Values.security.authorization.paths.manager }}
+              - {{ . | quote }}
+              {{- end }}
+            methods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+      when:
+        - key: request.auth.claims[{{ .Values.security.authorization.roleClaim | default "role" }}]
+          values: ["MANAGER"]
+
+---
+# MASTER 역할 - 최고 관리자 (MANAGER 포함 모든 권한)
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: master-authz
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  action: ALLOW
+  rules:
+    # 최고 관리자 - 모든 리소스 및 MANAGER 관리 가능
+    - from:
+        - source:
+            requestPrincipals: ["{{ .Values.security.jwt.issuer }}/*"]
+      to:
+        - operation:
+            paths:
+              - /api/v1/*
+            methods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+      when:
+        - key: request.auth.claims[{{ .Values.security.authorization.roleClaim | default "role" }}]
+          values: ["MASTER"]
+{{- end }}
 {{- end }}
 
 {{- if .Values.gateway.webhook.enabled }}
