@@ -146,15 +146,30 @@ httpRoute:
 trafficManagement:
   destinationRules:
     enabled: true
-    # Circuit Breaker 설정
+    # Connection Pool 설정
+    connectionPool:
+      tcp:
+        maxConnections: 50
+      http:
+        http1MaxPendingRequests: 100
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 1
+        idleTimeout: 300s
+
+    # Circuit Breaker 설정 (Outlier Detection)
     circuitBreaker:
       enabled: true
       consecutive5xxErrors: 5
-      interval: 10s
+      consecutiveGatewayErrors: 5
+      interval: 5s
       baseEjectionTime: 30s
       maxEjectionPercent: 50
       minHealthPercent: 40
-  
+
+    # Load Balancer 설정
+    loadBalancer:
+      simple: LEAST_REQUEST  # ROUND_ROBIN, LEAST_REQUEST, RANDOM, PASSTHROUGH
+
   virtualServices:
     enabled: true
     # 재시도 설정
@@ -167,15 +182,16 @@ trafficManagement:
 envoyFilter:
   rateLimit:
     enabled: true
-    redis:
-      host: redis.ecommerce.svc.cluster.local
-      port: 6379
+    customResponse: true  # 429 응답 커스터마이징
     limits:
-      user: 100  # 초당 100 요청
-      ip: 50     # 초당 50 요청
-  
+      default: 100      # 기본: 초당 100건
+      auth: 20          # 인증: 초당 20건
+      orders: 50        # 주문: 초당 50건
+      payments: 30      # 결제: 초당 30건
+      products: 100     # 상품: 초당 100건
+
   tokenBlacklist:
-    enabled: true
+    enabled: false
     redis:
       host: redis.ecommerce.svc.cluster.local
       port: 6379

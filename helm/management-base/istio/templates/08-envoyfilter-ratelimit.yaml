@@ -1,0 +1,147 @@
+{{- if .Values.envoyFilter.rateLimit.enabled }}
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: ingress-ratelimit
+  namespace: istio-system
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  workloadSelector:
+    labels:
+      istio: ingressgateway
+  configPatches:
+  # Local Rate Limiting 설정
+  - applyTo: HTTP_FILTER
+    match:
+      context: GATEWAY
+      listener:
+        filterChain:
+          filter:
+            name: envoy.filters.network.http_connection_manager
+            subFilter:
+              name: envoy.filters.http.router
+    patch:
+      operation: INSERT_BEFORE
+      value:
+        name: envoy.filters.http.local_ratelimit
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+          stat_prefix: http_local_rate_limiter
+          # 기본 제한: 초당 {{ .Values.envoyFilter.rateLimit.limits.default }}건
+          token_bucket:
+            max_tokens: {{ .Values.envoyFilter.rateLimit.limits.default }}
+            tokens_per_fill: {{ .Values.envoyFilter.rateLimit.limits.default }}
+            fill_interval: 1s
+          filter_enabled:
+            default_value:
+              numerator: 100
+              denominator: HUNDRED
+          filter_enforced:
+            default_value:
+              numerator: 100
+              denominator: HUNDRED
+          response_headers_to_add:
+            - append: false
+              header:
+                key: x-local-rate-limit
+                value: 'true'
+          # 경로별 세밀한 제한
+          descriptors:
+            # 사용자 인증 엔드포인트 - 초당 {{ .Values.envoyFilter.rateLimit.limits.auth }}건
+            - entries:
+                - key: header_match
+                  value: auth_endpoints
+              token_bucket:
+                max_tokens: {{ .Values.envoyFilter.rateLimit.limits.auth }}
+                tokens_per_fill: {{ .Values.envoyFilter.rateLimit.limits.auth }}
+                fill_interval: 1s
+
+            # 주문 엔드포인트 - 초당 {{ .Values.envoyFilter.rateLimit.limits.orders }}건
+            - entries:
+                - key: header_match
+                  value: order_endpoints
+              token_bucket:
+                max_tokens: {{ .Values.envoyFilter.rateLimit.limits.orders }}
+                tokens_per_fill: {{ .Values.envoyFilter.rateLimit.limits.orders }}
+                fill_interval: 1s
+
+            # 결제 엔드포인트 - 초당 {{ .Values.envoyFilter.rateLimit.limits.payments }}건
+            - entries:
+                - key: header_match
+                  value: payment_endpoints
+              token_bucket:
+                max_tokens: {{ .Values.envoyFilter.rateLimit.limits.payments }}
+                tokens_per_fill: {{ .Values.envoyFilter.rateLimit.limits.payments }}
+                fill_interval: 1s
+
+  # 경로별 레이트 리미팅 적용을 위한 헤더 추가
+  - applyTo: HTTP_ROUTE
+    match:
+      context: GATEWAY
+      routeConfiguration:
+        vhost:
+          route:
+            action: ANY
+    patch:
+      operation: MERGE
+      value:
+        typed_per_filter_config:
+          envoy.filters.http.local_ratelimit:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+            stat_prefix: http_local_rate_limiter
+
+---
+# Rate Limit 초과 시 응답 포맷
+{{- if .Values.envoyFilter.rateLimit.customResponse }}
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: ratelimit-response
+  namespace: istio-system
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  workloadSelector:
+    labels:
+      istio: ingressgateway
+  configPatches:
+  - applyTo: NETWORK_FILTER
+    match:
+      context: GATEWAY
+      listener:
+        filterChain:
+          filter:
+            name: envoy.filters.network.http_connection_manager
+    patch:
+      operation: MERGE
+      value:
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          local_reply_config:
+            mappers:
+              - filter:
+                  status_code_filter:
+                    comparison:
+                      op: EQ
+                      value:
+                        default_value: 429
+                        runtime_key: unused
+                body:
+                  inline_string: |
+                    {
+                      "error": "Too Many Requests",
+                      "message": "Rate limit exceeded. Please try again later.",
+                      "status": 429
+                    }
+                headers_to_add:
+                  - header:
+                      key: content-type
+                      value: application/json
+                    append: false
+                  - header:
+                      key: retry-after
+                      value: "1"
+                    append: false
+{{- end }}
+{{- end }}

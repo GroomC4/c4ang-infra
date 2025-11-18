@@ -1,0 +1,52 @@
+{{- if .Values.trafficManagement.destinationRules.enabled }}
+{{- range $serviceName, $config := .Values.httpRoute.services }}
+{{- if $config.enabled }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ $serviceName }}-circuit-breaker
+  namespace: {{ $.Values.namespace.name }}
+  labels:
+    {{- include "istio.labels" $ | nindent 4 }}
+    service: {{ $serviceName }}
+spec:
+  host: {{ $config.serviceName }}.{{ $.Values.namespace.name }}.svc.cluster.local
+  trafficPolicy:
+    # Connection Pool 설정
+    connectionPool:
+      tcp:
+        maxConnections: {{ $.Values.trafficManagement.destinationRules.connectionPool.tcp.maxConnections | default 100 }}
+      http:
+        http1MaxPendingRequests: {{ $.Values.trafficManagement.destinationRules.connectionPool.http.http1MaxPendingRequests | default 100 }}
+        http2MaxRequests: {{ $.Values.trafficManagement.destinationRules.connectionPool.http.http2MaxRequests | default 100 }}
+        maxRequestsPerConnection: {{ $.Values.trafficManagement.destinationRules.connectionPool.http.maxRequestsPerConnection | default 1 }}
+        idleTimeout: {{ $.Values.trafficManagement.destinationRules.connectionPool.http.idleTimeout | default "300s" }}
+
+    {{- if $.Values.trafficManagement.destinationRules.circuitBreaker.enabled }}
+    # Outlier Detection (Circuit Breaker)
+    outlierDetection:
+      consecutive5xxErrors: {{ $.Values.trafficManagement.destinationRules.circuitBreaker.consecutive5xxErrors }}
+      consecutiveGatewayErrors: {{ $.Values.trafficManagement.destinationRules.circuitBreaker.consecutiveGatewayErrors | default 5 }}
+      interval: {{ $.Values.trafficManagement.destinationRules.circuitBreaker.interval }}
+      baseEjectionTime: {{ $.Values.trafficManagement.destinationRules.circuitBreaker.baseEjectionTime }}
+      maxEjectionPercent: {{ $.Values.trafficManagement.destinationRules.circuitBreaker.maxEjectionPercent }}
+      minHealthPercent: {{ $.Values.trafficManagement.destinationRules.circuitBreaker.minHealthPercent }}
+    {{- end }}
+
+    # Load Balancer 설정
+    loadBalancer:
+      simple: {{ $.Values.trafficManagement.destinationRules.loadBalancer.simple | default "LEAST_REQUEST" }}
+      {{- if $.Values.trafficManagement.destinationRules.loadBalancer.consistentHash }}
+      consistentHash:
+        {{- toYaml $.Values.trafficManagement.destinationRules.loadBalancer.consistentHash | nindent 8 }}
+      {{- end }}
+
+    # TLS 설정 (mTLS)
+    {{- if $.Values.security.mTLS.enabled }}
+    tls:
+      mode: {{ $.Values.security.mTLS.mode }}
+    {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
