@@ -1,0 +1,71 @@
+# EKS Istio 테스트용 values - Order Service
+
+fullnameOverride: order-api
+replicaCount: 2
+
+image:
+  repository: hashicorp/http-echo
+  pullPolicy: IfNotPresent
+  tag: "1.0.0"
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 5678
+
+ingress:
+  enabled: false
+
+resources:
+  requests:
+    memory: 64Mi
+    cpu: 50m
+  limits:
+    memory: 128Mi
+    cpu: 100m
+
+autoscaling:
+  enabled: false
+
+env:
+  - name: SERVICE_NAME
+    value: "order-service-test"
+
+redis:
+  enabled: false
+
+istio:
+  enabled: true
+  pathPrefix: /api/v1/orders
+  timeout: 30s
+  retries:
+    attempts: 3
+    perTryTimeout: 10s
+    retryOn: "5xx,reset,connect-failure,refused-stream"
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 50
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 2
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 40
+  gatewayAPI:
+    enabled: true
+    gatewayName: ecommerce-gateway
+    gatewayNamespace: ecommerce
+    hostnames:
+      - api.c4ang.com
+
+command: ["/http-echo"]
+args:
+  - "-listen=:5678"
+  - "-text=Order Service Test Response"
+
+

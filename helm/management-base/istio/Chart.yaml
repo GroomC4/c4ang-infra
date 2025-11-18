@@ -1,0 +1,27 @@
+apiVersion: v2
+name: istio
+description: Istio Service Mesh and Gateway configuration for EKS
+type: application
+version: 1.0.0
+appVersion: "1.28.0"
+keywords:
+  - istio
+  - service-mesh
+  - gateway
+  - ecommerce
+maintainers:
+  - name: Infrastructure Team
+home: https://istio.io/
+sources:
+  - https://github.com/istio/istio
+dependencies:
+  # Istio 공식 Helm 차트 사용 (선택사항)
+  # Istio Control Plane은 istioctl로 설치하는 것을 권장
+  # - name: base
+  #   version: "1.28.0"
+  #   repository: https://istio-release.storage.googleapis.com/charts
+  # - name: istiod
+  #   version: "1.28.0"
+  #   repository: https://istio-release.storage.googleapis.com/charts
+  #   condition: istiod.enabled
+

@@ -231,51 +231,56 @@ deploy_helm_charts() {
         log_warn "Redis 차트를 찾을 수 없습니다: ${redis_chart}"
     fi
     
-    # PostgreSQL 배포 (helm/statefulset-base/postgresql 사용)
-    local postgres_chart="${project_root}/helm/statefulset-base/postgresql"
+    # PostgreSQL 배포 (bitnami/postgresql 차트 사용)
+    local postgres_namespace="postgres"
     local postgres_values="${K3D_DIR}/values/postgresql.yaml"
-
-    if [ -d "${postgres_chart}" ]; then
-        local postgres_dependency_dir="${postgres_chart}/charts"
-        if [ ! -d "${postgres_dependency_dir}" ] || [ -z "$(find "${postgres_dependency_dir}" -maxdepth 1 -name '*.tgz' -print -quit 2>/dev/null)" ]; then
-            log_info "PostgreSQL 차트 의존성 빌드 중..."
-            if ! helm dependency build "${postgres_chart}" >/dev/null 2>&1; then
-                log_error "PostgreSQL 차트 의존성 빌드 실패"
-                return 1
-            fi
-        else
-            log_info "PostgreSQL 차트 의존성이 이미 준비되어 있습니다. (build 생략)"
-        fi
-
-        log_info "PostgreSQL 배포 중..."
-
-        if [ -f "${postgres_values}" ]; then
-            helm upgrade --install postgresql "${postgres_chart}" \
-                --namespace "${NAMESPACE}" \
-                --create-namespace \
-                --values "${postgres_values}" \
-                --wait \
-                --timeout "${WAIT_TIMEOUT}s" || {
-                log_error "PostgreSQL 배포 실패"
-                return 1
-            }
-        else
-            log_warn "PostgreSQL values 파일을 찾을 수 없습니다: ${postgres_values}"
-            log_info "기본 설정으로 배포합니다."
-            helm upgrade --install postgresql "${postgres_chart}" \
-                --namespace "${NAMESPACE}" \
-                --create-namespace \
-                --wait \
-                --timeout "${WAIT_TIMEOUT}s" || {
-                log_error "PostgreSQL 배포 실패"
-                return 1
-            }
-        fi
-
-        log_info "PostgreSQL 배포 완료"
+    
+    # postgres 네임스페이스 생성
+    if kubectl get namespace "${postgres_namespace}" &> /dev/null; then
+        log_info "네임스페이스 '${postgres_namespace}'가 이미 존재합니다."
     else
-        log_warn "PostgreSQL 차트를 찾을 수 없습니다: ${postgres_chart}"
+        kubectl create namespace "${postgres_namespace}"
+        log_info "네임스페이스 '${postgres_namespace}' 생성 완료"
     fi
+    
+    # Bitnami 저장소 확인 및 추가
+    if ! helm repo list | grep -q "^bitnami"; then
+        log_info "Bitnami Helm 저장소 추가 중..."
+        helm repo add bitnami https://charts.bitnami.com/bitnami || {
+            log_error "Bitnami 저장소 추가 실패"
+            return 1
+        }
+    fi
+    
+    log_info "Helm 저장소 업데이트 중..."
+    helm repo update
+    
+    log_info "PostgreSQL 배포 중..."
+    
+    if [ -f "${postgres_values}" ]; then
+        helm upgrade --install pg bitnami/postgresql \
+            --namespace "${postgres_namespace}" \
+            --create-namespace \
+            --values "${postgres_values}" \
+            --wait \
+            --timeout "${WAIT_TIMEOUT}s" || {
+            log_error "PostgreSQL 배포 실패"
+            return 1
+        }
+    else
+        log_warn "PostgreSQL values 파일을 찾을 수 없습니다: ${postgres_values}"
+        log_info "기본 설정으로 배포합니다."
+        helm upgrade --install pg bitnami/postgresql \
+            --namespace "${postgres_namespace}" \
+            --create-namespace \
+            --wait \
+            --timeout "${WAIT_TIMEOUT}s" || {
+            log_error "PostgreSQL 배포 실패"
+            return 1
+        }
+    fi
+    
+    log_info "PostgreSQL 배포 완료"
 }
 
 # 헬스체크

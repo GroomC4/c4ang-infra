@@ -1,0 +1,29 @@
+{{- if .Values.istio.enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ include "product-service.fullname" . }}-vs
+  labels:
+    {{- include "product-service.labels" . | nindent 4 }}
+spec:
+  gateways:
+    - {{ .Values.istio.gatewayAPI.gatewayName | default "ecommerce-gateway" }}
+  hosts:
+    - {{ .Values.istio.gatewayAPI.hostnames | default (list "api.c4ang.com" "*") | first }}
+    - "*"
+  http:
+    - match:
+        - uri:
+            prefix: {{ .Values.istio.pathPrefix | default "/api/v1/products" }}
+      route:
+        - destination:
+            host: {{ include "product-service.fullname" . }}
+            port:
+              number: {{ .Values.service.port }}
+      timeout: {{ .Values.istio.timeout | default "30s" }}
+      retries:
+        attempts: {{ .Values.istio.retries.attempts | default 3 }}
+        perTryTimeout: {{ .Values.istio.retries.perTryTimeout | default "10s" }}
+        retryOn: {{ .Values.istio.retries.retryOn | default "5xx,reset,connect-failure,refused-stream" }}
+{{- end }}
+

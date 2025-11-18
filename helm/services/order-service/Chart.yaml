@@ -1,0 +1,11 @@
+apiVersion: v2
+name: order-service
+description: Order Service Microservice
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+# Note: For production EKS environment, use external RDS and ElastiCache
+# Dependencies are only needed for local/dev environments
+dependencies:
+

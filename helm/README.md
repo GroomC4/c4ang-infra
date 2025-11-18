@@ -9,7 +9,8 @@
 ```
 helm/
 ├── management-base/
-│   └── airflow/           # Apache Airflow 공통 베이스
+│   ├── airflow/           # Apache Airflow 공통 베이스
+│   └── istio/             # Istio Service Mesh 및 Gateway 설정
 ├── statefulset-base/
 │   ├── postgresql/        # PostgreSQL (Primary-Replica)
 │   └── redis/             # Redis Statefulset

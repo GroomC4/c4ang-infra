@@ -1,0 +1,16 @@
+apiVersion: v2
+name: recommendation-service
+description: Recommendation Service Microservice
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+# Note: For production EKS environment, use external RDS and ElastiCache
+# Dependencies are only needed for local/dev environments
+dependencies:
+  - name: redis-base
+    alias: redis
+    version: "1.0.0"
+    repository: "file://../../statefulset-base/redis"
+    condition: redis.enabled
+

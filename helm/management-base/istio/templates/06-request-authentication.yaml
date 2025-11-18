@@ -1,0 +1,28 @@
+{{- if .Values.security.jwt.enabled }}
+apiVersion: security.istio.io/v1
+kind: RequestAuthentication
+metadata:
+  name: jwt-auth
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  jwtRules:
+    - issuer: "{{ .Values.security.jwt.issuer }}"
+      jwksUri: "{{ .Values.security.jwt.jwksUri }}"
+      {{- if .Values.security.jwt.audiences }}
+      audiences:
+        {{- range .Values.security.jwt.audiences }}
+        - {{ . | quote }}
+        {{- end }}
+      {{- end }}
+      outputClaimToHeaders:
+        - header: "X-User-Id"
+          claim: "sub"
+        - header: "X-User-Roles"
+          claim: "roles"
+{{- end }}
+

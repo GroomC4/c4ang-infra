@@ -1,0 +1,30 @@
+{{- if .Values.alloy.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: alloy
+  namespace: {{ include "monitoring.namespace" . }}
+  labels:
+    {{- include "monitoring.alloy.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    {{- include "monitoring.alloy.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: 12345
+      targetPort: http
+      protocol: TCP
+    {{- if .Values.alloy.config.traces.enabled }}
+    - name: otlp-grpc
+      port: {{ .Values.alloy.config.traces.otlpGrpcPort }}
+      targetPort: otlp-grpc
+      protocol: TCP
+    - name: otlp-http
+      port: {{ .Values.alloy.config.traces.otlpHttpPort }}
+      targetPort: otlp-http
+      protocol: TCP
+    {{- end }}
+{{- end }}
+

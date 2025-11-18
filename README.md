@@ -197,6 +197,70 @@ helm install customer-service ./services/customer-service \
 3. main 브랜치에 머지
 4. ArgoCD가 자동으로 변경사항 감지 및 배포
 
+- [x] Helm Charts (K8s 배포용) - ✅ 완료
+- [x] Istio Service Mesh - ✅ 완료
+- [x] Airflow 데이터 파이프라인 - ✅ 완료
+- [ ] Testcontainers K3s Module 지원
+- [ ] Kafka, RabbitMQ 등 추가 인프라
+- [x] Monitoring Stack (Prometheus, Grafana, Kiali) - ✅ 부분 완료
+
+## 📐 아키텍처
+
+전체 시스템 아키텍처는 다음 문서를 참고하세요:
+
+### **[📐 ARCHITECTURE.md](./docs/ARCHITECTURE.md)** ⭐️⭐️⭐️
+완전한 시스템 아키텍처 문서 (2,100+ 라인)
+
+**주요 내용:**
+- 🏗️ **전체 시스템 아키텍처**
+  - High-Level Overview 다이어그램
+  - 7계층 아키텍처 (External → Gateway → Service Mesh → Application → Data → Pipeline → Serverless)
+  
+- ☸️ **Kubernetes 아키텍처**
+  - EKS Cluster 구성 (Multi-AZ)
+  - Namespace 구조 (istio-system, ecommerce, airflow)
+  - Helm Charts 구조 및 리소스 할당
+  - Persistent Storage (EBS)
+
+- 🌐 **네트워크 아키텍처 (Istio Service Mesh)**
+  - NLB → Istio Ingress Gateway
+  - VirtualService 경로 기반 라우팅
+  - DestinationRule (Circuit Breaker, Connection Pool)
+  - **Blue/Green 배포 전략 상세**
+    - 배포 프로세스 5단계
+    - Kubernetes 리소스 예시
+    - Blue/Green vs Canary 비교
+    - 장단점 및 권장 사항
+
+- 📊 **데이터 파이프라인 (Airflow)**
+  - Airflow on EKS 구성
+  - DAG 2개 (일별 추천, 주간 감정분석)
+  - 데이터 흐름 상세
+  - AWS Lambda 연동 (HuggingFace BERT)
+
+- 🔒 **보안 아키텍처**
+  - SOPS + AGE (암호화)
+  - External Secrets Operator
+  - IAM 및 RBAC
+  - Security Groups 및 Network Policies
+
+- 🌍 **환경별 구성**
+  - 로컬 (K3d) vs 스테이징 vs 프로덕션
+  - 리소스, HPA, 모니터링 차이
+  - 비용 비교 (무료 ~ $800/월)
+
+- 📦 **컴포넌트 상세**
+  - 6개 마이크로서비스 설명
+  - PostgreSQL RDS 스키마
+  - Redis StatefulSet
+  - Airflow, Istio 구성
+
+- 🔄 **CI/CD 파이프라인 (Blue/Green)**
+  - GitHub Actions Workflow 전체
+  - 5단계 배포 프로세스
+  - 모니터링 및 롤백 전략
+  - 실제 사용 가능한 Workflow 예시
+
 ### 로컬 개발
 
 1. k3d 환경 시작: `k8s-dev-k3d/scripts/start-environment.sh`
@@ -240,31 +304,6 @@ helm/services/customer-service/
 | **스테이징 (Staging)** | ArgoCD | ArgoCD Application에서 values 오버라이드 |
 | **프로덕션 (Prod)** | ArgoCD | ArgoCD Application에서 values 오버라이드 |
 
-## 📝 참고 문서
-
-### 내부 문서
-- [Helm 차트 가이드](./helm/README.md)
-- [k3d 로컬 환경 가이드](./k8s-dev-k3d/README.md)
-
-### 외부 문서
-- [ArgoCD 공식 문서](https://argo-cd.readthedocs.io/)
-- [Helm 공식 문서](https://helm.sh/docs/)
-- [k3d 공식 문서](https://k3d.io/)
-- [Kubernetes 공식 문서](https://kubernetes.io/docs/)
-- [Bitnami Charts](https://github.com/bitnami/charts)
-
-## 🎯 로드맵
-
-- [x] Helm Charts 구조 설계 및 구현
-- [x] k3d 로컬 환경 자동화
-- [x] PostgreSQL, Redis 베이스 차트
-- [x] Airflow 관리 베이스 차트
-- [ ] ArgoCD 연동 가이드 문서화
-- [ ] 서비스 차트 템플릿 표준화
-- [ ] Monitoring Stack (Prometheus, Grafana)
-- [ ] Kafka, RabbitMQ 등 추가 인프라
-- [ ] CI/CD 파이프라인 통합
-
 ## 🤝 기여
 
 인프라 변경 시:
@@ -275,3 +314,27 @@ helm/services/customer-service/
 ## 📞 문의
 - 인프라 관련 문의: @sunhozy @tkddk0108
 - ArgoCD 관련 문의: @eunjulee0603
+
+## 📝 참고 문서
+### 프로젝트 문서
+- [ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - 전체 시스템 아키텍처 ⭐️⭐️⭐️
+- [EKS-ISTIO-DEPLOYMENT-SUMMARY.md](./docs/EKS-ISTIO-DEPLOYMENT-SUMMARY.md)** - 배포 완료 보고서
+- [EKS-ISTIO-TEST-REPORT.md](./docs/EKS-ISTIO-TEST-REPORT.md)** - 테스트 완료 보고서
+- [helm/services/README.md](./helm/services/README.md)** - Helm Charts 가이드
+- [k8s-eks/README-AIRFLOW.md](./k8s-eks/README-AIRFLOW.md)** - Airflow 배포 가이드
+- [Helm 차트 가이드](./helm/README.md)
+- [k3d 로컬 환경 가이드](./k8s-dev-k3d/README.md)
+
+
+### 외부 문서
+- [ArgoCD 공식 문서](https://argo-cd.readthedocs.io/)
+- [Helm 공식 문서](https://helm.sh/docs/)
+- [k3d 공식 문서](https://k3d.io/)
+- [Bitnami Charts](https://github.com/bitnami/charts)
+- [Docker Compose 공식 문서](https://docs.docker.com/compose/)
+- [Testcontainers 공식 문서](https://www.testcontainers.org/)
+- [PostgreSQL Replication](https://www.postgresql.org/docs/current/warm-standby.html)
+- [Kubernetes 공식 문서](https://kubernetes.io/docs/)
+- [Istio 공식 문서](https://istio.io/latest/docs/)
+- [Apache Airflow 공식 문서](https://airflow.apache.org/docs/)
+

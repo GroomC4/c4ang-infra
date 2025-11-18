@@ -21,3 +21,28 @@ Thumbs.db
 **/values-*.local.yaml
 **/values.local.yaml
 *.local.yaml
+helm/services/customer-service/apiVersion: v1.yaml
+
+# SOPS 평문 시크릿 파일 (암호화된 .enc.yaml만 Git에 커밋)
+*.secrets.yaml
+**/values.secrets.yaml
+**/*.secrets.yaml
+k8s-dev-k3d/values/*.secrets.yaml
+
+# Istio (아직 Git에 커밋하지 않음)
+k8s-dev-k3d/istio/
+
+# EKS 관련 파일 (프로덕션 환경 설정)
+k8s-eks/
+
+# Istio 바이너리 및 다운로드 파일
+**/istio-*/
+**/istioctl
+
+# 테스트 및 임시 파일
+*.test.sh
+*.local.sh
+TEST.md
+TEST*.md
+*.log
+*.out
