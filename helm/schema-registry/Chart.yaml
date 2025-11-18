@@ -1,0 +1,22 @@
+apiVersion: v2
+name: schema-registry
+description: Confluent Schema Registry Helm Chart for c4ang-infra
+type: application
+version: 1.0.0
+appVersion: "7.5.1"
+
+dependencies:
+  - name: cp-schema-registry
+    version: 0.6.1
+    repository: https://confluentinc.github.io/cp-helm-charts/
+
+keywords:
+  - kafka
+  - schema-registry
+  - confluent
+  - avro
+  - c4ang
+
+maintainers:
+  - name: c4ang Platform Team
+    email: platform@c4ang.com

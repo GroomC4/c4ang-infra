@@ -1,0 +1,39 @@
+{{- if .Values.connector.enabled }}
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
+metadata:
+  name: {{ .Values.connector.name }}
+  namespace: {{ .Values.namespace | default "kafka" }}
+  labels:
+    strimzi.io/cluster: {{ .Values.connector.cluster }}
+spec:
+  class: {{ .Values.connector.class }}
+  tasksMax: {{ .Values.connector.tasksMax }}
+  config:
+    # Kafka
+    topics: {{ .Values.connector.config.topics }}
+    connector.class: {{ .Values.connector.class }}
+    key.converter: {{ .Values.connector.config.keyConverter }}
+    value.converter: {{ .Values.connector.config.valueConverter }}
+    value.converter.schemas.enable: {{ .Values.connector.config.valueConverterSchemasEnable }}
+
+    # S3 설정
+    s3.region: {{ .Values.connector.config.s3Region }}
+    s3.bucket.name: {{ .Values.connector.config.s3BucketName }}
+    s3.part.size: {{ .Values.connector.config.s3PartSize }}
+
+    # 파일 형식
+    format.class: {{ .Values.connector.config.formatClass }}
+    flush.size: {{ .Values.connector.config.flushSize }}
+
+    # IAM 인증 (IRSA 사용)
+    aws.region: {{ .Values.connector.config.awsRegion }}
+    behavior.on.null.values: {{ .Values.connector.config.behaviorOnNullValues }}
+    storage.class: {{ .Values.connector.config.storageClass }}
+
+    {{- if .Values.connector.config.storeUrl }}
+    # S3 URL (선택사항)
+    store.url: {{ .Values.connector.config.storeUrl }}
+    {{- end }}
+{{- end }}
+

@@ -14,6 +14,11 @@ helm/
 ├── statefulset-base/
 │   ├── postgresql/        # PostgreSQL (Primary-Replica)
 │   └── redis/             # Redis Statefulset
+├── kafka-cluster/         # Kafka Cluster (Strimzi 기반)
+├── kafka-topics/          # Kafka Topics 정의
+├── schema-registry/       # Confluent Schema Registry
+├── kafka-connect/         # Kafka Connect + S3 Sink Connector
+├── kafka-ui/              # Kafka UI 웹 관리 도구
 ├── services/
 │   └── customer-service/  # Customer Service
 └── test-infrastructure/   # 테스트용 인프라
@@ -151,6 +156,57 @@ class MyK8sTest {
 ```
 
 ## 📊 차트별 설정
+
+### Kafka 인프라
+
+Kafka 클러스터 및 관련 컴포넌트 배포 스크립트는 [setup-eks-kafka.sh](./setup-eks-kafka.sh)를 참조하세요.
+
+#### Schema Registry (schema-registry)
+
+Kafka Avro 직렬화를 위한 Schema Registry:
+
+**기본 설정:**
+- Replica 개수: 3 (고가용성)
+- 스키마 호환성: BACKWARD
+- 리소스: CPU 250m-1000m, Memory 768Mi-1.5Gi
+- Kafka 연결: `c4-kafka-kafka-bootstrap.kafka:9092`
+
+**배포:**
+```bash
+# Dependencies 빌드
+cd schema-registry
+helm dependency build
+cd ..
+
+# 배포
+helm upgrade --install schema-registry ./schema-registry -n kafka
+```
+
+**연결 정보:**
+```yaml
+# Spring Boot application.yml
+spring:
+  kafka:
+    bootstrap-servers: c4-kafka-kafka-bootstrap.kafka:9092
+    producer:
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      properties:
+        schema.registry.url: http://schema-registry-cp-schema-registry.kafka:8081
+    consumer:
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+      properties:
+        schema.registry.url: http://schema-registry-cp-schema-registry.kafka:8081
+```
+
+**확인:**
+```bash
+# Pod 상태
+kubectl get pods -n kafka -l app=cp-schema-registry
+
+# Health Check
+kubectl port-forward -n kafka svc/schema-registry-cp-schema-registry 8081:8081
+curl http://localhost:8081/subjects
+```
 
 ### PostgreSQL (statefulset-base/postgresql)
 
