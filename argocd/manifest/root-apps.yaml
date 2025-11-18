@@ -1,0 +1,242 @@
+# 이 파일은 ArgoCD의 "App of Apps" 패턴을 구현하는 핵심 파일입니다.
+# 클러스터에 배포되어야 할 모든 애플리케이션(인프라, 서비스)을 정의합니다.
+
+# 1. 인프라 애플리케이션: 모니터링
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infra-monitoring
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io # 삭제 시 관련 리소스 함께 정리
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/GroomC4/c4ang-infra.git
+    targetRevision: main
+    path: helm/management-base/monitoring
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+# 2. 인프라 애플리케이션: Kafka (스크린샷 기반)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infra-kafka-cluster
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/GroomC4/c4ang-infra.git
+    targetRevision: main
+    path: helm/kafka-cluster
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce # 또는 kafka 네임스페이스
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+# 3. 인프라 애플리케이션: 데이터베이스 (PostgreSQL 가정)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infra-database
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/GroomC4/c4ang-infra.git
+    targetRevision: main
+    path: helm/statefulset-base/postgresql
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+#4. istio
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infra-istio
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"  # 첫 번째로 배포
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/GroomC4/c4ang-infra.git
+    targetRevision: HEAD
+    path: helm/management-base/istio
+    helm:
+      # Gateway 설정
+      gateway:
+        main:
+          enabled: true
+          name: ecommerce-gateway
+          hostname: api.ecommerce.com
+      # Security
+      security:
+        mTLS:
+          enabled: true
+          mode: STRICT
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+    syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      # 중요: Helm 템플릿이 네임스페이스를 생성하므로 false!
+      - CreateNamespace=false
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+---
+# --- MSA 서비스 애플리케이션 ---
+# 4. 서비스: Customer Service
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: service-customer
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/GroomC4/c4ang-infra.git
+    targetRevision: main
+    path: helm/services/customer-service
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+# 5. 서비스: Store Service
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: service-store
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/GroomC4/c4ang-infra.git
+    targetRevision: main
+    path: helm/services/store-service
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+# 6. 서비스: Payment Service
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: service-payment
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/GroomC4/c4ang-infra.git
+    targetRevision: main
+    path: helm/services/payment-service
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+# 7. 서비스: Order Service
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: service-order
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/GroomC4/c4ang-infra.git
+    targetRevision: main
+    path: helm/services/order-service
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+# 8. 서비스: Product Service
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: service-product
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/GroomC4/c4ang-infra.git
+    targetRevision: main
+    path: helm/services/product-service
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
