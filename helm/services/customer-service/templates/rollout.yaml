@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  # 이름은 Helm에 의해 동적으로 생성됩니다 (예: c4ang-customer-service)
+  name: {{ .Release.Name }}-{{ .Chart.Name }}
+  labels:
+    app: {{ .Chart.Name }}
+spec:
+  replicas: {{ .Values.replicaCount | default 2 }}
+
+  # 1. 'BlueGreen' 전략 정의
+  strategy:
+    blueGreen:
+      # Active Service: 현재 프로덕션(Blue) 트래픽을 처리하는 Service
+      # (istio-services.yaml에 정의됨)
+      activeService: {{ .Chart.Name }}-active
+
+      # Preview Service: 새로 배포된(Green) Pod를 가리키는 Service
+      # 이 Service로 E2E 테스트/QA 테스트를 수행할 수 있습니다.
+      previewService: {{ .Chart.Name }}-preview
+
+      # 자동 승격 비활성화: 'false'로 설정하면 Green 배포가 완료된 후,
+      # Argo Rollouts가 수동 승인(Promote)을 기다립니다.
+      autoPromotionEnabled: false
+
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          # 이미지는 values.yaml 파일에서 동적으로 가져옵니다.
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+
+          # Readiness Probe
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3
+
+          # Liveness Probe
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 20
+
+          # Graceful Shutdown
+          # 블루 종료 시킬때 / 종료 전에 10초의 시간을 줌
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 10"]
+
+      terminationGracePeriodSeconds: 30
