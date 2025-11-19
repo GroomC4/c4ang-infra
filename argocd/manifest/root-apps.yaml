@@ -14,7 +14,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
-    targetRevision: feature/argo무중단배포설정
+    targetRevision: main
     path: helm/management-base/monitoring
   destination:
     server: https://kubernetes.default.svc
@@ -38,7 +38,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
-    targetRevision: feature/argo무중단배포설정
+    targetRevision: main
     path: helm/kafka-cluster
   destination:
     server: https://kubernetes.default.svc
@@ -62,7 +62,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
-    targetRevision: feature/argo무중단배포설정
+    targetRevision: main
     path: helm/statefulset-base/postgresql
   destination:
     server: https://kubernetes.default.svc
@@ -88,7 +88,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
-    targetRevision: HEAD
+    targetRevision: main
     path: helm/management-base/istio
     helm:
       # Gateway 설정
@@ -134,7 +134,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
-    targetRevision: feature/argo무중단배포설정
+    targetRevision: main
     path: helm/services/customer-service
   destination:
     server: https://kubernetes.default.svc
@@ -158,7 +158,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
-    targetRevision: feature/argo무중단배포설정
+    targetRevision: main
     path: helm/services/store-service
   destination:
     server: https://kubernetes.default.svc
@@ -182,7 +182,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
-    targetRevision: feature/argo무중단배포설정
+    targetRevision: main
     path: helm/services/payment-service
   destination:
     server: https://kubernetes.default.svc
@@ -206,7 +206,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
-    targetRevision: feature/argo무중단배포설정
+    targetRevision: main
     path: helm/services/order-service
   destination:
     server: https://kubernetes.default.svc
@@ -230,7 +230,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
-    targetRevision: feature/argo무중단배포설정
+    targetRevision: main
     path: helm/services/product-service
   destination:
     server: https://kubernetes.default.svc

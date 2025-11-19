@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "customer-service.labels" . | nindent 4 }}
 spec:
-  host: {{ include "customer-service.fullname" . }}
+  host: {{ .Chart.Name }}-active
   trafficPolicy:
     connectionPool:
       tcp:

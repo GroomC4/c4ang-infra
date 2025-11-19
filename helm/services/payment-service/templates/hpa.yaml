@@ -7,8 +7,9 @@ metadata:
     {{- include "payment-service.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
+    # [수정] Deployment -> Rollout 변경
+    apiVersion: argoproj.io/v1alpha1
+    kind: Rollout
     name: {{ include "payment-service.fullname" . }}
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
@@ -29,5 +30,4 @@ spec:
           type: Utilization
           averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
     {{- end }}
-{{- end }}
-
+  {{- end }}

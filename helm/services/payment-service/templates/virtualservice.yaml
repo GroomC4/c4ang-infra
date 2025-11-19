@@ -17,7 +17,8 @@ spec:
             prefix: {{ .Values.istio.pathPrefix | default "/api/v1/payments" }}
       route:
         - destination:
-            host: {{ include "payment-service.fullname" . }}
+            # [중요] Active Service를 바라보도록 수정
+            host: {{ .Chart.Name }}-active
             port:
               number: {{ .Values.service.port }}
       timeout: {{ .Values.istio.timeout | default "30s" }}
@@ -25,5 +26,4 @@ spec:
         attempts: {{ .Values.istio.retries.attempts | default 3 }}
         perTryTimeout: {{ .Values.istio.retries.perTryTimeout | default "10s" }}
         retryOn: {{ .Values.istio.retries.retryOn | default "5xx,reset,connect-failure,refused-stream" }}
-{{- end }}
-
+  {{- end }}

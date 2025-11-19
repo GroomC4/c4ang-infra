@@ -6,7 +6,8 @@ metadata:
   labels:
     {{- include "payment-service.labels" . | nindent 4 }}
 spec:
-  host: {{ include "payment-service.fullname" . }}
+  # Active Service 호스트로 변경
+  host: {{ .Chart.Name }}-active
   trafficPolicy:
     connectionPool:
       tcp:
@@ -21,5 +22,4 @@ spec:
       baseEjectionTime: {{ .Values.istio.trafficPolicy.outlierDetection.baseEjectionTime | default "30s" }}
       maxEjectionPercent: {{ .Values.istio.trafficPolicy.outlierDetection.maxEjectionPercent | default 50 }}
       minHealthPercent: {{ .Values.istio.trafficPolicy.outlierDetection.minHealthPercent | default 40 }}
-{{- end }}
-
+  {{- end }}

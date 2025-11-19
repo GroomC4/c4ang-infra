@@ -17,7 +17,7 @@ spec:
             prefix: {{ .Values.istio.pathPrefix | default "/api/v1/orders" }}
       route:
         - destination:
-            host: {{ include "order-service.fullname" . }}
+            host: {{ .Chart.Name }}-active
             port:
               number: {{ .Values.service.port }}
       timeout: {{ .Values.istio.timeout | default "30s" }}
@@ -26,4 +26,3 @@ spec:
         perTryTimeout: {{ .Values.istio.retries.perTryTimeout | default "10s" }}
         retryOn: {{ .Values.istio.retries.retryOn | default "5xx,reset,connect-failure,refused-stream" }}
 {{- end }}
-

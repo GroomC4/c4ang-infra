@@ -14,7 +14,7 @@ spec:
             prefix: {{ .Values.istio.pathPrefix | default "/api/v1/customers" }}
       route:
         - destination:
-            host: {{ include "customer-service.fullname" . }}
+            host: {{ .Chart.Name }}-active
             port:
               number: {{ .Values.service.port }}
       timeout: {{ .Values.istio.timeout | default "30s" }}

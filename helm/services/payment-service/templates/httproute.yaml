@@ -20,7 +20,7 @@ spec:
             type: PathPrefix
             value: {{ .Values.istio.pathPrefix | default "/api/v1/payments" }}
       backendRefs:
-        - name: {{ include "payment-service.fullname" . }}
+        - name: {{ .Chart.Name }}-active
           port: {{ .Values.service.port }}
           weight: 100
 {{- end }}
