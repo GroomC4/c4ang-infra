@@ -37,7 +37,13 @@ env:
     value: "customer-service-redis-service.cache-tier.svc.cluster.local"
   - name: SPRING_REDIS_PORT
     value: "6379"
+  - name: SPRING_DATA_REDIS_HOST
+    value: "customer-service-redis-service.cache-tier.svc.cluster.local"
+  - name: SPRING_DATA_REDIS_PORT
+    value: "6379"
   - name: SPRING_REDIS_PASSWORD
+    value: "h8baf4UBAZjSmCsQgDUmsvkF"
+  - name: SPRING_DATA_REDIS_PASSWORD
     value: "h8baf4UBAZjSmCsQgDUmsvkF"
 # Set to true for local/dev environments
 # Disabled for EKS - using existing redis in cache-tier namespace
