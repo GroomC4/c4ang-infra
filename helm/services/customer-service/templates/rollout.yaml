@@ -26,10 +26,9 @@ spec:
         sidecar.istio.io/inject: "true"
       labels:
         {{- include "customer-service.selectorLabels" . | nindent 8 }}
-          # [수정] 줄바꿈 보존을 위해 {{- if ... }} 대신 {{ if ... }} 사용
-          {{ if .Values.istio.enabled }}
-          version: {{ .Values.image.tag | default .Chart.AppVersion }}
-          {{ end }}
+        {{ if .Values.istio.enabled }}
+        version: {{ .Values.image.tag | default .Chart.AppVersion }}
+        {{ end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
