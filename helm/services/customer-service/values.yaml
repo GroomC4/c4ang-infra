@@ -30,24 +30,15 @@ env:
   - name: SPRING_DATASOURCE_REPLICA_URL
     value: "jdbc:postgresql://infra-database-postgresql-read.ecommerce.svc.cluster.local:5432/customer_db"
   - name: SPRING_DATASOURCE_USERNAME
-    valueFrom:
-      secretKeyRef:
-        name: customer-service-db-secret
-        key: username
+    value: "application"
   - name: SPRING_DATASOURCE_PASSWORD
-    valueFrom:
-      secretKeyRef:
-        name: customer-service-db-secret
-        key: password
+    value: "application"
   - name: SPRING_REDIS_HOST
     value: "customer-service-redis-service.cache-tier.svc.cluster.local"
   - name: SPRING_REDIS_PORT
     value: "6379"
   - name: SPRING_REDIS_PASSWORD
-    valueFrom:
-      secretKeyRef:
-        name: service-customer-redis-secret
-        key: redis-password
+    value: "h8baf4UBAZjSmCsQgDUmsvkF"
 # Set to true for local/dev environments
 # Disabled for EKS - using existing redis in cache-tier namespace
 redis:
