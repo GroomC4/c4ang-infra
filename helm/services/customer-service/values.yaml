@@ -26,9 +26,9 @@ env:
   - name: SPRING_PROFILES_ACTIVE
     value: "prod"
   - name: SPRING_DATASOURCE_PRIMARY_URL
-    value: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/customer_db"
+    value: "jdbc:postgresql://infra-database-postgresql-primary.ecommerce.svc.cluster.local:5432/customer_db"
   - name: SPRING_DATASOURCE_REPLICA_URL
-    value: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/customer_db"
+    value: "jdbc:postgresql://infra-database-postgresql-read.ecommerce.svc.cluster.local:5432/customer_db"
   - name: SPRING_DATASOURCE_USERNAME
     valueFrom:
       secretKeyRef:
@@ -49,8 +49,9 @@ env:
         name: service-customer-redis-secret
         key: redis-password
 # Set to true for local/dev environments
+# Disabled for EKS - using existing redis in cache-tier namespace
 redis:
-  enabled: true
+  enabled: false
 # Istio configuration
 istio:
   enabled: true # Set to true when deploying to EKS with Istio
