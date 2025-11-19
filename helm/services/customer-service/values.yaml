@@ -39,11 +39,11 @@ env:
       secretKeyRef:
         name: customer-service-db-secret
         key: password
-  - name: SPRING_DATA_REDIS_HOST
+  - name: spring.redis.host
     value: "customer-service-redis-service.cache-tier.svc.cluster.local"
-  - name: SPRING_DATA_REDIS_PORT
+  - name: spring.redis.port
     value: "6379"
-  - name: SPRING_DATA_REDIS_PASSWORD
+  - name: spring.redis.password
     valueFrom:
       secretKeyRef:
         name: customer-service-redis-secret
