@@ -14,21 +14,6 @@ service:
   port: 8080
   targetPort: 8080
 
-ingress:
-  enabled: true
-  className: "nginx"
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-  hosts:
-    - host: api.c4ang.com
-      paths:
-        - path: /api/v1/saga
-          pathType: Prefix
-  tls:
-    - secretName: saga-tracker-tls
-      hosts:
-        - api.c4ang.com
-
 resources:
   requests:
     memory: 512Mi
@@ -71,9 +56,8 @@ env:
 redis:
   enabled: false
 
-# Istio configuration
 istio:
-  enabled: true  # Set to true when deploying to EKS with Istio
+  enabled: true
   pathPrefix: /api/v1/saga
   timeout: 30s
   retries:
@@ -94,3 +78,9 @@ istio:
       baseEjectionTime: 30s
       maxEjectionPercent: 50
       minHealthPercent: 40
+  gatewayAPI:
+    enabled: true
+    gatewayName: ecommerce-gateway
+    gatewayNamespace: ecommerce
+    hostnames:
+      - api.c4ang.com

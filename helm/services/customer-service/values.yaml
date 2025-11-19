@@ -14,20 +14,6 @@ service:
   port: 8080
   targetPort: 8080
 
-ingress:
-  enabled: true
-  className: "nginx"
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-  hosts:
-    - host: api.c4ang.com
-      paths:
-        - path: /api/v1/customers
-          pathType: Prefix
-  tls:
-    - secretName: customer-service-tls
-      hosts:
-        - api.c4ang.com
 
 resources:
   requests:
@@ -66,7 +52,6 @@ env:
   - name: SPRING_DATA_REDIS_PORT
     value: "6379"
 
-# Redis dependency - disabled by default for EKS (use ElastiCache)
 # Set to true for local/dev environments
 redis:
   enabled: false
@@ -95,7 +80,7 @@ istio:
       maxEjectionPercent: 50
       minHealthPercent: 40
   gatewayAPI:
-    enabled: false  # Set to true to use Kubernetes Gateway API
+    enabled: true  # Set to true to use Kubernetes Gateway API
     gatewayName: ecommerce-gateway
     gatewayNamespace: ecommerce
     hostnames:
