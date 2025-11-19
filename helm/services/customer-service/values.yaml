@@ -2,6 +2,9 @@ fullnameOverride: customer-api
 
 replicaCount: 2
 
+# 환경 설정
+environment: "prod"
+
 image:
   repository: 963403601423.dkr.ecr.ap-northeast-2.amazonaws.com/c4ang-customer-service
   pullPolicy: IfNotPresent

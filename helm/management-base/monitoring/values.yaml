@@ -1,6 +1,9 @@
 # Namespace
 namespace: monitoring
 
+# Cluster Name
+clusterName: "c4ang-eks-cluster"
+
 # Image Pull Secrets (ECR 연동)
 imagePullSecrets: []
   # - name: ecr-creds

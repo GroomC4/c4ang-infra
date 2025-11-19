@@ -18,11 +18,20 @@ spec:
         {{- if .Values.istio.enabled }}
         sidecar.istio.io/inject: "true"
         {{- end }}
+        # Prometheus metrics scraping
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.service.targetPort }}"
+        prometheus.io/path: "/actuator/prometheus"
       labels:
         {{- include "customer-service.selectorLabels" . | nindent 8 }}
         {{- if .Values.istio.enabled }}
         version: {{ .Values.image.tag | default .Chart.AppVersion }}
         {{- end }}
+        # 로그 수집을 위한 추가 레이블
+        app: {{ include "customer-service.fullname" . }}
+        environment: {{ .Values.environment | default "prod" }}
+        team: "ecommerce"
+        component: "backend"
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

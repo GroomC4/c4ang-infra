@@ -17,10 +17,13 @@ data:
     // ============================================
     // Logs Collection (Kubernetes Container Logs)
     // ============================================
+
+    // 모든 파드 발견
     discovery.kubernetes "pods" {
       role = "pod"
     }
 
+    // 일반 파드 로그 수집
     discovery.relabel "logs" {
       targets = discovery.kubernetes.pods.targets
 
@@ -42,6 +45,23 @@ data:
         target_label  = "container"
       }
 
+      // 노드 이름 레이블
+      rule {
+        source_labels = ["__meta_kubernetes_pod_node_name"]
+        target_label  = "node"
+      }
+
+      // 앱 레이블 (app 또는 app.kubernetes.io/name)
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_app"]
+        target_label  = "app"
+      }
+
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+        target_label  = "app_name"
+      }
+
       // 로그 경로 설정
       rule {
         source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
@@ -51,14 +71,182 @@ data:
       }
     }
 
-    loki.source.kubernetes "pods" {
-      targets    = discovery.relabel.logs.output
-      forward_to = [loki.write.default.receiver]
+    // 도메인 서비스 전용 로그 수집 (ecommerce 네임스페이스)
+    discovery.kubernetes "domain_services" {
+      role = "pod"
+      namespaces {
+        names = ["ecommerce", "default"]  // 도메인 서비스가 배포되는 네임스페이스
+      }
     }
 
+    discovery.relabel "domain_services" {
+      targets = discovery.kubernetes.domain_services.targets
+
+      // 도메인 서비스만 필터링 (customer-api, order-api 등)
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_app"]
+        regex         = "(customer-api|order-api|payment-api|product-api|recommendation-api|saga-tracker)"
+        action        = "keep"
+      }
+
+      // 네임스페이스 레이블
+      rule {
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label  = "namespace"
+      }
+
+      // 서비스 이름 레이블 (app 레이블 사용)
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_app"]
+        target_label  = "service"
+      }
+
+      // 파드 이름 레이블
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "pod"
+      }
+
+      // 컨테이너 이름 레이블
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_name"]
+        target_label  = "container"
+      }
+
+      // 노드 이름 레이블
+      rule {
+        source_labels = ["__meta_kubernetes_pod_node_name"]
+        target_label  = "node"
+      }
+
+      // 버전 레이블
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_version"]
+        target_label  = "version"
+      }
+
+      // 환경 레이블
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_environment"]
+        target_label  = "environment"
+      }
+
+      // 로그 경로 설정
+      rule {
+        source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
+        separator     = "/"
+        target_label  = "__path__"
+        replacement   = "/var/log/pods/*$1/*.log"
+      }
+    }
+
+    // 일반 파드 로그 처리
+    loki.source.kubernetes "pods" {
+      targets    = discovery.relabel.logs.output
+      forward_to = [loki.process.general.receiver]
+    }
+
+    // 도메인 서비스 로그 처리
+    loki.source.kubernetes "domain_services" {
+      targets    = discovery.relabel.domain_services.output
+      forward_to = [loki.process.domain_services.receiver]
+    }
+
+    // 일반 로그 처리 파이프라인
+    loki.process "general" {
+      forward_to = [loki.write.default.receiver]
+
+      // JSON 파싱 (있는 경우)
+      stage.json {
+        expressions = {
+          timestamp = "timestamp",
+          level     = "level",
+          message   = "message",
+        }
+      }
+
+      // 타임스탬프 추출
+      stage.timestamp {
+        source = "timestamp"
+        format = "RFC3339"
+        fallback_formats = ["UnixMs", "Unix"]
+      }
+
+      // 로그 레벨 라벨 추가
+      stage.labels {
+        values = {
+          level = "",
+        }
+      }
+    }
+
+    // 도메인 서비스 로그 처리 파이프라인 (Spring Boot 로그 형식)
+    loki.process "domain_services" {
+      forward_to = [loki.write.default.receiver]
+
+      // Spring Boot 로그 패턴 파싱
+      // 예: 2024-01-01 10:00:00.000  INFO 1 --- [main] com.example.Service : Message
+      stage.regex {
+        expression = "^(?P<timestamp>\\S+\\s+\\S+)\\s+(?P<level>\\w+)\\s+\\d+\\s+---\\s+\\[(?P<thread>[^\\]]+)\\]\\s+(?P<logger>\\S+)\\s*:\\s*(?P<message>.*)"
+      }
+
+      // JSON 로그 파싱 (구조화된 로그인 경우)
+      stage.json {
+        expressions = {
+          timestamp = "timestamp",
+          level     = "level",
+          message   = "message",
+          trace_id  = "traceId",
+          span_id   = "spanId",
+          user_id   = "userId",
+          order_id  = "orderId",
+        }
+      }
+
+      // 타임스탬프 처리
+      stage.timestamp {
+        source = "timestamp"
+        format = "2006-01-02 15:04:05.000"
+        fallback_formats = ["RFC3339", "UnixMs"]
+      }
+
+      // 추가 라벨 설정
+      stage.labels {
+        values = {
+          level    = "",
+          thread   = "",
+          logger   = "",
+          trace_id = "",
+          span_id  = "",
+        }
+      }
+
+      // 민감한 정보 마스킹
+      stage.replace {
+        expression = "(password|token|secret)\\s*[=:]\\s*\\S+"
+        replace    = "$1=***REDACTED***"
+      }
+    }
+
+    // Loki 쓰기 설정
     loki.write "default" {
       endpoint {
         url = "http://loki.{{ include "monitoring.namespace" . }}.svc.cluster.local:3100/loki/api/v1/push"
+
+        // 배치 설정
+        batch_wait = "1s"
+        batch_size = 1048576  // 1MB
+
+        // 재시도 설정
+        min_backoff = "500ms"
+        max_backoff = "5m"
+        max_retries = 10
+      }
+
+      // 외부 라벨 (모든 로그에 추가)
+      external_labels = {
+        cluster = "{{ .Values.clusterName | default "kubernetes" }}",
+        job     = "alloy",
       }
     }
     {{- end }}
