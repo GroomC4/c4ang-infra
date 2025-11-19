@@ -40,13 +40,13 @@ env:
         name: customer-service-db-secret
         key: password
   - name: spring.redis.host
-    value: "customer-service-redis-service.cache-tier.svc.cluster.local"
+    value: "service-customer-redis-service.cache-tier.svc.cluster.local"
   - name: spring.redis.port
     value: "6379"
   - name: spring.redis.password
     valueFrom:
       secretKeyRef:
-        name: customer-service-redis-secret
+        name: service-customer-redis-secret
         key: redis-password
 # Set to true for local/dev environments
 redis:
