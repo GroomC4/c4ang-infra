@@ -71,3 +71,26 @@ env:
 redis:
   enabled: false
 
+# Istio configuration
+istio:
+  enabled: true  # Set to true when deploying to EKS with Istio
+  pathPrefix: /api/v1/recommendation
+  timeout: 30s
+  retries:
+    attempts: 3
+    perTryTimeout: 10s
+    retryOn: "5xx,reset,connect-failure,refused-stream"
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 50
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 2
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 40

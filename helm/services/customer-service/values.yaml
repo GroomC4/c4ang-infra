@@ -73,7 +73,7 @@ redis:
 
 # Istio configuration
 istio:
-  enabled: false  # Set to true when deploying to EKS with Istio
+  enabled: true  # Set to true when deploying to EKS with Istio
   pathPrefix: /api/v1/customers
   timeout: 30s
   retries:
