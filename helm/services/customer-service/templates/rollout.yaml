@@ -26,10 +26,10 @@ spec:
         sidecar.istio.io/inject: "true"
       labels:
         {{- include "customer-service.selectorLabels" . | nindent 8 }}
-          # [수정 핵심] version 라벨의 들여쓰기를 위 include와 똑같이 8칸으로 맞췄습니다.
-          {{- if .Values.istio.enabled }}
+          # [수정] 줄바꿈 보존을 위해 {{- if ... }} 대신 {{ if ... }} 사용
+          {{ if .Values.istio.enabled }}
           version: {{ .Values.image.tag | default .Chart.AppVersion }}
-          {{- end }}
+          {{ end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
