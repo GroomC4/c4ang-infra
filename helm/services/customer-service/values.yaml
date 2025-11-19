@@ -40,7 +40,7 @@ env:
         name: customer-service-db-secret
         key: password
   - name: SPRING_REDIS_HOST
-    value: "service-customer-redis-service.cache-tier.svc.cluster.local"
+    value: "customer-service-redis-service.cache-tier.svc.cluster.local"
   - name: SPRING_REDIS_PORT
     value: "6379"
   - name: SPRING_REDIS_PASSWORD
