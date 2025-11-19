@@ -7,7 +7,7 @@ metadata:
   labels:
     {{- include "customer-service.labels" . | nindent 4 }}
 spec:
-  type: { { .Values.service.type } }
+  type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.targetPort }}
@@ -15,7 +15,7 @@ spec:
       name: http
   # No selector is needed. Argo Rollouts will manage the Endpoints.
   selector:
-    { { - include "customer-service.selectorLabels" . | nindent 4 } }
+    {{ - include "customer-service.selectorLabels" . | nindent 4 }}
 ---
 
 # Preview Service (Green): Points to the new version for testing.
@@ -27,7 +27,7 @@ metadata:
   labels:
     {{- include "customer-service.labels" . | nindent 4 }}
 spec:
-  type: { { .Values.service.type } }
+  type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.targetPort }}
@@ -35,7 +35,7 @@ spec:
       name: http
   # No selector is needed. Argo Rollouts will manage the Endpoints.
   selector:
-    { { - include "customer-service.selectorLabels" . | nindent 4 } }
+    {{ - include "customer-service.selectorLabels" . | nindent 4 }}
 ---
 
 # VirtualService: Directs traffic from the Istio gateway to the active service.
@@ -50,13 +50,13 @@ spec:
   # 중요: values.yaml 파일의 ingress.hosts 설정에 맞게 호스트를 지정해야 합니다.
   # 예: hosts: [ "customer.example.com" ]
   hosts:
-    { { - if and .Values.ingress .Values.ingress.hosts } }
-      { { - range .Values.ingress.hosts } }
-      - { { .host | quote } }
-      { { - end } }
-      { { - else } }
+    {{ - if and .Values.ingress .Values.ingress.hosts }}
+      {{ - range .Values.ingress.hosts }}
+      - {{ .host | quote }}
+      {{ - end }}
+      {{ - else }}
       - "{{ .Chart.Name }}.ecommerce.com" # ⬅️ hosts 설정이 없으면 기본값 사용
-      { { - end } }
+      {{ - end }}
   gateways:
     - ecommerce-gateway
   http:
