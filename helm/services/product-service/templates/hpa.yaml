@@ -7,8 +7,9 @@ metadata:
     {{- include "product-service.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
+    # Deployment -> Rollout
+    apiVersion: argoproj.io/v1alpha1
+    kind: Rollout
     name: {{ include "product-service.fullname" . }}
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
@@ -29,5 +30,4 @@ spec:
           type: Utilization
           averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
     {{- end }}
-{{- end }}
-
+  {{- end }}

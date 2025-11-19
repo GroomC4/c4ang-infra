@@ -1,7 +1,9 @@
+# Active Service (Blue): 안정적인 프로덕션 버전
+# Argo Rollouts가 이 서비스의 Endpoints를 관리하여 Blue Pod를 가리키게 합니다.
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "order-service.fullname" . }}
+  name: {{ .Chart.Name }}-active
   labels:
     {{- include "order-service.labels" . | nindent 4 }}
 spec:
@@ -11,6 +13,20 @@ spec:
       targetPort: {{ .Values.service.targetPort }}
       protocol: TCP
       name: http
-  selector:
-    {{- include "order-service.selectorLabels" . | nindent 4 }}
 
+---
+# Preview Service (Green): 테스트용 새 버전
+# Argo Rollouts가 이 서비스의 Endpoints를 관리하여 Green Pod를 가리키게 합니다.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}-preview
+  labels:
+    {{- include "order-service.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: http

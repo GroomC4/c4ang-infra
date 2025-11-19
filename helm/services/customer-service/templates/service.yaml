@@ -1,15 +1,34 @@
+# Active Service (Blue): Points to the stable, production version.
+# Argo Rollouts manages the endpoints of this service to point to the blue pods.
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "customer-service.fullname" . }}
+  name: {{ .Chart.Name }}-active
   labels:
     {{- include "customer-service.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.targetPort }}
-      protocol: TCP
-      name: http
-  selector:
-    {{- include "customer-service.selectorLabels" . | nindent 4 }}
+  - port: {{ .Values.service.port }}
+    targetPort: {{ .Values.service.targetPort }}
+    protocol: TCP
+    name: http
+  # No selector is needed. Argo Rollouts will manage the Endpoints.
+---
+
+# Preview Service (Green): Points to the new version for testing.
+# Argo Rollouts manages the endpoints of this service to point to the green pods.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}-preview
+  labels:
+    {{- include "customer-service.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+  - port: {{ .Values.service.port }}
+    targetPort: {{ .Values.service.targetPort }}
+    protocol: TCP
+    name: http
+  # No selector is needed. Argo Rollouts will manage the Endpoints.

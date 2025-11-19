@@ -1,7 +1,8 @@
+# [1] Active Service (Blue)
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "recommendation-service.fullname" . }}
+  name: {{ .Chart.Name }}-active
   labels:
     {{- include "recommendation-service.labels" . | nindent 4 }}
 spec:
@@ -11,6 +12,18 @@ spec:
       targetPort: {{ .Values.service.targetPort }}
       protocol: TCP
       name: http
-  selector:
-    {{- include "recommendation-service.selectorLabels" . | nindent 4 }}
-
+---
+# [2] Preview Service (Green)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}-preview
+  labels:
+    {{- include "recommendation-service.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: http
