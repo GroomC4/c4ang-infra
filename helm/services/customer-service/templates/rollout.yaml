@@ -69,7 +69,7 @@ spec:
               protocol: TCP
           {{- if .Values.env }}
           env:
-          {{- toYaml .Values.env | nindent 8 }}
+          {{- toYaml .Values.env | nindent 12 }}
           {{- end }}
           volumeMounts:
             - name: logs-dir
