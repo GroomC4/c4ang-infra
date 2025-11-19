@@ -40,12 +40,12 @@ env:
         name: customer-service-db-secret
         key: password
   - name: SPRING_DATA_REDIS_HOST
-    value: "redis-master"
+    value: "customer-service-redis-service.cache-tier.svc.cluster.local"
   - name: SPRING_DATA_REDIS_PORT
     value: "6379"
 # Set to true for local/dev environments
 redis:
-  enabled: false
+  enabled: true
 # Istio configuration
 istio:
   enabled: true # Set to true when deploying to EKS with Istio
