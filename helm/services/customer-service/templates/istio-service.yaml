@@ -9,13 +9,11 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.targetPort }}
-      protocol: TCP
-      name: http
+  - port: {{ .Values.service.port }}
+    targetPort: {{ .Values.service.targetPort }}
+    protocol: TCP
+    name: http
   # No selector is needed. Argo Rollouts will manage the Endpoints.
-  selector:
-    {{ - include "customer-service.selectorLabels" . | nindent 4 }}
 ---
 
 # Preview Service (Green): Points to the new version for testing.
@@ -29,13 +27,11 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.targetPort }}
-      protocol: TCP
-      name: http
+  - port: {{ .Values.service.port }}
+    targetPort: {{ .Values.service.targetPort }}
+    protocol: TCP
+    name: http
   # No selector is needed. Argo Rollouts will manage the Endpoints.
-  selector:
-    {{ - include "customer-service.selectorLabels" . | nindent 4 }}
 ---
 
 # VirtualService: Directs traffic from the Istio gateway to the active service.
