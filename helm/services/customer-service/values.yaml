@@ -42,9 +42,9 @@ env:
   - name: SPRING_DATA_REDIS_PORT
     value: "6379"
   - name: SPRING_REDIS_PASSWORD
-    value: "h8baf4UBAZjSmCsQgDUmsvkF"
+    value: ""
   - name: SPRING_DATA_REDIS_PASSWORD
-    value: "h8baf4UBAZjSmCsQgDUmsvkF"
+    value: ""
 # Set to true for local/dev environments
 # Disabled for EKS - using existing redis in cache-tier namespace
 redis:
