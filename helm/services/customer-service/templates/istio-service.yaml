@@ -50,9 +50,9 @@ spec:
       {{ - range .Values.ingress.hosts }}
       - {{ .host | quote }}
       {{ - end }}
-      {{ - else }}
+    {{ - else }}
       - "{{ .Chart.Name }}.ecommerce.com" # ⬅️ hosts 설정이 없으면 기본값 사용
-      {{ - end }}
+    {{ - end }}
   gateways:
     - ecommerce-gateway
   http:
