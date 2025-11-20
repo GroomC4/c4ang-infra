@@ -8,7 +8,7 @@ imagePullSecrets: []
 service:
   type: ClusterIP
   port: 8080
-  targetPort: 8080
+  targetPort: 8081  # Application runs on 8081
 resources:
   requests:
     memory: 1Gi
@@ -23,6 +23,8 @@ autoscaling:
   targetCPUUtilizationPercentage: 70
   targetMemoryUtilizationPercentage: 80
 env:
+  - name: SERVER_PORT
+    value: "8081"  # Spring Boot server port
   - name: SPRING_PROFILES_ACTIVE
     value: "prod"
   - name: SPRING_DATASOURCE_MASTER_URL
