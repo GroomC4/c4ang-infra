@@ -13,14 +13,16 @@ k8s-dev-k3d/
 │   ├── cleanup.sh              # k3d 리소스 정리
 │   ├── setup-sops-age.sh       # SOPS Age 키 설정 (로컬 환경용)
 │   ├── install-istio.sh        # Istio 설치 스크립트
-│   └── uninstall-istio.sh      # Istio 제거 스크립트
+│   ├── uninstall-istio.sh      # Istio 제거 스크립트
+│   └── deploy-monitoring.sh    # Argo Rollouts 모니터링 배포 스크립트
 ├── values/
 │   ├── airflow.yaml            # (선택) Airflow values
 │   ├── postgresql.yaml         # PostgreSQL values
 │   ├── postgresql.secrets.yaml.example  # PostgreSQL 시크릿 예시
 │   ├── redis.yaml              # Redis values
 │   ├── redis.secrets.yaml.example       # Redis 시크릿 예시
-│   └── istio.yaml              # Istio values (Helm 차트용)
+│   ├── istio.yaml              # Istio values (Helm 차트용)
+│   └── monitoring.yaml         # Monitoring 스택 values (k3d 최적화)
 ├── kubeconfig/                 # kubeconfig 파일 저장 디렉토리
 └── README.md
 ```
@@ -104,7 +106,31 @@ cd k8s-dev-k3d/scripts
 >
 > 이후에는 캐시된 `charts/*.tgz`를 재사용하므로 훨씬 빠르게 배포됩니다.
 
-### 5. 로컬 환경 중지
+### 5. Argo Rollouts 모니터링 배포 (선택사항)
+
+```bash
+cd k8s-dev-k3d/scripts
+./deploy-monitoring.sh
+```
+
+이 스크립트는 다음을 수행합니다:
+- Argo Rollouts 메트릭 서비스 배포
+- Monitoring 스택 배포 (Prometheus, Grafana, Loki, Tempo)
+- k3d 환경에 최적화된 설정 자동 적용
+- 배포 상태 확인 및 접속 정보 출력
+
+접속 방법:
+```bash
+# Grafana (대시보드)
+kubectl port-forward -n monitoring svc/grafana 3000:3000
+# http://localhost:3000 (admin/admin)
+
+# Prometheus (메트릭)
+kubectl port-forward -n monitoring svc/prometheus 9090:9090
+# http://localhost:9090
+```
+
+### 6. 로컬 환경 중지
 
 ```bash
 cd k8s-dev-k3d/scripts
