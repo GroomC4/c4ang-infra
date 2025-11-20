@@ -3,12 +3,12 @@ replicaCount: 2
 image:
   repository: 963403601423.dkr.ecr.ap-northeast-2.amazonaws.com/c4ang-customer-service
   pullPolicy: IfNotPresent
-  tag: "v1.0.8"
+  tag: "v1.0.7"
 imagePullSecrets: []
 service:
   type: ClusterIP
   port: 8080
-  targetPort: 8081  # Application runs on 8081
+  targetPort: 8081 # Application runs on 8081
 resources:
   requests:
     memory: 1Gi
@@ -24,7 +24,7 @@ autoscaling:
   targetMemoryUtilizationPercentage: 80
 env:
   - name: SERVER_PORT
-    value: "8081"  # Spring Boot server port
+    value: "8081" # Spring Boot server port
   - name: SPRING_PROFILES_ACTIVE
     value: "prod"
   - name: SPRING_DATASOURCE_MASTER_URL
@@ -79,6 +79,5 @@ istio:
     gatewayNamespace: ecommerce
     hostnames:
       - api.c4ang.com
-
 analysis:
   prometheusUrl: "http://prometheus.monitoring.svc.cluster.local:9090"
