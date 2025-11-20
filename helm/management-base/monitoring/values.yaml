@@ -286,6 +286,42 @@ alerting:
       summary: "Node disk usage is high"
       description: "Node {{ $labels.node }} disk usage is above 85%"
 
+    # Argo Rollouts - Rollout Failed
+    - name: RolloutFailed
+      enabled: true
+      expr: 'rollout_phase{phase="Degraded"} == 1'
+      duration: 5m
+      severity: critical
+      summary: "Rollout has failed"
+      description: "Rollout {{ $labels.namespace }}/{{ $labels.name }} is in Degraded state"
+
+    # Argo Rollouts - High Reconcile Error Rate
+    - name: RolloutHighErrorRate
+      enabled: true
+      expr: 'rate(rollout_reconcile_error[5m]) > 0.1'
+      duration: 5m
+      severity: warning
+      summary: "High rollout reconcile error rate"
+      description: "Rollout {{ $labels.namespace }}/{{ $labels.name }} has high error rate (>0.1/s)"
+
+    # Argo Rollouts - Rollout Stuck
+    - name: RolloutStuck
+      enabled: true
+      expr: 'rollout_phase{phase="Progressing"} == 1'
+      duration: 15m
+      severity: warning
+      summary: "Rollout stuck in progressing state"
+      description: "Rollout {{ $labels.namespace }}/{{ $labels.name }} has been progressing for more than 15 minutes"
+
+    # Argo Rollouts - Replica Mismatch
+    - name: RolloutReplicaMismatch
+      enabled: true
+      expr: '(rollout_info_replicas_available != rollout_info_replicas_desired) and (rollout_phase{phase="Healthy"} == 1)'
+      duration: 10m
+      severity: warning
+      summary: "Rollout replica count mismatch"
+      description: "Rollout {{ $labels.namespace }}/{{ $labels.rollout }} has {{ $value }} available replicas but desired count is different"
+
 # ServiceMonitor 설정 (Prometheus Operator 사용 시)
 serviceMonitor:
   enabled: false

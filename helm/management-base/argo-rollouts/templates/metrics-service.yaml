@@ -1,0 +1,27 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: argo-rollouts-metrics
+  namespace: {{ include "argo-rollouts-monitoring.namespace" . }}
+  labels:
+    {{- include "argo-rollouts-monitoring.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rollouts-controller
+  annotations:
+    {{- if .Values.prometheus.enabled }}
+    prometheus.io/scrape: "{{ .Values.prometheus.scrape }}"
+    prometheus.io/path: "{{ .Values.prometheus.path }}"
+    prometheus.io/port: "{{ .Values.prometheus.port }}"
+    {{- end }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: {{ .Values.metrics.port }}
+      targetPort: {{ .Values.metrics.targetPort }}
+      protocol: TCP
+  selector:
+    app.kubernetes.io/component: rollouts-controller
+    app.kubernetes.io/instance: argo-rollouts
+    app.kubernetes.io/name: argo-rollouts
+{{- end }}

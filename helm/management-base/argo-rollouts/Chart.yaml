@@ -1,0 +1,6 @@
+apiVersion: v2
+name: argo-rollouts-monitoring
+description: Argo Rollouts monitoring configuration for Prometheus integration
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
