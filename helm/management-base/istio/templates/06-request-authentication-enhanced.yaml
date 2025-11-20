@@ -1,0 +1,85 @@
+{{- if .Values.security.jwt.enabled }}
+# ====================================
+# Gateway-level JWT Authentication
+# ====================================
+apiVersion: security.istio.io/v1
+kind: RequestAuthentication
+metadata:
+  name: gateway-jwt-auth
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  jwtRules:
+    - issuer: "{{ .Values.security.jwt.issuer }}"
+      jwksUri: "{{ .Values.security.jwt.jwksUri }}"
+      {{- if .Values.security.jwt.audiences }}
+      audiences:
+        {{- range .Values.security.jwt.audiences }}
+        - {{ . | quote }}
+        {{- end }}
+      {{- end }}
+      forwardOriginalToken: true
+      outputClaimToHeaders:
+        - header: "X-User-Id"
+          claim: "sub"
+        - header: "X-User-Role"
+          claim: "role"
+        - header: "X-User-Email"
+          claim: "email"
+        - header: "X-User-Name"
+          claim: "name"
+
+---
+# ====================================
+# Service-to-Service JWT Authentication
+# ====================================
+apiVersion: security.istio.io/v1
+kind: RequestAuthentication
+metadata:
+  name: service-jwt-auth
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  # 모든 서비스에 적용 (메시 전체)
+  selector:
+    matchLabels:
+      app.kubernetes.io/managed-by: "Helm"
+  jwtRules:
+    # Customer Service가 발급한 JWT
+    - issuer: "ecommerce-service-api"
+      jwksUri: "http://customer-api.{{ include "istio.namespace" . }}.svc.cluster.local:8080/.well-known/jwks.json"
+      forwardOriginalToken: true
+      outputClaimToHeaders:
+        - header: "X-User-Id"
+          claim: "sub"
+        - header: "X-User-Role"
+          claim: "role"
+
+    {{- if .Values.security.jwt.additionalIssuers }}
+    # 추가 JWT 발급자 (예: 외부 IdP)
+    {{- range .Values.security.jwt.additionalIssuers }}
+    - issuer: {{ .issuer | quote }}
+      jwksUri: {{ .jwksUri | quote }}
+      {{- if .audiences }}
+      audiences:
+        {{- range .audiences }}
+        - {{ . | quote }}
+        {{- end }}
+      {{- end }}
+      forwardOriginalToken: true
+      {{- if .outputClaimToHeaders }}
+      outputClaimToHeaders:
+        {{- range .outputClaimToHeaders }}
+        - header: {{ .header | quote }}
+          claim: {{ .claim | quote }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+    {{- end }}
+
+{{- end }}

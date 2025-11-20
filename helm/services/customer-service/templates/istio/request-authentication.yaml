@@ -1,0 +1,30 @@
+{{- if .Values.istio.enabled }}
+apiVersion: security.istio.io/v1
+kind: RequestAuthentication
+metadata:
+  name: {{ include "customer-service.fullname" . }}-jwt-auth
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "customer-service.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "customer-service.selectorLabels" . | nindent 6 }}
+  jwtRules:
+    - issuer: "ecommerce-service-api"
+      # Customer Service가 발급한 JWT를 검증하기 위한 JWKS URI
+      # Customer Service의 공개키를 제공하는 엔드포인트
+      jwksUri: "http://{{ include "customer-service.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}/.well-known/jwks.json"
+      # JWT가 유효할 때만 클레임을 헤더로 변환
+      forwardOriginalToken: true
+      # JWT 클레임을 HTTP 헤더로 매핑
+      outputClaimToHeaders:
+        - header: "X-User-Id"
+          claim: "sub"  # JWT subject (user ID)
+        - header: "X-User-Role"
+          claim: "role" # User role (CUSTOMER or OWNER)
+        - header: "X-User-Email"
+          claim: "email"
+        - header: "X-User-Name"
+          claim: "name"
+{{- end }}

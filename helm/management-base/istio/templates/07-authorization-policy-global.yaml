@@ -1,0 +1,134 @@
+{{- if .Values.security.jwt.enabled }}
+# ====================================
+# Global Public Endpoints Policy
+# 모든 서비스에 공통으로 적용되는 인가 정책
+# ====================================
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: global-public-endpoints
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  # 게이트웨이에 적용
+  selector:
+    matchLabels:
+      istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  action: ALLOW
+  rules:
+    # ====== Health & Monitoring (모든 서비스 공통) ======
+    - to:
+        - operation:
+            paths:
+              - "/actuator/health"
+              - "/actuator/health/*"
+              - "/actuator/prometheus"
+              - "/actuator/metrics"
+              - "/actuator/info"
+              - "/.well-known/jwks.json"  # JWT 공개키
+
+    # ====== API Documentation ======
+    - to:
+        - operation:
+            paths:
+              - "/swagger-ui/*"
+              - "/v3/api-docs/*"
+              - "/swagger-resources/*"
+              - "/webjars/*"
+
+    # ====== Authentication Endpoints (인증 불필요) ======
+    {{- if .Values.security.publicEndpoints }}
+    - to:
+        - operation:
+            paths:
+              {{- range .Values.security.publicEndpoints }}
+              - {{ . | quote }}
+              {{- end }}
+            methods: ["GET", "POST"]
+    {{- end }}
+
+    # ====== Protected Endpoints (JWT 필수) ======
+    # JWT가 있는 모든 요청 허용 (세부 권한은 서비스별 정책에서 처리)
+    - from:
+        - source:
+            requestPrincipals: ["*"]  # Valid JWT required
+      to:
+        - operation:
+            paths:
+              - "/*"  # All paths with valid JWT
+
+---
+# ====================================
+# Default Deny Policy
+# JWT가 없고 public endpoint도 아닌 요청은 모두 거부
+# ====================================
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: default-deny
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  action: DENY
+  rules:
+    # JWT가 없고 public endpoint가 아닌 모든 요청 거부
+    - from:
+        - source:
+            notRequestPrincipals: ["*"]
+      to:
+        - operation:
+            notPaths:
+              {{- range .Values.security.publicEndpoints }}
+              - {{ . | quote }}
+              {{- end }}
+              - "/actuator/*"
+              - "/swagger-ui/*"
+              - "/v3/api-docs/*"
+              - "/.well-known/*"
+
+{{- end }}
+
+{{- if .Values.gateway.webhook.enabled }}
+---
+# ====================================
+# Webhook Gateway IP Whitelist
+# PG사, 파트너사 등 특정 IP만 허용
+# ====================================
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: webhook-ip-whitelist
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      istio.io/gateway-name: {{ include "istio.gateway.webhook.name" . }}
+  action: ALLOW
+  rules:
+    {{- if .Values.security.webhook.ipWhitelist }}
+    {{- range .Values.security.webhook.ipWhitelist }}
+    - from:
+        - source:
+            remoteIpBlocks:
+              - {{ . | quote }}
+      to:
+        - operation:
+            paths:
+              - "/webhooks/*"
+            methods: ["POST"]
+    {{- end }}
+    {{- else }}
+    # IP 화이트리스트가 설정되지 않은 경우 모든 IP 허용 (개발 환경)
+    - to:
+        - operation:
+            paths:
+              - "/webhooks/*"
+    {{- end }}
+{{- end }}

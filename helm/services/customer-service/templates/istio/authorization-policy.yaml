@@ -1,0 +1,149 @@
+{{- if .Values.istio.enabled }}
+# ====================================
+# Customer Service Specific Authorization
+# 서비스별 세부 인가 규칙 (Role-based)
+# ====================================
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ include "customer-service.fullname" . }}-authz
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "customer-service.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "customer-service.selectorLabels" . | nindent 6 }}
+  action: ALLOW
+  rules:
+    # ====== PUBLIC ENDPOINTS (인증 불필요) ======
+    # Health checks and monitoring
+    - to:
+        - operation:
+            paths:
+              - "/actuator/health"
+              - "/actuator/health/*"
+              - "/actuator/prometheus"
+              - "/actuator/metrics"
+              - "/actuator/info"
+
+    # API documentation
+    - to:
+        - operation:
+            paths:
+              - "/swagger-ui/*"
+              - "/v3/api-docs/*"
+              - "/swagger-resources/*"
+              - "/webjars/*"
+
+    # JWKS endpoint for other services to validate tokens
+    - to:
+        - operation:
+            paths:
+              - "/.well-known/jwks.json"
+            methods: ["GET"]
+
+    # ====== AUTHENTICATION ENDPOINTS (인증 불필요) ======
+    # Customer authentication endpoints
+    - to:
+        - operation:
+            paths:
+              - "/api/v1/auth/customers/signup"
+              - "/api/v1/auth/customers/login"
+            methods: ["POST"]
+
+    # Owner authentication endpoints
+    - to:
+        - operation:
+            paths:
+              - "/api/v1/auth/owners/signup"
+              - "/api/v1/auth/owners/login"
+            methods: ["POST"]
+
+    # Token refresh (requires refresh token, not JWT)
+    - to:
+        - operation:
+            paths:
+              - "/api/v1/auth/refresh"
+            methods: ["POST"]
+
+    # ====== PROTECTED ENDPOINTS (인증 필요) ======
+    # Customer logout - requires CUSTOMER role
+    - to:
+        - operation:
+            paths:
+              - "/api/v1/auth/customers/logout"
+            methods: ["POST"]
+      when:
+        - key: request.headers[x-user-role]
+          values: ["CUSTOMER"]
+        - key: request.headers[x-user-id]
+          notValues: [""]
+
+    # Owner logout - requires OWNER role
+    - to:
+        - operation:
+            paths:
+              - "/api/v1/auth/owners/logout"
+            methods: ["POST"]
+      when:
+        - key: request.headers[x-user-role]
+          values: ["OWNER"]
+        - key: request.headers[x-user-id]
+          notValues: [""]
+
+    # ====== CUSTOMER PROFILE ENDPOINTS ======
+    # Customer profile management - requires CUSTOMER role
+    - to:
+        - operation:
+            paths:
+              - "/api/v1/customers/profile"
+              - "/api/v1/customers/profile/*"
+            methods: ["GET", "PUT", "PATCH", "DELETE"]
+      when:
+        - key: request.headers[x-user-role]
+          values: ["CUSTOMER"]
+        - key: request.headers[x-user-id]
+          notValues: [""]
+
+    # ====== OWNER PROFILE ENDPOINTS ======
+    # Owner profile management - requires OWNER role
+    - to:
+        - operation:
+            paths:
+              - "/api/v1/owners/profile"
+              - "/api/v1/owners/profile/*"
+            methods: ["GET", "PUT", "PATCH", "DELETE"]
+      when:
+        - key: request.headers[x-user-role]
+          values: ["OWNER"]
+        - key: request.headers[x-user-id]
+          notValues: [""]
+
+    # ====== ADMIN ENDPOINTS ======
+    # Admin-only endpoints - requires ADMIN role
+    - to:
+        - operation:
+            paths:
+              - "/api/v1/admin/customers/*"
+              - "/api/v1/admin/owners/*"
+            methods: ["GET", "PUT", "PATCH", "DELETE"]
+      when:
+        - key: request.headers[x-user-role]
+          values: ["ADMIN"]
+        - key: request.headers[x-user-id]
+          notValues: [""]
+
+    # ====== INTER-SERVICE COMMUNICATION ======
+    # Allow internal service-to-service calls (with service account)
+    - from:
+        - source:
+            namespaces: ["{{ .Release.Namespace }}"]
+      to:
+        - operation:
+            paths:
+              - "/api/v1/internal/*"
+
+    # ====== DEFAULT DENY ======
+    # All other requests are denied by default (implicit)
+{{- end }}
