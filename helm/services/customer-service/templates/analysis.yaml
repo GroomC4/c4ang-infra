@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: error-rate-check
+  labels:
+    {{- include "customer-service.labels" . | nindent 4 }}
+spec:
+  args:
+    - name: service-name # Rollout에서 넘겨받을 서비스 이름 인자 정의
+  metrics:
+    - name: error-rate
+      interval: 1m
+      successCondition: result[0] < 0.05 # 에러율 5% 미만이면 성공
+      failureLimit: 0 # 한 번이라도 실패하면 즉시 중단 (자동 롤백 트리거)
+      provider:
+        prometheus:
+          # Prometheus 주소는 values.yaml에서 가져옴
+          address: {{ .Values.analysis.prometheusUrl | default "http://prometheus-server.monitoring.svc.cluster.local:9090" }}
+          query: |
+            # 해당 서비스(Preview)의 500번대 에러 비율 계산
+            sum(rate(http_server_requests_seconds_count{status=~"5.*", uri!="/actuator/health/.*", service="{{ args.service-name }}"}[1m]))
+            /
+            sum(rate(http_server_requests_seconds_count{service="{{ args.service-name }}"}[1m]))

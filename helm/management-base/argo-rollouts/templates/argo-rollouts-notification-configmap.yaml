@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argo-rollouts-notification-configmap
+  namespace: argo-rollouts
+data:
+  service.grafana: |
+    address: http://a68126f1f9e17476aa603b145e3adfcb-394715272.ap-northeast-2.elb.amazonaws.com/login #그라파나 주소
+    api-key: $grafana-api-key # Secret의 키 이름 참조
