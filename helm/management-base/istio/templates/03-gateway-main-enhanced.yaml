@@ -1,0 +1,104 @@
+{{- if .Values.gateway.main.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ include "istio.gateway.main.name" . }}
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.gateway.main.annotations | nindent 4 }}
+spec:
+  gatewayClassName: {{ .Values.gatewayClassName | default "istio" }}
+  {{- if .Values.gateway.main.addresses }}
+  addresses:
+    {{- toYaml .Values.gateway.main.addresses | nindent 4 }}
+  {{- end }}
+  listeners:
+    {{- if .Values.gateway.main.listeners.https.enabled }}
+    - name: https
+      hostname: {{ .Values.gateway.main.hostname | quote }}
+      port: {{ .Values.gateway.main.listeners.https.port | default 443 }}
+      protocol: HTTPS
+      tls:
+        mode: {{ .Values.gateway.main.listeners.https.tls.mode | default "Terminate" }}
+        {{- if .Values.gateway.main.listeners.https.tls.certificateRefs }}
+        certificateRefs:
+          {{- toYaml .Values.gateway.main.listeners.https.tls.certificateRefs | nindent 10 }}
+        {{- end }}
+      # Cross-namespace routing 활성화 - 서비스들이 자체 네임스페이스에서 HTTPRoute 정의 가능
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              gateway-access: "shared"  # 이 레이블을 가진 네임스페이스만 라우트 생성 가능
+        kinds:
+          - kind: HTTPRoute
+          - kind: GRPCRoute
+    {{- end }}
+
+    {{- if .Values.gateway.main.listeners.http.enabled }}
+    - name: http
+      hostname: {{ .Values.gateway.main.hostname | quote }}
+      port: {{ .Values.gateway.main.listeners.http.port | default 80 }}
+      protocol: HTTP
+      {{- if .Values.gateway.main.listeners.http.redirectToHttps }}
+      # HTTP to HTTPS 리다이렉트는 HTTPRoute에서 처리
+      allowedRoutes:
+        namespaces:
+          from: Same  # 리다이렉트 규칙은 같은 네임스페이스에서만
+      {{- else }}
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              gateway-access: "shared"
+      {{- end }}
+    {{- end }}
+
+---
+{{- if .Values.gateway.main.listeners.http.redirectToHttps }}
+# HTTP to HTTPS 리다이렉트 규칙
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "istio.gateway.main.name" . }}-http-redirect
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: {{ include "istio.gateway.main.name" . }}
+      sectionName: http
+  hostnames:
+    - {{ .Values.gateway.main.hostname | quote }}
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+{{- end }}
+
+---
+# Cross-namespace routing을 위한 ReferenceGrant
+# 서비스 네임스페이스가 게이트웨이를 참조할 수 있도록 허용
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: gateway-reference-grant
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: "*"  # 또는 특정 네임스페이스 목록
+  to:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ include "istio.gateway.main.name" . }}
+{{- end }}
