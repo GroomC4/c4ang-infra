@@ -90,6 +90,8 @@ spec:
             {{- if .Values.grafana.dashboards.enabled }}
             - name: dashboards-provisioning
               mountPath: /etc/grafana/provisioning/dashboards
+            - name: dashboard-argo-rollouts
+              mountPath: /var/lib/grafana/dashboards
             {{- end }}
       
       volumes:
@@ -103,6 +105,9 @@ spec:
         - name: dashboards-provisioning
           configMap:
             name: grafana-dashboards
+        - name: dashboard-argo-rollouts
+          configMap:
+            name: grafana-dashboard-argo-rollouts
         {{- end }}
       
       {{- with .Values.nodeSelector }}

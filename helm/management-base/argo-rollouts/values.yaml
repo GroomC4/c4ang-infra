@@ -1,0 +1,15 @@
+# Argo Rollouts 모니터링 설정
+namespace: argo-rollouts
+
+# Metrics 서비스 설정
+metrics:
+  enabled: true
+  port: 8090
+  targetPort: 8090
+
+# Prometheus 연동 설정
+prometheus:
+  enabled: true
+  scrape: true
+  path: /metrics
+  port: 8090

@@ -25,17 +25,26 @@ rules:
       - endpoints
       - pods
     verbs: ["get", "list", "watch"]
-  
+
   - apiGroups: [""]
     resources:
       - configmaps
     verbs: ["get"]
-  
+
   - apiGroups: ["networking.k8s.io"]
     resources:
       - ingresses
     verbs: ["get", "list", "watch"]
-  
+
+  # Argo Rollouts 메트릭 수집을 위한 권한
+  - apiGroups: ["argoproj.io"]
+    resources:
+      - rollouts
+      - experiments
+      - analysisruns
+      - analysistemplates
+    verbs: ["get", "list", "watch"]
+
   - nonResourceURLs:
       - /metrics
       - /metrics/cadvisor

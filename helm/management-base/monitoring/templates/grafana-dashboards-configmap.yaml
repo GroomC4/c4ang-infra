@@ -1,0 +1,13 @@
+{{- if and .Values.grafana.enabled .Values.grafana.dashboards.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-argo-rollouts
+  namespace: {{ include "monitoring.namespace" . }}
+  labels:
+    {{- include "monitoring.grafana.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  argo-rollouts-dashboard.json: |-
+{{ .Files.Get "dashboards/argo-rollouts-dashboard.json" | indent 4 }}
+{{- end }}
