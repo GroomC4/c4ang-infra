@@ -1,0 +1,197 @@
+# k3d 로컬 환경 최적화 Monitoring 설정
+# 이 파일은 로컬 k3d 클러스터에서 Argo Rollouts 모니터링을 위한 설정입니다.
+
+namespace: monitoring
+
+# Image Pull Secrets (로컬에서는 불필요)
+imagePullSecrets: []
+
+# Grafana Alloy - 로컬에서는 비활성화 (리소스 절약)
+# DaemonSet으로 모든 노드에 배포되는데, k3d는 보통 단일 노드이므로 불필요
+alloy:
+  enabled: false
+
+# Prometheus 설정 (메트릭 저장소)
+prometheus:
+  enabled: true
+  image:
+    repository: prom/prometheus
+    tag: v2.50.0
+    pullPolicy: IfNotPresent
+
+  replicas: 1
+
+  # k3d의 local-path 스토리지 사용 (로컬 디스크)
+  storage:
+    size: 10Gi  # 로컬이므로 크기 축소 (EKS: 50Gi)
+    storageClassName: "local-path"  # k3d 기본 storage class
+
+  # 로컬 환경이므로 보존 기간 단축
+  retention:
+    time: 7d  # 7일 (EKS: 30일)
+    size: 8GB
+
+  # 로컬 환경 리소스 최적화
+  resources:
+    limits:
+      cpu: "500m"      # EKS: 1000m
+      memory: "1Gi"    # EKS: 2Gi
+    requests:
+      cpu: "200m"      # EKS: 500m
+      memory: "512Mi"  # EKS: 1Gi
+
+  service:
+    type: ClusterIP
+    port: 9090
+
+  # Prometheus 스크랩 설정은 base values 상속
+
+# Loki 설정 (로그 저장소)
+loki:
+  enabled: true
+  image:
+    repository: grafana/loki
+    tag: 2.9.4
+    pullPolicy: IfNotPresent
+
+  replicas: 1
+
+  storage:
+    size: 5Gi  # 로컬이므로 축소 (EKS: 20Gi)
+    storageClassName: "local-path"
+
+  # 로그 보존 기간 단축
+  retention:
+    enabled: true
+    period: 7d  # 7일 (EKS: 90일)
+
+  resources:
+    limits:
+      cpu: "500m"      # EKS: 1000m
+      memory: "512Mi"  # EKS: 1Gi
+    requests:
+      cpu: "200m"      # EKS: 500m
+      memory: "256Mi"  # EKS: 512Mi
+
+  service:
+    type: ClusterIP
+    port: 3100
+
+  limits:
+    maxStreams: 5000           # EKS: 10000
+    ingestionRateMb: 5         # EKS: 10
+    ingestionBurstSizeMb: 10   # EKS: 20
+
+# Tempo 설정 (트레이스 저장소)
+tempo:
+  enabled: true
+  image:
+    repository: grafana/tempo
+    tag: 2.3.1
+    pullPolicy: IfNotPresent
+
+  replicas: 1
+
+  storage:
+    size: 5Gi  # 로컬이므로 축소 (EKS: 20Gi)
+    storageClassName: "local-path"
+
+  # 트레이스 보존 기간 단축
+  retention:
+    period: 168h  # 7일 (EKS: 720h = 30일)
+
+  resources:
+    limits:
+      cpu: "500m"      # EKS: 1000m
+      memory: "512Mi"  # EKS: 1Gi
+    requests:
+      cpu: "200m"      # EKS: 500m
+      memory: "256Mi"  # EKS: 512Mi
+
+  service:
+    type: ClusterIP
+    otlpGrpcPort: 4317
+    otlpHttpPort: 4318
+    tempoPort: 3200
+
+  sampling:
+    rate: 0.1  # 10% 샘플링
+
+# Grafana 설정 (시각화 대시보드)
+grafana:
+  enabled: true
+  image:
+    repository: grafana/grafana
+    tag: 10.3.1
+    pullPolicy: IfNotPresent
+
+  replicas: 1
+
+  # 로컬 환경이므로 평문 비밀번호 사용
+  admin:
+    user: admin
+    password: "admin"  # 로컬 개발용
+    existingSecret: ""
+    secretKey: "admin-password"
+
+  storage:
+    size: 2Gi  # 로컬이므로 축소 (EKS: 5Gi)
+    storageClassName: "local-path"
+
+  resources:
+    limits:
+      cpu: "300m"      # EKS: 500m
+      memory: "512Mi"  # EKS: 512Mi
+    requests:
+      cpu: "100m"      # EKS: 250m
+      memory: "256Mi"  # EKS: 256Mi
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  # 대시보드 자동 프로비저닝
+  dashboards:
+    enabled: true
+
+  # 데이터소스 자동 프로비저닝
+  datasources:
+    prometheus:
+      enabled: true
+      url: http://prometheus:9090
+      isDefault: true
+
+    loki:
+      enabled: true
+      url: http://loki:3100
+
+    tempo:
+      enabled: true
+      url: http://tempo:3200
+
+# Alerting 설정 - 로컬에서는 비활성화 (개발 환경)
+alerting:
+  enabled: false
+  slack:
+    enabled: false
+  email:
+    enabled: false
+
+# ServiceMonitor 설정 (Prometheus Operator 사용 시)
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
+
+# Ingress 설정 - 로컬에서는 비활성화 (port-forward 사용)
+ingress:
+  enabled: false
+
+# 노드 선택기 (로컬에서는 불필요)
+nodeSelector: {}
+
+# Tolerations (로컬에서는 불필요)
+tolerations: []
+
+# Affinity (로컬에서는 불필요)
+affinity: {}

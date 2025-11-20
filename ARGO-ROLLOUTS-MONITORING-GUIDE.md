@@ -221,12 +221,155 @@ Analysis Run이나 Experiment 메트릭도 수집하려면:
       action: keep
 ```
 
+## k3d 로컬 환경 배포
+
+### 개요
+
+k3d 로컬 환경에서 Argo Rollouts 모니터링을 배포할 수 있습니다. 로컬 환경에 최적화된 설정이 별도로 제공됩니다.
+
+### k3d vs EKS 차이점
+
+| 항목 | EKS (프로덕션) | k3d (로컬) |
+|------|----------------|-----------|
+| Storage Class | `gp2` (AWS EBS) | `local-path` (로컬 디스크) |
+| Prometheus 스토리지 | 50Gi | 10Gi |
+| 보존 기간 | 30일 | 7일 |
+| Grafana Alloy | 활성화 | 비활성화 |
+| 리소스 제한 | 프로덕션급 | 축소 (50% 감소) |
+| Alerting | 활성화 | 비활성화 |
+
+### 배포 방법
+
+#### 1. 자동 배포 (권장)
+
+```bash
+# k3d 클러스터가 실행 중인지 확인
+k3d cluster list
+
+# 배포 스크립트 실행
+cd k8s-dev-k3d/scripts
+./deploy-monitoring.sh
+```
+
+스크립트가 자동으로:
+- Argo Rollouts 메트릭 서비스 배포
+- Monitoring 스택 배포 (k3d 최적화 설정 적용)
+- 배포 상태 확인
+- 접속 정보 출력
+
+#### 2. 수동 배포
+
+```bash
+# kubeconfig 설정
+export KUBECONFIG=$(pwd)/k8s-dev-k3d/kubeconfig/config
+
+# 1. Argo Rollouts 메트릭 서비스
+helm upgrade --install argo-rollouts-monitoring \
+  helm/management-base/argo-rollouts \
+  --namespace argo-rollouts \
+  --create-namespace
+
+# 2. Monitoring 스택 (k3d 전용 values 사용)
+helm upgrade --install monitoring \
+  helm/management-base/monitoring \
+  --namespace monitoring \
+  --create-namespace \
+  -f k8s-dev-k3d/values/monitoring.yaml
+```
+
+### 접속 방법
+
+#### Grafana
+
+```bash
+# Port-forward
+kubectl port-forward -n monitoring svc/grafana 3000:3000
+
+# 브라우저 접속
+# http://localhost:3000
+# Username: admin
+# Password: admin
+
+# 대시보드 경로
+# Dashboards > Argo Rollouts Monitoring
+```
+
+#### Prometheus
+
+```bash
+# Port-forward
+kubectl port-forward -n monitoring svc/prometheus 9090:9090
+
+# 브라우저 접속
+# http://localhost:9090
+
+# Target 확인
+# Status > Targets > argo-rollouts
+```
+
+### k3d 전용 설정 파일
+
+`k8s-dev-k3d/values/monitoring.yaml`:
+- 로컬 환경에 최적화된 리소스 설정
+- `local-path` storage class 사용
+- 스토리지 크기 및 보존 기간 축소
+- Grafana Alloy 비활성화 (리소스 절약)
+- Alerting 비활성화
+
+### 트러블슈팅 (k3d)
+
+#### Pod가 Pending 상태인 경우
+
+```bash
+# PVC 상태 확인
+kubectl get pvc -n monitoring
+
+# Storage class 확인
+kubectl get storageclass
+
+# local-path provisioner 확인
+kubectl get pods -n kube-system | grep local-path
+```
+
+#### 메트릭이 수집되지 않는 경우
+
+```bash
+# Argo Rollouts 메트릭 직접 확인
+kubectl port-forward -n argo-rollouts deployment/argo-rollouts 8090:8090
+curl http://localhost:8090/metrics
+
+# Prometheus target 확인
+kubectl port-forward -n monitoring svc/prometheus 9090:9090
+# http://localhost:9090/targets
+```
+
+#### 리소스 부족
+
+```bash
+# k3d values에서 리소스 더 축소
+# k8s-dev-k3d/values/monitoring.yaml 수정
+prometheus:
+  resources:
+    limits:
+      cpu: "300m"
+      memory: "512Mi"
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+
+# 재배포
+helm upgrade monitoring helm/management-base/monitoring \
+  -n monitoring \
+  -f k8s-dev-k3d/values/monitoring.yaml
+```
+
 ## 참고 자료
 
 - [Argo Rollouts 공식 문서](https://argo-rollouts.readthedocs.io/)
 - [Argo Rollouts Metrics 문서](https://argo-rollouts.readthedocs.io/en/stable/features/controller-metrics/)
 - [Prometheus 쿼리 가이드](https://prometheus.io/docs/prometheus/latest/querying/basics/)
 - [Grafana 대시보드 가이드](https://grafana.com/docs/grafana/latest/dashboards/)
+- [k3d 공식 문서](https://k3d.io/)
 
 ## 유지보수
 
