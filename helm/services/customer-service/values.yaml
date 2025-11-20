@@ -3,7 +3,7 @@ replicaCount: 2
 image:
   repository: 963403601423.dkr.ecr.ap-northeast-2.amazonaws.com/c4ang-customer-service
   pullPolicy: IfNotPresent
-  tag: "v1.0.6"
+  tag: "v1.0.8"
 imagePullSecrets: []
 service:
   type: ClusterIP
@@ -33,17 +33,16 @@ env:
     value: "application"
   - name: SPRING_DATASOURCE_PASSWORD
     value: "application"
-  - name: SPRING_REDIS_HOST
-    value: "customer-service-redis-service.cache-tier.svc.cluster.local"
-  - name: SPRING_REDIS_PORT
-    value: "6379"
   - name: SPRING_DATA_REDIS_HOST
     value: "customer-service-redis-service.cache-tier.svc.cluster.local"
   - name: SPRING_DATA_REDIS_PORT
     value: "6379"
-  - name: SPRING_REDIS_PASSWORD
-    value: ""
   - name: SPRING_DATA_REDIS_PASSWORD
+    value: ""
+  # Redisson specific properties
+  - name: SPRING_REDISSON_ADDRESS
+    value: "redis://customer-service-redis-service.cache-tier.svc.cluster.local:6379"
+  - name: SPRING_REDISSON_PASSWORD
     value: ""
 # Set to true for local/dev environments
 # Disabled for EKS - using existing redis in cache-tier namespace
