@@ -23,7 +23,7 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        sidecar.istio.io/inject: "true"
+        sidecar.istio.io/inject: "false"
       labels:
         {{- include "customer-service.selectorLabels" . | nindent 8 }}
         {{ if .Values.istio.enabled }}
