@@ -33,11 +33,11 @@ env:
     value: "application"
   - name: SPRING_DATASOURCE_PASSWORD
     value: "application"
-  - name: SPRING_DATA_REDIS_HOST
+  - name: SPRING_REDIS_HOST
     value: "customer-service-redis-service.cache-tier.svc.cluster.local"
-  - name: SPRING_DATA_REDIS_PORT
+  - name: SPRING_REDIS_PORT
     value: "6379"
-  - name: SPRING_DATA_REDIS_PASSWORD
+  - name: SPRING_REDIS_PASSWORD
     value: ""
   # Redisson specific properties
   - name: SPRING_REDISSON_ADDRESS
