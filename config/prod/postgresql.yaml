@@ -1,0 +1,112 @@
+# EKS 운영 환경 PostgreSQL 설정
+# ArgoCD ApplicationSet에서 사용
+# 참고: 운영 환경에서는 AWS RDS 사용을 권장합니다.
+#       이 설정은 Self-managed PostgreSQL이 필요한 경우에만 사용하세요.
+
+# Global settings
+global:
+  storageClass: gp3
+
+# Architecture: replication 모드
+architecture: replication
+
+# Authentication - 운영환경은 Secret 사용
+auth:
+  username: ""
+  password: ""
+  postgresPassword: ""
+  database: groom
+  replicationUsername: ""
+  replicationPassword: ""
+  existingSecret: "postgresql-credentials"
+
+# Primary configuration
+primary:
+  persistence:
+    enabled: true
+    storageClass: gp3
+    size: 100Gi
+
+  podSecurityContext:
+    fsGroup: 1000
+
+  containerSecurityContext:
+    runAsUser: 1000
+
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+  nodeSelector:
+    role: database
+
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/component: primary
+            topologyKey: topology.kubernetes.io/zone
+
+# Read Replicas configuration
+readReplicas:
+  replicaCount: 2
+
+  persistence:
+    enabled: true
+    storageClass: gp3
+    size: 100Gi
+
+  podSecurityContext:
+    fsGroup: 1000
+
+  containerSecurityContext:
+    runAsUser: 1000
+
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+  nodeSelector:
+    role: database
+
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/component: read
+            topologyKey: topology.kubernetes.io/zone
+
+# Service configuration
+service:
+  type: ClusterIP
+
+# Metrics - 운영환경은 활성화
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+
+# Volume permissions
+volumePermissions:
+  enabled: false
+
+# Backup configuration (pgbackrest 또는 외부 백업 솔루션 권장)
+backup:
+  enabled: true
+  schedule: "0 3 * * *"  # 매일 03:00 AM
+  retentionDays: 30

@@ -19,10 +19,17 @@ NC='\033[0m' # No Color
 
 # 설정 변수
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+K3D_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$K3D_ROOT/.." && pwd)"
 ISTIO_VERSION="${ISTIO_VERSION:-1.22.0}"
 NAMESPACE="${NAMESPACE:-ecommerce}"
 ISTIO_NAMESPACE="istio-system"
+# 환경별 설정 경로 (새 구조: config/local/)
+CONFIG_DIR="${PROJECT_ROOT}/config/local"
+# 레거시 경로 (k8s-dev-k3d/values/)
+LEGACY_VALUES_DIR="${K3D_ROOT}/values"
+# Helm 차트 경로 (새 구조: charts/)
+CHARTS_DIR="${PROJECT_ROOT}/charts"
 
 # 로그 함수
 log_info() {
@@ -293,18 +300,27 @@ deploy_istio_resources() {
 # Helm 차트 설치 옵션
 install_with_helm() {
     log_step "=== Helm 차트로 Istio 설정 설치 ==="
-    
-    local helm_chart_path="${PROJECT_ROOT}/../helm/management-base/istio"
-    local values_file="${PROJECT_ROOT}/values/istio.yaml"
-    
+
+    local helm_chart_path="${CHARTS_DIR}/istio"
+    local values_file=""
+
+    # 새 구조 경로 우선, 레거시 경로 폴백
+    if [ -f "${CONFIG_DIR}/istio.yaml" ]; then
+        values_file="${CONFIG_DIR}/istio.yaml"
+    elif [ -f "${LEGACY_VALUES_DIR}/istio.yaml" ]; then
+        values_file="${LEGACY_VALUES_DIR}/istio.yaml"
+        log_warn "레거시 경로 사용: ${values_file}"
+        log_info "새 구조로 마이그레이션하세요: config/local/istio.yaml"
+    fi
+
     if [ ! -d "$helm_chart_path" ]; then
         log_error "Helm 차트를 찾을 수 없습니다: $helm_chart_path"
         return 1
     fi
-    
+
     log_info "Helm 차트로 Istio 설정을 설치합니다."
     log_info "Helm 차트: $helm_chart_path"
-    if [ -f "$values_file" ]; then
+    if [ -n "$values_file" ] && [ -f "$values_file" ]; then
         log_info "Values 파일: $values_file"
     fi
     
@@ -341,20 +357,24 @@ install_with_helm() {
         helm_cmd="helm install istio-config $helm_chart_path --namespace $NAMESPACE --set namespace.create=false --set gatewayAPI.enabled=false"
     fi
     
-    if [ -f "$values_file" ]; then
+    if [ -n "$values_file" ] && [ -f "$values_file" ]; then
         helm_cmd="$helm_cmd -f $values_file"
     fi
-    
+
     eval "$helm_cmd --wait" || {
         log_error "Helm 차트 설치/업데이트 실패"
         log_info "기존 release를 제거한 후 다시 시도하세요:"
         log_info "  helm uninstall istio-config -n $NAMESPACE"
         return 1
     }
-    
+
     log_success "Helm 차트 설치/업데이트 완료"
     log_info ""
-    log_info "업데이트: helm upgrade istio-config $helm_chart_path -n $NAMESPACE -f $values_file"
+    if [ -n "$values_file" ]; then
+        log_info "업데이트: helm upgrade istio-config $helm_chart_path -n $NAMESPACE -f $values_file"
+    else
+        log_info "업데이트: helm upgrade istio-config $helm_chart_path -n $NAMESPACE"
+    fi
     log_info "제거: helm uninstall istio-config -n $NAMESPACE"
 }
 

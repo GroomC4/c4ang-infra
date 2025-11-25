@@ -20,9 +20,15 @@ NC='\033[0m' # No Color
 
 # 스크립트 디렉토리 및 프로젝트 루트
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-K3D_VALUES_DIR="${SCRIPT_DIR}/../values"
-KUBECONFIG_FILE="${SCRIPT_DIR}/../kubeconfig/config"
+K3D_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PROJECT_ROOT="$(cd "${K3D_ROOT}/.." && pwd)"
+# 환경별 설정 경로 (새 구조: config/local/)
+CONFIG_DIR="${PROJECT_ROOT}/config/local"
+# 레거시 경로 (k8s-dev-k3d/values/) - 호환성 유지
+LEGACY_VALUES_DIR="${K3D_ROOT}/values"
+KUBECONFIG_FILE="${K3D_ROOT}/kubeconfig/config"
+# Helm 차트 경로 (새 구조: charts/)
+CHARTS_DIR="${PROJECT_ROOT}/charts"
 
 # 로그 함수
 log_info() {
@@ -97,7 +103,7 @@ deploy_argo_rollouts_monitoring() {
     log_step "Argo Rollouts 메트릭 서비스 배포 중..."
 
     helm upgrade --install argo-rollouts-monitoring \
-        "${PROJECT_ROOT}/helm/management-base/argo-rollouts" \
+        "${CHARTS_DIR}/argo-rollouts" \
         --namespace argo-rollouts \
         --create-namespace \
         --wait \
@@ -109,13 +115,26 @@ deploy_argo_rollouts_monitoring() {
 # Monitoring 스택 배포
 deploy_monitoring_stack() {
     log_step "Monitoring 스택 배포 중 (Prometheus, Grafana, Loki, Tempo)..."
-    log_info "k3d 최적화 설정 사용: ${K3D_VALUES_DIR}/monitoring.yaml"
+
+    # 새 구조 경로 우선, 레거시 경로 폴백
+    local values_file=""
+    if [[ -f "${CONFIG_DIR}/monitoring.yaml" ]]; then
+        values_file="${CONFIG_DIR}/monitoring.yaml"
+        log_info "k3d 최적화 설정 사용: ${values_file}"
+    elif [[ -f "${LEGACY_VALUES_DIR}/monitoring.yaml" ]]; then
+        values_file="${LEGACY_VALUES_DIR}/monitoring.yaml"
+        log_warn "레거시 경로 사용: ${values_file}"
+        log_info "새 구조로 마이그레이션하세요: config/local/monitoring.yaml"
+    else
+        log_error "monitoring.yaml 파일을 찾을 수 없습니다."
+        exit 1
+    fi
 
     helm upgrade --install monitoring \
-        "${PROJECT_ROOT}/helm/management-base/monitoring" \
+        "${CHARTS_DIR}/monitoring" \
         --namespace monitoring \
         --create-namespace \
-        -f "${K3D_VALUES_DIR}/monitoring.yaml" \
+        -f "${values_file}" \
         --wait \
         --timeout 10m
 

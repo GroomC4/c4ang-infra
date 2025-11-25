@@ -1,0 +1,148 @@
+# EKS 운영 환경 Redis 설정
+# ArgoCD ApplicationSet에서 사용
+
+# Global settings
+global:
+  namespace: msa-quality
+  appName: redis
+  partOf: msa-quality-suite
+
+# Master configuration
+master:
+  enabled: true
+  replicas: 1
+  image:
+    repository: redis
+    tag: 7-alpine
+    pullPolicy: IfNotPresent
+
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+  # EKS GP3 스토리지 사용
+  storage:
+    useEmptyDir: false
+    persistentVolumeClaim:
+      enabled: true
+      storageClass: gp3
+      size: 10Gi
+
+  nodeSelector:
+    role: stateful
+
+  podAntiAffinity:
+    enabled: true
+
+# Slave configuration
+slave:
+  enabled: true
+  replicas: 2  # 운영환경은 2개 replica
+
+  image:
+    repository: redis
+    tag: 7-alpine
+    pullPolicy: IfNotPresent
+
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+  storage:
+    useEmptyDir: false
+    persistentVolumeClaim:
+      enabled: true
+      storageClass: gp3
+      size: 10Gi
+
+  nodeSelector:
+    role: stateful
+
+  podAntiAffinity:
+    enabled: true
+
+# Config
+config:
+  maxmemory: "1gb"
+  maxmemoryPolicy: "allkeys-lru"
+  appendonly: "yes"
+  appendfsync: "everysec"
+  bind: "0.0.0.0"
+  port: 6379
+  protectedMode: "no"
+  loglevel: "notice"
+
+# Auth - 운영환경은 인증 활성화
+auth:
+  enabled: true
+  password: ""
+  existingSecret: "redis-credentials"
+
+# Services
+services:
+  master:
+    enabled: true
+    type: ClusterIP
+    headless: true
+    port: 6379
+  slave:
+    enabled: true
+    type: ClusterIP
+    headless: true
+    port: 6379
+  unified:
+    enabled: true
+    type: ClusterIP
+    port: 6379
+    selector: master
+    sessionAffinity: ClientIP
+  readonly:
+    enabled: true
+    type: ClusterIP
+    port: 6379
+    selector: slave
+    sessionAffinity: None
+
+# Monitoring - 운영환경은 활성화
+monitoring:
+  enabled: true
+  exporter:
+    enabled: true
+    image:
+      repository: oliver006/redis_exporter
+      tag: v1.55.0
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+  healthCheck:
+    enabled: true
+  backup:
+    enabled: true
+    schedule: "0 2 * * *"  # 매일 02:00 AM
+
+# Security context
+securityContext:
+  fsGroup: 999
+  runAsUser: 999
+  runAsGroup: 999
+
+# Health checks
+healthCheck:
+  liveness:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3

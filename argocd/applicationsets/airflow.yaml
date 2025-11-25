@@ -1,0 +1,55 @@
+# ArgoCD ApplicationSet - Airflow
+# 데이터 파이프라인 오케스트레이션
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: airflow
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - env: local
+            cluster: https://kubernetes.default.svc
+            namespace: airflow
+          - env: prod
+            cluster: https://eks-cluster.region.eks.amazonaws.com
+            namespace: airflow
+
+  template:
+    metadata:
+      name: 'airflow-{{.env}}'
+      namespace: argocd
+      labels:
+        app.kubernetes.io/component: airflow
+        app.kubernetes.io/env: '{{.env}}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "20"
+    spec:
+      project: infrastructure
+      source:
+        repoURL: https://github.com/your-org/c4ang-infra.git
+        targetRevision: HEAD
+        path: charts/airflow
+        helm:
+          valueFiles:
+            - values.yaml
+            - ../../config/{{.env}}/airflow.yaml
+      destination:
+        server: '{{.cluster}}'
+        namespace: '{{.namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true  # CRD가 큰 경우 필요
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 5m

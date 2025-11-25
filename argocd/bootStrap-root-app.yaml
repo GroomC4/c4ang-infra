@@ -1,26 +1,33 @@
+# [DEPRECATED] 레거시 Root Application
+# 새로운 방식은 bootstrap/root-application.yaml을 사용하세요.
+# ApplicationSet 기반: argocd/applicationsets/
+#
+# 마이그레이션:
+# 1. ./bootstrap/install-argocd.sh 실행
+# 2. 또는 kubectl apply -f bootstrap/root-application.yaml -n argocd
+
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  # 이것이 'App of Apps'의 최상위 부모 앱입니다.
-  name: argocd-root
+  name: argocd-root-legacy
   namespace: argocd
   finalizers:
-    - resources-finalizer.argocd.argocd.argoproj.io
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    deprecated: "true"
+    migration-target: "bootstrap/root-application.yaml"
 spec:
   project: default
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
     targetRevision: main
-
-    # 'root'는 c4ang-infra 레포지토리의 argocd-manifests 디렉토리를 바라봅니다.
+    # 레거시 매니페스트 경로 (개별 Application 정의)
     path: argocd/manifest
 
   destination:
-    # 'root' 앱 자체는 argocd 네임스페이스에 정의됩니다.
     server: https://kubernetes.default.svc
     namespace: argocd
 
-  # 'root' 앱이 'root-apps.yaml'의 변경 사항을 자동으로 감지하고 적용하게 합니다.
   syncPolicy:
     automated:
       prune: true

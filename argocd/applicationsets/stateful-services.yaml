@@ -1,0 +1,77 @@
+# ArgoCD ApplicationSet - Stateful Services
+# Redis, PostgreSQL, Kafka 등 상태 저장 서비스
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: stateful-services
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          # 환경 정의
+          - list:
+              elements:
+                - env: local
+                  cluster: https://kubernetes.default.svc
+                - env: prod
+                  cluster: https://eks-cluster.region.eks.amazonaws.com
+
+          # Stateful 서비스 정의
+          - list:
+              elements:
+                - name: redis
+                  namespace: msa-quality
+                  chart: charts/statefulset-base/redis
+                  syncWave: "10"
+                - name: postgresql
+                  namespace: msa-quality
+                  chart: ""  # bitnami chart 사용
+                  repoURL: https://charts.bitnami.com/bitnami
+                  chartName: postgresql
+                  chartVersion: "15.5.0"
+                  syncWave: "10"
+
+  template:
+    metadata:
+      name: '{{.name}}-{{.env}}'
+      namespace: argocd
+      labels:
+        app.kubernetes.io/component: '{{.name}}'
+        app.kubernetes.io/env: '{{.env}}'
+        app.kubernetes.io/type: stateful
+      annotations:
+        argocd.argoproj.io/sync-wave: '{{.syncWave}}'
+    spec:
+      project: infrastructure
+      source:
+        # 조건부 소스 설정
+        repoURL: '{{if .repoURL}}{{.repoURL}}{{else}}https://github.com/your-org/c4ang-infra.git{{end}}'
+        targetRevision: '{{if .chartVersion}}{{.chartVersion}}{{else}}HEAD{{end}}'
+        path: '{{if .chart}}{{.chart}}{{else}}{{end}}'
+        chart: '{{if .chartName}}{{.chartName}}{{else}}{{end}}'
+        helm:
+          valueFiles:
+            - '{{if not .repoURL}}values.yaml{{end}}'
+          values: |
+            {{if .repoURL}}
+            # External chart - values inline
+            {{end}}
+      destination:
+        server: '{{.cluster}}'
+        namespace: '{{.namespace}}'
+      syncPolicy:
+        automated:
+          prune: false  # Stateful 서비스는 prune 비활성화
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=orphan
+        retry:
+          limit: 3
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 5m

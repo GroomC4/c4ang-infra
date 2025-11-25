@@ -1,8 +1,8 @@
 # intelij
 .idea
 
-# Helm
-charts/
+# Helm dependencies (서브차트)
+**/charts/*.tgz
 *.tgz
 Chart.lock
 
@@ -32,8 +32,11 @@ k8s-dev-k3d/values/*.secrets.yaml
 # Istio (아직 Git에 커밋하지 않음)
 k8s-dev-k3d/istio/
 
-# EKS 관련 파일 (프로덕션 환경 설정)
-k8s-eks/
+# EKS 관련 파일 (프로덕션 환경 설정) - 레거시
+# k8s-eks/  # config/prod/로 이동됨
+
+# 프로덕션 시크릿 (config/prod에서 시크릿 파일 제외)
+config/prod/*.secrets.yaml
 
 # Istio 바이너리 및 다운로드 파일
 **/istio-*/
