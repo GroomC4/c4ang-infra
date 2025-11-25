@@ -73,9 +73,11 @@ spec:
             - name: varlibdockercontainers
               mountPath: /var/lib/docker/containers
               readOnly: true
+            {{- if not .Values.alloy.config.skipMachineId }}
             - name: etcmachineid
               mountPath: /etc/machine-id
               readOnly: true
+            {{- end }}
       
       volumes:
         - name: config
@@ -87,10 +89,12 @@ spec:
         - name: varlibdockercontainers
           hostPath:
             path: /var/lib/docker/containers
+        {{- if not .Values.alloy.config.skipMachineId }}
         - name: etcmachineid
           hostPath:
             path: /etc/machine-id
             type: File
+        {{- end }}
       
       {{- with .Values.alloy.daemonset.nodeSelector }}
       nodeSelector:
