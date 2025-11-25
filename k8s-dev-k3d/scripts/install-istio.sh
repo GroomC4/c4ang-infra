@@ -19,7 +19,8 @@ NC='\033[0m' # No Color
 
 # 설정 변수
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+K3D_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$K3D_ROOT/.." && pwd)"
 ISTIO_VERSION="${ISTIO_VERSION:-1.22.0}"
 NAMESPACE="${NAMESPACE:-ecommerce}"
 ISTIO_NAMESPACE="istio-system"
@@ -249,11 +250,11 @@ setup_namespace() {
     log_info "네임스페이스 '$NAMESPACE' 설정 완료"
 }
 
-# Istio 구성 리소스 배포
+# Istio 구성 리소스 배포 (레거시 YAML 방식)
 deploy_istio_resources() {
     log_step "Istio 구성 리소스 배포 중..."
-    
-    local resources_dir="${PROJECT_ROOT}/../k8s-eks/istio/resources"
+
+    local resources_dir="${SCRIPT_DIR}/resources"
     
     if [ ! -d "$resources_dir" ]; then
         log_error "리소스 디렉토리를 찾을 수 없습니다: $resources_dir"
@@ -293,9 +294,9 @@ deploy_istio_resources() {
 # Helm 차트 설치 옵션
 install_with_helm() {
     log_step "=== Helm 차트로 Istio 설정 설치 ==="
-    
-    local helm_chart_path="${PROJECT_ROOT}/../helm/management-base/istio"
-    local values_file="${PROJECT_ROOT}/values/istio.yaml"
+
+    local helm_chart_path="${PROJECT_ROOT}/helm/management-base/istio"
+    local values_file="${K3D_ROOT}/values/istio.yaml"
     
     if [ ! -d "$helm_chart_path" ]; then
         log_error "Helm 차트를 찾을 수 없습니다: $helm_chart_path"
@@ -355,7 +356,11 @@ install_with_helm() {
     log_success "Helm 차트 설치/업데이트 완료"
     log_info ""
     log_info "업데이트: helm upgrade istio-config $helm_chart_path -n $NAMESPACE -f $values_file"
-    log_info "제거: helm uninstall istio-config -n $NAMESPACE"
+    log_info "제거:     helm uninstall istio-config -n $NAMESPACE"
+    log_info ""
+    log_info "Istio 상태 확인:"
+    log_info "  kubectl get pods -n $ISTIO_NAMESPACE"
+    log_info "  kubectl get gateway -n $NAMESPACE"
 }
 
 # 메인 함수
@@ -410,7 +415,7 @@ main() {
     log_info "  kubectl get gateway -n $NAMESPACE"
     log_info ""
     log_warn "YAML 방식은 레거시입니다. Helm 차트 방식 사용을 권장합니다:"
-    log_info "  helm upgrade istio-config ../../helm/management-base/istio -n $NAMESPACE"
+    log_info "  helm upgrade istio-config ${PROJECT_ROOT}/helm/management-base/istio -n $NAMESPACE -f ${K3D_ROOT}/values/istio.yaml"
 }
 
 # 스크립트 실행
