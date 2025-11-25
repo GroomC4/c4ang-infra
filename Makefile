@@ -7,7 +7,7 @@
 .PHONY: k3d-create k3d-start k3d-stop k3d-delete k3d-list
 .PHONY: kubectl-config kubectl-ns kubectl-pods kubectl-svc
 .PHONY: sops-setup sops-encrypt sops-decrypt
-.PHONY: eks-deploy-airflow eks-install-istio
+.PHONY: argocd-install argocd-status
 .PHONY: perf-smoke perf-load perf-stress perf-all perf-install
 .DEFAULT_GOAL := help
 
@@ -21,7 +21,7 @@ NC     := \033[0m
 # 설정 변수
 CLUSTER_NAME ?= msa-quality-cluster
 NAMESPACE ?= msa-quality
-KUBECONFIG_PATH := $(CURDIR)/k8s-dev-k3d/kubeconfig/config
+KUBECONFIG_PATH := $(CURDIR)/environments/local/kubeconfig/config
 
 # Help 명령어 - 모든 타겟과 설명을 보여줌
 help: ## 사용 가능한 명령어 표시
@@ -44,7 +44,7 @@ help: ## 사용 가능한 명령어 표시
 
 local-up: install-tools helm-deps k3d-create ## 로컬 k3d 환경 완전 시작 (도구 설치 + 클러스터 생성 + Helm 배포)
 	@echo "$(BLUE)🚀 로컬 환경 시작 중...$(NC)"
-	@cd k8s-dev-k3d/scripts && ./start-environment.sh
+	@./scripts/dev/start-environment.sh
 	@echo ""
 	@echo "$(GREEN)✅ 로컬 환경이 준비되었습니다!$(NC)"
 	@echo ""
@@ -56,12 +56,12 @@ local-up: install-tools helm-deps k3d-create ## 로컬 k3d 환경 완전 시작 
 
 local-down: ## 로컬 환경 중지 (데이터 유지)
 	@echo "$(BLUE)⏸️  로컬 환경 중지 중...$(NC)"
-	@cd k8s-dev-k3d/scripts && ./stop-environment.sh
+	@./scripts/dev/stop-environment.sh
 	@echo "$(GREEN)✅ 로컬 환경이 중지되었습니다$(NC)"
 
 local-clean: ## 로컬 환경 완전 제거 (클러스터 삭제)
 	@echo "$(RED)🗑️  로컬 환경 완전 제거 중...$(NC)"
-	@cd k8s-dev-k3d/scripts && ./cleanup.sh --force
+	@./scripts/dev/cleanup.sh --force
 	@echo "$(GREEN)✅ 로컬 환경이 제거되었습니다$(NC)"
 
 local-restart: local-down local-up ## 로컬 환경 재시작
@@ -85,18 +85,18 @@ local-status: ## 로컬 환경 상태 확인
 
 install-tools: ## 필수 도구 설치 (k3d, helm, kubectl)
 	@echo "$(BLUE)🔧 필수 도구 설치 확인 중...$(NC)"
-	@cd k8s-dev-k3d && ./install-k3s.sh
+	@./scripts/dev/create-cluster.sh
 	@echo "$(GREEN)✅ 필수 도구 확인 완료$(NC)"
 
 helm-deps: helm-build ## Helm 차트 의존성 빌드 (alias for helm-build)
 
 helm-build: ## Helm 차트 의존성 빌드
 	@echo "$(BLUE)📦 Helm 의존성 빌드 중...$(NC)"
-	@if [ -f helm/build-dependencies.sh ]; then \
-		cd helm && ./build-dependencies.sh; \
+	@if [ -f charts/build-dependencies.sh ]; then \
+		cd charts && ./build-dependencies.sh; \
 	else \
-		echo "$(YELLOW)⚠️  helm/build-dependencies.sh가 없습니다. 수동으로 빌드합니다...$(NC)"; \
-		for chart_dir in helm/statefulset-base/* helm/management-base/* helm/test-infrastructure; do \
+		echo "$(YELLOW)⚠️  charts/build-dependencies.sh가 없습니다. 수동으로 빌드합니다...$(NC)"; \
+		for chart_dir in charts/statefulset-base/* charts/monitoring charts/istio charts/argo-rollouts; do \
 			if [ -f "$$chart_dir/Chart.yaml" ]; then \
 				echo "  Building $$chart_dir..."; \
 				cd "$$chart_dir" && helm dependency build && cd - > /dev/null; \
@@ -109,7 +109,7 @@ helm-build: ## Helm 차트 의존성 빌드
 
 k3d-create: ## k3d 클러스터만 생성 (Helm 배포 제외)
 	@echo "$(BLUE)🏗️  k3d 클러스터 생성 중...$(NC)"
-	@cd k8s-dev-k3d && ./install-k3s.sh
+	@./scripts/dev/create-cluster.sh
 	@echo "$(GREEN)✅ k3d 클러스터 생성 완료$(NC)"
 
 k3d-start: ## k3d 클러스터 시작
@@ -135,12 +135,12 @@ k3d-list: ## k3d 클러스터 목록 표시
 
 istio-install: ## Istio 설치 (로컬 k3d 환경)
 	@echo "$(BLUE)🕸️  Istio 설치 중...$(NC)"
-	@cd k8s-dev-k3d/istio && ./install-istio.sh
+	@./scripts/infra/install-istio.sh
 	@echo "$(GREEN)✅ Istio 설치 완료$(NC)"
 
 istio-uninstall: ## Istio 제거 (로컬 k3d 환경)
 	@echo "$(BLUE)🗑️  Istio 제거 중...$(NC)"
-	@cd k8s-dev-k3d/istio && ./uninstall-istio.sh
+	@./scripts/infra/uninstall-istio.sh
 	@echo "$(GREEN)✅ Istio 제거 완료$(NC)"
 
 istio-status: ## Istio 상태 확인
@@ -154,6 +154,22 @@ istio-status: ## Istio 상태 확인
 	@echo ""
 	@echo "$(YELLOW)HTTPRoute:$(NC)"
 	@KUBECONFIG=$(KUBECONFIG_PATH) kubectl get httproute -n $(NAMESPACE) 2>/dev/null || echo "  HTTPRoute가 없습니다"
+
+##@ ArgoCD GitOps
+
+argocd-install: ## ArgoCD 설치 및 부트스트랩
+	@echo "$(BLUE)🚀 ArgoCD 설치 중...$(NC)"
+	@./scripts/infra/install-argocd.sh
+	@echo "$(GREEN)✅ ArgoCD 설치 완료$(NC)"
+
+argocd-status: ## ArgoCD 상태 확인
+	@echo "$(BLUE)📊 ArgoCD 상태:$(NC)"
+	@echo ""
+	@echo "$(YELLOW)ArgoCD Pods:$(NC)"
+	@KUBECONFIG=$(KUBECONFIG_PATH) kubectl get pods -n argocd 2>/dev/null || echo "  ArgoCD가 설치되지 않았습니다"
+	@echo ""
+	@echo "$(YELLOW)ArgoCD Applications:$(NC)"
+	@KUBECONFIG=$(KUBECONFIG_PATH) kubectl get applications -n argocd 2>/dev/null || echo "  Application이 없습니다"
 
 ##@ kubectl 유틸리티
 
@@ -182,7 +198,7 @@ kubectl-svc: ## 모든 Services 목록 (네임스페이스: $(NAMESPACE))
 
 sops-setup: ## SOPS Age 키 설정 (로컬 환경용)
 	@echo "$(BLUE)🔐 SOPS Age 키 설정 중...$(NC)"
-	@cd k8s-dev-k3d/scripts && ./setup-sops-age.sh
+	@./scripts/infra/setup-sops-age.sh
 	@echo "$(GREEN)✅ SOPS Age 키 설정 완료$(NC)"
 
 sops-encrypt: ## SOPS로 시크릿 파일 암호화 (사용법: make sops-encrypt FILE=path/to/secrets.yaml)
@@ -204,35 +220,12 @@ sops-decrypt: ## SOPS로 시크릿 파일 복호화 (사용법: make sops-decryp
 	@echo "$(BLUE)🔓 파일 복호화 중: $(FILE)$(NC)"
 	@sops -d "$(FILE)"
 
-##@ EKS 배포
+##@ Helm 배포 (로컬)
 
-eks-deploy-airflow: ## EKS에 Airflow 배포
-	@echo "$(BLUE)🚀 EKS에 Airflow 배포 중...$(NC)"
-	@cd k8s-eks/scripts && ./deploy-airflow.sh
-	@echo "$(GREEN)✅ Airflow 배포 완료$(NC)"
-
-eks-install-istio: ## EKS에 Istio 설치
-	@echo "$(BLUE)🕸️  EKS에 Istio 설치 중...$(NC)"
-	@cd k8s-eks/istio && ./install-istio.sh
-	@echo "$(GREEN)✅ Istio 설치 완료$(NC)"
-
-eks-access-airflow: ## Airflow UI 접속 (포트포워딩)
-	@echo "$(BLUE)🌐 Airflow UI 접속 중...$(NC)"
-	@cd k8s-eks/scripts && ./access-airflow-ui.sh
-
-eks-create-airflow-user: ## Airflow 사용자 생성
-	@echo "$(BLUE)👤 Airflow 사용자 생성 중...$(NC)"
-	@cd k8s-eks/scripts && ./create-airflow-user.sh
-
-eks-upload-dags: ## Airflow DAG 파일 업로드
-	@echo "$(BLUE)📤 Airflow DAG 파일 업로드 중...$(NC)"
-	@cd k8s-eks/scripts && ./upload-dag.sh ../airflow/dags/*.py ../airflow/dags/utils/*.py
-	@echo "$(GREEN)✅ DAG 업로드 완료$(NC)"
-
-eks-deploy-lambda: ## Lambda 감정분석 함수 배포
-	@echo "$(BLUE)🚀 Lambda 함수 배포 중...$(NC)"
-	@cd k8s-eks/scripts && ./deploy-lambda.sh
-	@echo "$(GREEN)✅ Lambda 배포 완료$(NC)"
+deploy-monitoring: ## 모니터링 스택 배포 (Prometheus, Grafana, Loki, Tempo)
+	@echo "$(BLUE)📊 모니터링 스택 배포 중...$(NC)"
+	@./scripts/infra/deploy-monitoring.sh
+	@echo "$(GREEN)✅ 모니터링 스택 배포 완료$(NC)"
 
 ##@ 성능 테스트 (k6)
 
@@ -287,8 +280,8 @@ perf-results: ## 성능 테스트 결과 확인
 
 clean-helm-cache: ## Helm 캐시 정리
 	@echo "$(BLUE)🧹 Helm 캐시 정리 중...$(NC)"
-	@find helm -type f -name "*.tgz" -delete
-	@find helm -type d -name "charts" -exec rm -rf {} + 2>/dev/null || true
+	@find charts -type f -name "*.tgz" -delete
+	@find charts -type d -name "charts" -exec rm -rf {} + 2>/dev/null || true
 	@echo "$(GREEN)✅ Helm 캐시 정리 완료$(NC)"
 
 clean-perf-results: ## 성능 테스트 결과 정리

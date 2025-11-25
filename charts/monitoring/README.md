@@ -156,7 +156,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/your-org/c4ang-infra
+    repoURL: https://github.com/GroomC4/c4ang-infra
     targetRevision: main
     path: helm/management-base/monitoring
     helm:

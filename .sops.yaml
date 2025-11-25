@@ -10,7 +10,7 @@
 creation_rules:
   # 로컬 개발 환경 (k3d): Age 키 사용
   - age: 'age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'  # Age 공개 키로 변경
-    path_regex: k8s-dev-k3d/values/.*secrets\.enc\.yaml$
+    path_regex: config/local/.*secrets\.enc\.yaml$
     encrypted_regex: ^(data|stringData|password|secret|token|key|username|host|url)$
   
   # 프로덕션 환경 (EKS): AWS KMS 사용

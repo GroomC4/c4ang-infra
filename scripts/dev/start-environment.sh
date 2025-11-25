@@ -19,8 +19,9 @@ NC='\033[0m' # No Color
 # 설정 변수
 CLUSTER_NAME="${CLUSTER_NAME:-msa-quality-cluster}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-K3D_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-KUBECONFIG_FILE="${K3D_DIR}/kubeconfig/config"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+KUBECONFIG_FILE="${PROJECT_ROOT}/environments/local/kubeconfig/config"
+CONFIG_DIR="${PROJECT_ROOT}/config/local"
 NAMESPACE="${NAMESPACE:-msa-quality}"
 WAIT_TIMEOUT="${WAIT_TIMEOUT:-600}" # 10분
 
@@ -55,7 +56,7 @@ check_prerequisites() {
     
     if [ ${#missing_tools[@]} -ne 0 ]; then
         log_error "다음 도구들이 설치되어 있지 않습니다: ${missing_tools[*]}"
-        log_info "k3d 설치: ${K3D_DIR}/install-k3s.sh 실행"
+        log_info "k3d 설치: ${SCRIPT_DIR}/create-cluster.sh 실행"
         exit 1
     fi
     
@@ -78,7 +79,7 @@ start_cluster() {
     if ! k3d cluster list | grep -q "^${CLUSTER_NAME}"; then
         log_warn "클러스터 '${CLUSTER_NAME}'가 존재하지 않습니다."
         log_info "클러스터를 생성합니다..."
-        "${K3D_DIR}/install-k3s.sh"
+        "${SCRIPT_DIR}/create-cluster.sh"
     else
         # 클러스터가 중지된 경우 시작
         log_info "클러스터 상태 확인 중..."
@@ -158,7 +159,7 @@ create_namespace() {
 find_project_root() {
     local current_dir="${SCRIPT_DIR}"
     while [ "${current_dir}" != "/" ]; do
-        if [ -d "${current_dir}/helm" ] && [ -d "${current_dir}/k8s-dev-k3d" ]; then
+        if [ -d "${current_dir}/charts" ] && [ -d "${current_dir}/environments" ]; then
             echo "${current_dir}"
             return 0
         fi
@@ -185,9 +186,9 @@ deploy_helm_charts() {
     
     log_info "프로젝트 루트: ${project_root}"
     
-    # Redis 배포 (helm/statefulset-base/redis 사용)
-    local redis_chart="${project_root}/helm/statefulset-base/redis"
-    local redis_values="${K3D_DIR}/values/redis.yaml"
+    # Redis 배포 (charts/statefulset-base/redis 사용)
+    local redis_chart="${project_root}/charts/statefulset-base/redis"
+    local redis_values="${CONFIG_DIR}/redis.yaml"
     
     if [ -d "${redis_chart}" ]; then
         local redis_dependency_dir="${redis_chart}/charts"
@@ -233,7 +234,7 @@ deploy_helm_charts() {
     
     # PostgreSQL 배포 (bitnami/postgresql 차트 사용)
     local postgres_namespace="postgres"
-    local postgres_values="${K3D_DIR}/values/postgresql.yaml"
+    local postgres_values="${CONFIG_DIR}/postgresql.yaml"
     
     # postgres 네임스페이스 생성
     if kubectl get namespace "${postgres_namespace}" &> /dev/null; then

@@ -5,7 +5,7 @@
 ## 📁 파일 구조
 
 ```
-k8s-eks/secrets/
+prod/secrets/
 ├── README.md                           # 이 파일
 ├── secret-store.yaml                   # SecretStore 정의 (AWS Secrets Manager)
 ├── service-account.yaml                # ServiceAccount (IRSA)

@@ -19,16 +19,14 @@ NC='\033[0m' # No Color
 
 # 설정 변수
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-K3D_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-PROJECT_ROOT="$(cd "$K3D_ROOT/.." && pwd)"
+ENV_LOCAL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$ENV_LOCAL_DIR/../.." && pwd)"
 ISTIO_VERSION="${ISTIO_VERSION:-1.22.0}"
 NAMESPACE="${NAMESPACE:-ecommerce}"
 ISTIO_NAMESPACE="istio-system"
-# 환경별 설정 경로 (새 구조: config/local/)
+# 환경별 설정 경로
 CONFIG_DIR="${PROJECT_ROOT}/config/local"
-# 레거시 경로 (k8s-dev-k3d/values/)
-LEGACY_VALUES_DIR="${K3D_ROOT}/values"
-# Helm 차트 경로 (새 구조: charts/)
+# Helm 차트 경로
 CHARTS_DIR="${PROJECT_ROOT}/charts"
 
 # 로그 함수
@@ -304,13 +302,8 @@ install_with_helm() {
     local helm_chart_path="${CHARTS_DIR}/istio"
     local values_file=""
 
-    # 새 구조 경로 우선, 레거시 경로 폴백
     if [ -f "${CONFIG_DIR}/istio.yaml" ]; then
         values_file="${CONFIG_DIR}/istio.yaml"
-    elif [ -f "${LEGACY_VALUES_DIR}/istio.yaml" ]; then
-        values_file="${LEGACY_VALUES_DIR}/istio.yaml"
-        log_warn "레거시 경로 사용: ${values_file}"
-        log_info "새 구조로 마이그레이션하세요: config/local/istio.yaml"
     fi
 
     if [ ! -d "$helm_chart_path" ]; then

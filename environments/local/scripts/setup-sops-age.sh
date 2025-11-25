@@ -131,7 +131,7 @@ main() {
     
     log_info "설정 완료!"
     log_info "다음 단계:"
-    echo "1. k8s-dev-k3d/values/ 디렉토리에서 시크릿 파일 생성"
+    echo "1. config/local/ 디렉토리에서 시크릿 파일 생성"
     echo "2. 시크릿 파일 암호화: sops -e postgresql.secrets.yaml > postgresql.secrets.enc.yaml"
     echo "3. Helm 배포 시 암호화된 파일 사용"
 }

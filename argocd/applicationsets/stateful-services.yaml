@@ -48,7 +48,7 @@ spec:
       project: infrastructure
       source:
         # 조건부 소스 설정
-        repoURL: '{{if .repoURL}}{{.repoURL}}{{else}}https://github.com/your-org/c4ang-infra.git{{end}}'
+        repoURL: '{{if .repoURL}}{{.repoURL}}{{else}}https://github.com/GroomC4/c4ang-infra.git{{end}}'
         targetRevision: '{{if .chartVersion}}{{.chartVersion}}{{else}}HEAD{{end}}'
         path: '{{if .chart}}{{.chart}}{{else}}{{end}}'
         chart: '{{if .chartName}}{{.chartName}}{{else}}{{end}}'

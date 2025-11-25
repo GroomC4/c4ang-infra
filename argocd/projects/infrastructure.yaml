@@ -12,7 +12,7 @@ spec:
 
   # 소스 리포지토리 허용
   sourceRepos:
-    - 'https://github.com/your-org/c4ang-infra.git'
+    - 'https://github.com/GroomC4/c4ang-infra.git'
     - '*'
 
   # 대상 클러스터 및 네임스페이스 허용
