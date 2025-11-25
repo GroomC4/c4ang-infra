@@ -1,5 +1,6 @@
-# airflow-base 기본 값
-# Apache Airflow 공식 Helm Chart (alias: airflow)를 래핑하여 공통 옵션을 정의합니다.
+# Airflow - 환경 중립적 기본값
+# 이 파일은 공통 기본값만 정의합니다.
+# 환경별 설정은 k8s-dev-k3d/values/ 또는 k8s-eks/values/에서 오버라이드하세요.
 
 airflow:
   defaultAirflowRepository: apache/airflow
@@ -12,12 +13,12 @@ airflow:
     enabled: true
     auth:
       username: airflow
-      password: airflow
+      password: ""  # 환경별로 오버라이드 필수
       database: airflow
     persistence:
       enabled: true
       size: 20Gi
-      storageClassName: gp2-immediate
+      storageClassName: ""  # 환경별로 오버라이드
     primary:
       resources:
         requests:
@@ -30,13 +31,13 @@ airflow:
   redis:
     enabled: true
     persistence:
-      storageClassName: gp2-immediate
+      storageClassName: ""
 
   dags:
     persistence:
       enabled: true
       size: 5Gi
-      storageClassName: gp2-immediate
+      storageClassName: ""
     gitSync:
       enabled: false
 

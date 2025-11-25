@@ -1,32 +1,27 @@
-# Istio Configuration Values
-# 이 Helm 차트는 Istio 설정 리소스들(Gateway, HTTPRoute 등)을 관리합니다.
-# Istio Control Plane은 별도로 istioctl로 설치해야 합니다.
+# Istio Configuration - 환경 중립적 기본값
+# 이 파일은 공통 기본값만 정의합니다.
+# 환경별 설정은 k8s-dev-k3d/values/ 또는 k8s-eks/values/에서 오버라이드하세요.
 
 # CRD 설치 설정
 crds:
-  install: false  # CRD는 Helm 차트 설치 전에 별도로 설치해야 합니다
+  install: false
   gatewayAPI:
     install: false
-    version: "v1.0.0"  # Gateway API CRD 버전
+    version: "v1.0.0"
 
 # Namespace 설정
 namespace:
   name: ecommerce
   create: true
-  istioInjection: enabled  # Sidecar 자동 주입 활성화
+  istioInjection: enabled
 
 # Gateway 설정
 gateway:
   main:
     enabled: true
     name: ecommerce-gateway
-    hostname: api.ecommerce.com
-    # NLB 설정
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-prod
-      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-      service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    hostname: ""  # 환경별로 오버라이드
+    annotations: {}  # 환경별로 오버라이드 (AWS NLB 등)
     listeners:
       https:
         enabled: true
@@ -40,16 +35,12 @@ gateway:
         enabled: true
         port: 80
         redirectToHttps: true
-  
+
   webhook:
-    enabled: true
+    enabled: false  # 환경별로 활성화
     name: webhook-gateway
-    hostname: webhook.ecommerce.com
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-prod
-      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-      service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    hostname: ""
+    annotations: {}
     listeners:
       https:
         enabled: true
@@ -64,35 +55,23 @@ gateway:
 security:
   mTLS:
     enabled: true
-    mode: STRICT  # STRICT, PERMISSIVE, DISABLE
-  
+    mode: STRICT
+
   jwt:
-    enabled: true
-    issuer: "https://api.ecommerce.com"
-    jwksUri: "https://api.ecommerce.com/.well-known/jwks.json"
-    audiences:
-      - "ecommerce-api"
-  
-  # Webhook IP Whitelist (PG사, 파트너사 IP)
+    enabled: false  # 환경별로 활성화
+    issuer: ""
+    jwksUri: ""
+    audiences: []
+
   webhook:
     ipWhitelist: []
-      # - "203.0.113.0/24"  # PG사 IP 대역 (실제 IP로 변경 필요)
-      # - "198.51.100.5/32"  # PG사 Backup IP (실제 IP로 변경 필요)
-      # - "198.51.100.0/24"  # 파트너사 IP 대역 (실제 IP로 변경 필요)
-  
-  # Public endpoints (인증 불필요)
+
   publicEndpoints:
-    # Customer/Owner Authentication
     - /api/v1/auth/customers/signup
     - /api/v1/auth/customers/login
     - /api/v1/auth/owners/signup
     - /api/v1/auth/owners/login
     - /api/v1/auth/refresh
-    # Legacy endpoints (if exists)
-    - /api/v1/users/register
-    - /api/v1/users/login
-    - /api/v1/users/refresh-token
-    # Health and Monitoring
     - /actuator/health
     - /actuator/prometheus
 
@@ -100,50 +79,48 @@ security:
 httpRoute:
   enabled: true
   services:
-    # 각 서비스별 라우팅 설정
-    # 배포 시 자동으로 활성화
     order:
-      enabled: true
+      enabled: false
       path: /api/v1/orders
       serviceName: order-service
       servicePort: 8080
     product:
-      enabled: true
+      enabled: false
       path: /api/v1/products
       serviceName: product-service
       servicePort: 8080
     payment:
-      enabled: true
+      enabled: false
       path: /api/v1/payments
       serviceName: payment-service
       servicePort: 8080
     user:
-      enabled: true
+      enabled: false
       path: /api/v1/users
       serviceName: user-service
       servicePort: 8080
     auth:
-      enabled: true
+      enabled: false
       path: /api/v1/auth
       serviceName: auth-service
       servicePort: 8080
     store:
-      enabled: true
+      enabled: false
       path: /api/v1/stores
       serviceName: store-service
       servicePort: 8080
     review:
-      enabled: true
+      enabled: false
       path: /api/v1/reviews
       serviceName: review-service
       servicePort: 8080
     recommendation:
-      enabled: true
+      enabled: false
       path: /api/v1/recommendations
       serviceName: recommendation-service
       servicePort: 8080
     analytics:
-      enabled: true
+      enabled: false
       path: /api/v1/analytics
       serviceName: analytics-service
       servicePort: 8080
@@ -151,19 +128,17 @@ httpRoute:
 # Traffic Management 설정
 trafficManagement:
   destinationRules:
-    enabled: true
-    # Circuit Breaker 설정
+    enabled: false
     circuitBreaker:
-      enabled: true
+      enabled: false
       consecutive5xxErrors: 5
       interval: 10s
       baseEjectionTime: 30s
       maxEjectionPercent: 50
       minHealthPercent: 40
-  
+
   virtualServices:
-    enabled: true
-    # 재시도 설정
+    enabled: false
     retries:
       attempts: 3
       perTryTimeout: 5s
@@ -172,22 +147,21 @@ trafficManagement:
 # EnvoyFilter 설정
 envoyFilter:
   rateLimit:
-    enabled: true
+    enabled: false
     redis:
       host: redis.ecommerce.svc.cluster.local
       port: 6379
     limits:
-      user: 100  # 초당 100 요청
-      ip: 50     # 초당 50 요청
-  
+      user: 100
+      ip: 50
+
   tokenBlacklist:
-    enabled: true
+    enabled: false
     redis:
       host: redis.ecommerce.svc.cluster.local
       port: 6379
 
-# Gateway API CRD 설치
+# Gateway API
 gatewayAPI:
-  enabled: true
+  enabled: false
   version: "v1.0.0"
-

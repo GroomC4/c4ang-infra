@@ -1,9 +1,12 @@
-# Airflow for k3d local environment
-# helm/management-base/airflow 차트를 사용
+# Airflow - k3d 로컬/테스트 환경 설정
+# 기본값: helm/management-base/airflow/values.yaml
 
 airflow:
-  workers:
-    replicas: 0
+  defaultAirflowRepository: apache/airflow
+  defaultAirflowTag: "2.9.0"
+  defaultAirflowImagePullPolicy: IfNotPresent
+
+  # 로컬에서는 LocalExecutor 사용 (리소스 절약)
   executor: LocalExecutor
 
   waitForMigrations:
@@ -15,9 +18,6 @@ airflow:
 
   createUserJob:
     enabled: true
-
-  defaultAirflowRepository: apache/airflow
-  defaultAirflowTag: "2.9.0"
 
   serviceAccount:
     create: true
@@ -31,12 +31,12 @@ airflow:
     enabled: true
     auth:
       username: airflow
-      password: airflow
+      password: "airflow"  # 로컬 개발용
       database: airflow
     persistence:
       enabled: true
-      storageClassName: local-path
       size: 10Gi
+      storageClassName: "local-path"
     primary:
       resources:
         requests:
@@ -46,6 +46,7 @@ airflow:
           memory: "512Mi"
           cpu: "500m"
 
+  # LocalExecutor에서는 Redis 불필요
   redis:
     enabled: false
 
@@ -60,6 +61,7 @@ airflow:
       enabled: false
 
   webserver:
+    replicas: 1
     service:
       type: NodePort
       ports:
@@ -81,6 +83,7 @@ airflow:
       periodSeconds: 10
 
   scheduler:
+    replicas: 1
     resources:
       requests:
         memory: "256Mi"
@@ -88,6 +91,10 @@ airflow:
       limits:
         memory: "512Mi"
         cpu: "500m"
+
+  # LocalExecutor에서는 Worker 불필요
+  workers:
+    replicas: 0
 
   flower:
     enabled: false
@@ -102,3 +109,6 @@ airflow:
       value: "False"
     - name: AIRFLOW__WEBSERVER__EXPOSE_CONFIG
       value: "True"
+
+  ingress:
+    enabled: false

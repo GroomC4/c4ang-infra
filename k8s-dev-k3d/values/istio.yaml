@@ -1,83 +1,54 @@
-# Istio Configuration Values for k3d
-# k3d 환경에 최적화된 Istio 설정
-# Helm 차트: helm/management-base/istio
+# Istio Configuration - k3d 로컬/테스트 환경 설정
+# 기본값: helm/management-base/istio/values.yaml
 
-# Namespace 설정
+# Namespace
 namespace:
   name: ecommerce
   create: false  # install-istio.sh 스크립트가 생성
 
-# Gateway 설정
+# Gateway 설정 - k3d 환경용
 gateway:
   main:
     enabled: true
     name: ecommerce-gateway
-    hostname: api.ecommerce.com
-    # k3d 환경에서는 LoadBalancer 타입이 NodePort로 매핑됨
-    # AWS NLB 어노테이션은 k3d에서 무시됨
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-prod
-      # k3d에서는 LoadBalancer가 자동으로 NodePort로 매핑됨
+    hostname: api.ecommerce.local
+    # k3d에서는 AWS NLB 어노테이션 불필요
+    annotations: {}
     listeners:
       https:
-        enabled: true
-        port: 443
-        tls:
-          mode: Terminate
-          certificateRefs:
-            - name: ecommerce-tls-cert
-              kind: Secret
+        enabled: false  # 로컬에서는 HTTP만 사용
       http:
         enabled: true
         port: 80
-        redirectToHttps: true
-  
-  webhook:
-    enabled: true
-    name: webhook-gateway
-    hostname: webhook.ecommerce.com
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-prod
-    listeners:
-      https:
-        enabled: true
-        port: 443
-        tls:
-          mode: Terminate
-          certificateRefs:
-            - name: webhook-tls-cert
-              kind: Secret
+        redirectToHttps: false
 
-# Security 설정
+  webhook:
+    enabled: false  # 로컬에서는 비활성화
+
+# Security 설정 - 로컬 테스트용
 security:
   mTLS:
     enabled: true
-    mode: STRICT
-  
+    mode: PERMISSIVE  # 로컬에서는 PERMISSIVE로 테스트 용이
+
   jwt:
-    enabled: true
-    issuer: "https://api.ecommerce.com"
-    jwksUri: "https://api.ecommerce.com/.well-known/jwks.json"
-    audiences:
-      - "ecommerce-api"
-  
-  # Public endpoints (인증 불필요)
+    enabled: false  # 로컬에서는 비활성화
+
   publicEndpoints:
-    - /api/v1/users/register
-    - /api/v1/users/login
-    - /api/v1/users/refresh-token
-    - /api/v1/auth/login
+    - /api/v1/auth/customers/signup
+    - /api/v1/auth/customers/login
+    - /api/v1/auth/owners/signup
+    - /api/v1/auth/owners/login
     - /api/v1/auth/refresh
     - /actuator/health
     - /actuator/prometheus
 
-# HTTPRoute 설정
-# 필요한 서비스만 활성화
+# HTTPRoute - 필요한 서비스만 활성화
 httpRoute:
   enabled: true
   services:
     order:
-      enabled: false  # 서비스 배포 시 true로 변경
+      enabled: false
       path: /api/v1/orders
       serviceName: order-service
       servicePort: 8080
@@ -122,3 +93,20 @@ httpRoute:
       serviceName: analytics-service
       servicePort: 8080
 
+# Traffic Management - 로컬에서는 비활성화
+trafficManagement:
+  destinationRules:
+    enabled: false
+  virtualServices:
+    enabled: false
+
+# EnvoyFilter - 로컬에서는 비활성화
+envoyFilter:
+  rateLimit:
+    enabled: false
+  tokenBlacklist:
+    enabled: false
+
+# Gateway API
+gatewayAPI:
+  enabled: false

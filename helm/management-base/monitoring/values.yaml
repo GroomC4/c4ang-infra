@@ -1,18 +1,20 @@
-# Namespace
+# Monitoring Stack - 환경 중립적 기본값
+# 이 파일은 공통 기본값만 정의합니다.
+# 환경별 설정은 k8s-dev-k3d/values/ 또는 k8s-eks/values/에서 오버라이드하세요.
+
 namespace: monitoring
 
-# Image Pull Secrets (ECR 연동)
+# Image Pull Secrets
 imagePullSecrets: []
-  # - name: ecr-creds
 
-# Grafana Alloy DaemonSet settings (메트릭, 로그, 트레이스 수집 에이전트)
+# Grafana Alloy DaemonSet (메트릭, 로그, 트레이스 수집 에이전트)
 alloy:
   enabled: true
   image:
     repository: grafana/alloy
     tag: v1.0.0
     pullPolicy: IfNotPresent
-  
+
   resources:
     limits:
       cpu: "500m"
@@ -20,55 +22,46 @@ alloy:
     requests:
       cpu: "200m"
       memory: "256Mi"
-  
-  # RBAC 설정
+
   rbac:
     create: true
-  
-  # DaemonSet 설정
+
   daemonset:
     nodeSelector: {}
     tolerations: []
     affinity: {}
-  
-  # 수집 설정
+
   config:
-    # 로그 수집 활성화
     logs:
       enabled: true
       paths:
         - /var/log/pods/*/*/*.log
-    
-    # 메트릭 수집 활성화
     metrics:
       enabled: true
       scrapeInterval: 30s
-    
-    # 트레이스 수집 활성화
     traces:
       enabled: true
-      # OTLP 수신 포트
       otlpHttpPort: 4318
       otlpGrpcPort: 4317
 
-# Prometheus settings (메트릭 저장소)
+# Prometheus (메트릭 저장소)
 prometheus:
   enabled: true
   image:
     repository: prom/prometheus
     tag: v2.50.0
     pullPolicy: IfNotPresent
-  
+
   replicas: 1
-  
+
   storage:
     size: 50Gi
-    storageClassName: ""  # 기본 스토리지 클래스 사용
-  
+    storageClassName: ""  # 환경별로 오버라이드
+
   retention:
     time: 30d
     size: 45GB
-  
+
   resources:
     limits:
       cpu: "1000m"
@@ -76,47 +69,40 @@ prometheus:
     requests:
       cpu: "500m"
       memory: "1Gi"
-  
+
   service:
     type: ClusterIP
     port: 9090
-  
-  # Prometheus 스크랩 설정
+
   scrapeConfigs:
-    # Kubernetes API 서버 메트릭
     - job_name: 'kubernetes-apiservers'
       kubernetes_sd_configs:
         - role: endpoints
-    
-    # Kubernetes 노드 메트릭
     - job_name: 'kubernetes-nodes'
       kubernetes_sd_configs:
         - role: node
-    
-    # Kubernetes 파드 메트릭
     - job_name: 'kubernetes-pods'
       kubernetes_sd_configs:
         - role: pod
 
-# Loki settings (로그 저장소)
+# Loki (로그 저장소)
 loki:
   enabled: true
   image:
     repository: grafana/loki
     tag: 2.9.4
     pullPolicy: IfNotPresent
-  
+
   replicas: 1
-  
+
   storage:
     size: 20Gi
     storageClassName: ""
-  
-  # 로그 보존 기간
+
   retention:
     enabled: true
     period: 90d
-  
+
   resources:
     limits:
       cpu: "1000m"
@@ -124,38 +110,33 @@ loki:
     requests:
       cpu: "500m"
       memory: "512Mi"
-  
+
   service:
     type: ClusterIP
     port: 3100
-  
-  # 로그 제한 설정
+
   limits:
-    # 최대 스트림 수
     maxStreams: 10000
-    # 인제스트 속도 제한 (MB/s)
     ingestionRateMb: 10
-    # 버스트 크기 (MB)
     ingestionBurstSizeMb: 20
 
-# Tempo settings (트레이스 저장소)
+# Tempo (트레이스 저장소)
 tempo:
   enabled: true
   image:
     repository: grafana/tempo
     tag: 2.3.1
     pullPolicy: IfNotPresent
-  
+
   replicas: 1
-  
+
   storage:
     size: 20Gi
     storageClassName: ""
-  
-  # 트레이스 보존 기간 (시간 단위: 30일 = 720시간)
+
   retention:
-    period: 720h
-  
+    period: 720h  # 30일
+
   resources:
     limits:
       cpu: "1000m"
@@ -163,41 +144,36 @@ tempo:
     requests:
       cpu: "500m"
       memory: "512Mi"
-  
+
   service:
     type: ClusterIP
-    # OTLP 수신 포트
     otlpGrpcPort: 4317
     otlpHttpPort: 4318
-    # Tempo 쿼리 포트
     tempoPort: 3200
-  
-  # 샘플링 설정
+
   sampling:
-    # 샘플링 비율 (0.0 ~ 1.0)
     rate: 0.1
 
-# Grafana settings (시각화 대시보드)
+# Grafana (시각화 대시보드)
 grafana:
   enabled: true
   image:
     repository: grafana/grafana
     tag: 10.3.1
     pullPolicy: IfNotPresent
-  
+
   replicas: 1
-  
-  # 관리자 계정
+
   admin:
     user: admin
-    password: "admin"  # 프로덕션에서는 반드시 변경 필요
-    existingSecret: ""  # Secret 이름 지정 시 password 무시
+    password: ""  # 환경별로 오버라이드 필수
+    existingSecret: ""
     secretKey: "admin-password"
-  
+
   storage:
     size: 5Gi
     storageClassName: ""
-  
+
   resources:
     limits:
       cpu: "500m"
@@ -205,154 +181,65 @@ grafana:
     requests:
       cpu: "250m"
       memory: "256Mi"
-  
+
   service:
     type: ClusterIP
     port: 3000
-  
-  # 대시보드 자동 프로비저닝
+
   dashboards:
     enabled: true
-  
-  # 데이터소스 자동 프로비저닝
+
   datasources:
     prometheus:
       enabled: true
       url: http://prometheus:9090
       isDefault: true
-    
     loki:
       enabled: true
       url: http://loki:3100
-    
     tempo:
       enabled: true
       url: http://tempo:3200
 
-# Alerting 설정
+# Alerting
 alerting:
-  enabled: true
-  
-  # Slack 알림
+  enabled: false  # 환경별로 활성화
   slack:
     enabled: false
     webhookUrl: ""
     channel: "#alerts"
-  
-  # 이메일 알림
   email:
     enabled: false
-    from: "grafana@example.com"
-    to: "team@example.com"
-    smtpHost: "smtp.example.com:587"
+    from: ""
+    to: ""
+    smtpHost: ""
     smtpUser: ""
     smtpPassword: ""
-  
-  # 알림 규칙 예시
-  rules:
-    # Pod CrashLoopBackOff 감지
-    - name: PodCrashLoopBackOff
-      enabled: true
-      expr: 'rate(kube_pod_container_status_restarts_total[5m]) > 0'
-      duration: 5m
-      severity: critical
-      summary: "Pod is crash looping"
-      description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping"
-    
-    # High HTTP 5xx Error Rate
-    - name: HighErrorRate
-      enabled: true
-      expr: 'sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.01'
-      duration: 10m
-      severity: warning
-      summary: "High 5xx error rate detected"
-      description: "Error rate is above 1% for 10 minutes"
-    
-    # High Latency
-    - name: HighLatency
-      enabled: true
-      expr: 'histogram_quantile(0.90, rate(http_request_duration_seconds_bucket[5m])) > 0.3'
-      duration: 10m
-      severity: warning
-      summary: "High latency detected"
-      description: "P90 latency is above 300ms for 10 minutes"
-    
-    # Node Disk Pressure
-    - name: NodeDiskPressure
-      enabled: true
-      expr: 'node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} < 0.15'
-      duration: 5m
-      severity: warning
-      summary: "Node disk usage is high"
-      description: "Node {{ $labels.node }} disk usage is above 85%"
+  rules: []
 
-    # Argo Rollouts - Rollout Failed
-    - name: RolloutFailed
-      enabled: true
-      expr: 'rollout_phase{phase="Degraded"} == 1'
-      duration: 5m
-      severity: critical
-      summary: "Rollout has failed"
-      description: "Rollout {{ $labels.namespace }}/{{ $labels.name }} is in Degraded state"
-
-    # Argo Rollouts - High Reconcile Error Rate
-    - name: RolloutHighErrorRate
-      enabled: true
-      expr: 'rate(rollout_reconcile_error[5m]) > 0.1'
-      duration: 5m
-      severity: warning
-      summary: "High rollout reconcile error rate"
-      description: "Rollout {{ $labels.namespace }}/{{ $labels.name }} has high error rate (>0.1/s)"
-
-    # Argo Rollouts - Rollout Stuck
-    - name: RolloutStuck
-      enabled: true
-      expr: 'rollout_phase{phase="Progressing"} == 1'
-      duration: 15m
-      severity: warning
-      summary: "Rollout stuck in progressing state"
-      description: "Rollout {{ $labels.namespace }}/{{ $labels.name }} has been progressing for more than 15 minutes"
-
-    # Argo Rollouts - Replica Mismatch
-    - name: RolloutReplicaMismatch
-      enabled: true
-      expr: '(rollout_info_replicas_available != rollout_info_replicas_desired) and (rollout_phase{phase="Healthy"} == 1)'
-      duration: 10m
-      severity: warning
-      summary: "Rollout replica count mismatch"
-      description: "Rollout {{ $labels.namespace }}/{{ $labels.rollout }} has {{ $value }} available replicas but desired count is different"
-
-# ServiceMonitor 설정 (Prometheus Operator 사용 시)
+# ServiceMonitor (Prometheus Operator 사용 시)
 serviceMonitor:
   enabled: false
   interval: 30s
   scrapeTimeout: 10s
 
-# Ingress 설정 (외부 접근)
+# Ingress
 ingress:
   enabled: false
-  className: "nginx"
+  className: ""
   annotations: {}
-    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
-  
   grafana:
-    host: "grafana.example.com"
+    host: ""
     tls:
       enabled: false
-      secretName: "grafana-tls"
-  
+      secretName: ""
   prometheus:
-    host: "prometheus.example.com"
+    host: ""
     tls:
       enabled: false
-      secretName: "prometheus-tls"
+      secretName: ""
 
-# 노드 선택기 (모든 컴포넌트에 공통 적용, 개별 설정으로 오버라이드 가능)
+# 공통 노드 설정
 nodeSelector: {}
-
-# Tolerations (모든 컴포넌트에 공통 적용)
 tolerations: []
-
-# Affinity (모든 컴포넌트에 공통 적용)
 affinity: {}
-
