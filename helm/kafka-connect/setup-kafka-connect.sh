@@ -237,10 +237,29 @@ if [ -n "${OIDC_PROVIDER}" ]; then
     EXPECTED_SUBJECT="system:serviceaccount:${KAFKA_NS}:${serviceAccountName}"
     CURRENT_SUBJECT=$(echo ${CURRENT_POLICY} | jq -r '.Statement[0].Condition.StringEquals | to_entries[] | select(.key | contains("sub")) | .value' 2>/dev/null || echo "")
     
+    # OIDC Provider ARN 확인
+    CURRENT_OIDC_ARN=$(echo ${CURRENT_POLICY} | jq -r '.Statement[0].Principal.Federated' 2>/dev/null || echo "")
+    CURRENT_OIDC_ID=$(echo ${CURRENT_OIDC_ARN} | awk -F'/' '{print $NF}' 2>/dev/null || echo "")
+    
+    # 업데이트 필요 여부 확인
+    NEED_UPDATE=false
+    
     if [ "${CURRENT_SUBJECT}" != "${EXPECTED_SUBJECT}" ]; then
       echo -e "${YELLOW}⚠️  IAM 역할 Trust Policy의 ServiceAccount가 일치하지 않습니다.${NC}"
       echo "   현재: ${CURRENT_SUBJECT}"
       echo "   예상: ${EXPECTED_SUBJECT}"
+      NEED_UPDATE=true
+    fi
+    
+    if [ "${CURRENT_OIDC_ID}" != "${OIDC_ID}" ]; then
+      echo -e "${YELLOW}⚠️  IAM 역할 Trust Policy의 OIDC Provider ID가 일치하지 않습니다.${NC}"
+      echo "   현재: ${CURRENT_OIDC_ID}"
+      echo "   예상: ${OIDC_ID}"
+      echo "   (EKS 클러스터가 재생성되었거나 OIDC Provider가 변경되었을 수 있습니다)"
+      NEED_UPDATE=true
+    fi
+    
+    if [ "${NEED_UPDATE}" = "true" ]; then
       echo -e "${YELLOW}   Trust Policy를 업데이트합니다...${NC}"
       
       # Trust Policy 생성
@@ -267,12 +286,15 @@ EOF
 )
       
       echo "${TRUST_POLICY}" > /tmp/trust-policy.json
-      aws iam update-assume-role-policy \
+      if aws iam update-assume-role-policy \
         --role-name ${IAM_ROLE_NAME} \
-        --policy-document file:///tmp/trust-policy.json \
-        || echo -e "${YELLOW}⚠️  Trust Policy 업데이트 실패 (수동으로 확인 필요)${NC}"
-      
-      echo -e "${GREEN}✅ Trust Policy 업데이트 완료${NC}"
+        --policy-document file:///tmp/trust-policy.json; then
+        echo -e "${GREEN}✅ Trust Policy 업데이트 완료${NC}"
+        echo -e "${YELLOW}⚠️  Pod를 재시작하여 새 IRSA 토큰을 받아야 합니다:${NC}"
+        echo "   kubectl delete pod -n ${KAFKA_NS} -l strimzi.io/name=c4-kafka-connect-connect"
+      else
+        echo -e "${YELLOW}⚠️  Trust Policy 업데이트 실패 (수동으로 확인 필요)${NC}"
+      fi
     else
       echo -e "${GREEN}✅ Trust Policy가 올바르게 설정되어 있습니다.${NC}"
     fi
