@@ -6,13 +6,13 @@ MSA 기반 E-commerce 플랫폼을 위한 Kubernetes 인프라 구성 리포지�
 
 ```
 c4ang-infra/
-├── scripts/                       # 사용자 유형별 스크립트
-│   ├── dev/                      # 서비스 개발자용 스크립트
+├── scripts/                       # 운영 스크립트
+│   ├── bootstrap/                # 환경 부트스트랩 스크립트
 │   │   ├── create-cluster.sh    # k3d 클러스터 생성
 │   │   ├── start-environment.sh # 환경 시작
 │   │   ├── stop-environment.sh  # 환경 중지
 │   │   └── cleanup.sh           # 환경 정리
-│   └── infra/                    # 인프라 담당자용 스크립트
+│   └── platform/                 # 플랫폼 컴포넌트 설치 스크립트
 │       ├── install-argocd.sh    # ArgoCD 설치
 │       ├── install-istio.sh     # Istio 설치
 │       ├── uninstall-istio.sh   # Istio 제거
@@ -57,22 +57,22 @@ c4ang-infra/
 
 ```bash
 # 1. k3d 클러스터 생성
-./scripts/dev/create-cluster.sh
+./scripts/bootstrap/create-cluster.sh
 
 # 2. kubectl 설정
 export KUBECONFIG=$(pwd)/environments/local/kubeconfig/config
 
 # 3. 환경 시작 (Redis, PostgreSQL 등 기본 서비스 배포)
-./scripts/dev/start-environment.sh
+./scripts/bootstrap/start-environment.sh
 
 # 4. 환경 상태 확인
 kubectl get pods -A
 
 # 5. 환경 중지 (클러스터 유지)
-./scripts/dev/stop-environment.sh
+./scripts/bootstrap/stop-environment.sh
 
 # 6. 환경 완전 삭제
-./scripts/dev/cleanup.sh
+./scripts/bootstrap/cleanup.sh
 ```
 
 | 스크립트 | 설명 |
@@ -88,16 +88,16 @@ kubectl get pods -A
 
 ```bash
 # ArgoCD 설치 (GitOps)
-./scripts/infra/install-argocd.sh
+./scripts/platform/install-argocd.sh
 
 # Istio Service Mesh 설치
-./scripts/infra/install-istio.sh
+./scripts/platform/install-istio.sh
 
 # 모니터링 스택 배포 (Prometheus, Grafana, Loki, Tempo)
-./scripts/infra/deploy-monitoring.sh
+./scripts/platform/deploy-monitoring.sh
 
 # SOPS/Age 시크릿 관리 설정
-./scripts/infra/setup-sops-age.sh
+./scripts/platform/setup-sops-age.sh
 ```
 
 | 스크립트 | 설명 |
@@ -213,8 +213,8 @@ make version              # 도구 버전 확인
 
 | 디렉토리 | 설명 |
 |---------|------|
-| `scripts/dev/` | 서비스 개발자용 스크립트 (로컬 환경 관리) |
-| `scripts/infra/` | 인프라 담당자용 스크립트 (인프라 컴포넌트 관리) |
+| `scripts/bootstrap/` | 환경 부트스트랩 스크립트 (클러스터 생성, 시작/중지) |
+| `scripts/platform/` | 플랫폼 컴포넌트 설치 스크립트 (ArgoCD, Istio, 모니터링) |
 | `charts/` | 환경 중립적 Helm 차트 |
 | `config/local/` | k3d 환경 Values 오버라이드 |
 | `config/prod/` | EKS 환경 Values 오버라이드 |

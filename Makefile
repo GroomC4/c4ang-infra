@@ -44,7 +44,7 @@ help: ## 사용 가능한 명령어 표시
 
 local-up: install-tools helm-deps k3d-create ## 로컬 k3d 환경 완전 시작 (도구 설치 + 클러스터 생성 + Helm 배포)
 	@echo "$(BLUE)🚀 로컬 환경 시작 중...$(NC)"
-	@./scripts/dev/start-environment.sh
+	@./scripts/bootstrap/start-environment.sh
 	@echo ""
 	@echo "$(GREEN)✅ 로컬 환경이 준비되었습니다!$(NC)"
 	@echo ""
@@ -56,12 +56,12 @@ local-up: install-tools helm-deps k3d-create ## 로컬 k3d 환경 완전 시작 
 
 local-down: ## 로컬 환경 중지 (데이터 유지)
 	@echo "$(BLUE)⏸️  로컬 환경 중지 중...$(NC)"
-	@./scripts/dev/stop-environment.sh
+	@./scripts/bootstrap/stop-environment.sh
 	@echo "$(GREEN)✅ 로컬 환경이 중지되었습니다$(NC)"
 
 local-clean: ## 로컬 환경 완전 제거 (클러스터 삭제)
 	@echo "$(RED)🗑️  로컬 환경 완전 제거 중...$(NC)"
-	@./scripts/dev/cleanup.sh --force
+	@./scripts/bootstrap/cleanup.sh --force
 	@echo "$(GREEN)✅ 로컬 환경이 제거되었습니다$(NC)"
 
 local-restart: local-down local-up ## 로컬 환경 재시작
@@ -85,7 +85,7 @@ local-status: ## 로컬 환경 상태 확인
 
 install-tools: ## 필수 도구 설치 (k3d, helm, kubectl)
 	@echo "$(BLUE)🔧 필수 도구 설치 확인 중...$(NC)"
-	@./scripts/dev/create-cluster.sh
+	@./scripts/bootstrap/create-cluster.sh
 	@echo "$(GREEN)✅ 필수 도구 확인 완료$(NC)"
 
 helm-deps: helm-build ## Helm 차트 의존성 빌드 (alias for helm-build)
@@ -109,7 +109,7 @@ helm-build: ## Helm 차트 의존성 빌드
 
 k3d-create: ## k3d 클러스터만 생성 (Helm 배포 제외)
 	@echo "$(BLUE)🏗️  k3d 클러스터 생성 중...$(NC)"
-	@./scripts/dev/create-cluster.sh
+	@./scripts/bootstrap/create-cluster.sh
 	@echo "$(GREEN)✅ k3d 클러스터 생성 완료$(NC)"
 
 k3d-start: ## k3d 클러스터 시작
@@ -135,12 +135,12 @@ k3d-list: ## k3d 클러스터 목록 표시
 
 istio-install: ## Istio 설치 (로컬 k3d 환경)
 	@echo "$(BLUE)🕸️  Istio 설치 중...$(NC)"
-	@./scripts/infra/install-istio.sh
+	@./scripts/platform/install-istio.sh
 	@echo "$(GREEN)✅ Istio 설치 완료$(NC)"
 
 istio-uninstall: ## Istio 제거 (로컬 k3d 환경)
 	@echo "$(BLUE)🗑️  Istio 제거 중...$(NC)"
-	@./scripts/infra/uninstall-istio.sh
+	@./scripts/platform/uninstall-istio.sh
 	@echo "$(GREEN)✅ Istio 제거 완료$(NC)"
 
 istio-status: ## Istio 상태 확인
@@ -159,7 +159,7 @@ istio-status: ## Istio 상태 확인
 
 argocd-install: ## ArgoCD 설치 및 부트스트랩
 	@echo "$(BLUE)🚀 ArgoCD 설치 중...$(NC)"
-	@./scripts/infra/install-argocd.sh
+	@./scripts/platform/install-argocd.sh
 	@echo "$(GREEN)✅ ArgoCD 설치 완료$(NC)"
 
 argocd-status: ## ArgoCD 상태 확인
@@ -198,7 +198,7 @@ kubectl-svc: ## 모든 Services 목록 (네임스페이스: $(NAMESPACE))
 
 sops-setup: ## SOPS Age 키 설정 (로컬 환경용)
 	@echo "$(BLUE)🔐 SOPS Age 키 설정 중...$(NC)"
-	@./scripts/infra/setup-sops-age.sh
+	@./scripts/platform/setup-sops-age.sh
 	@echo "$(GREEN)✅ SOPS Age 키 설정 완료$(NC)"
 
 sops-encrypt: ## SOPS로 시크릿 파일 암호화 (사용법: make sops-encrypt FILE=path/to/secrets.yaml)
@@ -224,7 +224,7 @@ sops-decrypt: ## SOPS로 시크릿 파일 복호화 (사용법: make sops-decryp
 
 deploy-monitoring: ## 모니터링 스택 배포 (Prometheus, Grafana, Loki, Tempo)
 	@echo "$(BLUE)📊 모니터링 스택 배포 중...$(NC)"
-	@./scripts/infra/deploy-monitoring.sh
+	@./scripts/platform/deploy-monitoring.sh
 	@echo "$(GREEN)✅ 모니터링 스택 배포 완료$(NC)"
 
 ##@ 성능 테스트 (k6)
