@@ -1,0 +1,143 @@
+# Monitoring Stack - EKS 운영 환경 설정
+# 기본값: helm/management-base/monitoring/values.yaml
+
+namespace: monitoring
+
+# Grafana Alloy
+alloy:
+  enabled: true
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+  daemonset:
+    tolerations:
+      - key: "workload"
+        operator: "Equal"
+        value: "stateful"
+        effect: "NoSchedule"
+
+# Prometheus
+prometheus:
+  enabled: true
+  storage:
+    size: 50Gi
+    storageClassName: "gp3"
+  retention:
+    time: 30d
+    size: 45GB
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+
+# Loki
+loki:
+  enabled: true
+  storage:
+    size: 20Gi
+    storageClassName: "gp3"
+  retention:
+    enabled: true
+    period: 90d
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+
+# Tempo
+tempo:
+  enabled: true
+  storage:
+    size: 20Gi
+    storageClassName: "gp3"
+  retention:
+    period: 720h  # 30일
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+
+# Grafana
+grafana:
+  enabled: true
+  admin:
+    existingSecret: "grafana-admin-secret"
+    secretKey: "admin-password"
+  storage:
+    size: 5Gi
+    storageClassName: "gp3"
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+  dashboards:
+    enabled: true
+
+# Alerting - 운영 환경에서 활성화
+alerting:
+  enabled: true
+  slack:
+    enabled: true
+    webhookUrl: ""  # Secret으로 관리
+    channel: "#alerts-prod"
+  rules:
+    - name: PodCrashLoopBackOff
+      enabled: true
+      expr: 'rate(kube_pod_container_status_restarts_total[5m]) > 0'
+      duration: 5m
+      severity: critical
+      summary: "Pod is crash looping"
+      description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping"
+    - name: HighErrorRate
+      enabled: true
+      expr: 'sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.01'
+      duration: 10m
+      severity: warning
+      summary: "High 5xx error rate detected"
+      description: "Error rate is above 1% for 10 minutes"
+    - name: RolloutFailed
+      enabled: true
+      expr: 'rollout_phase{phase="Degraded"} == 1'
+      duration: 5m
+      severity: critical
+      summary: "Rollout has failed"
+      description: "Rollout {{ $labels.namespace }}/{{ $labels.name }} is in Degraded state"
+
+# Ingress - ALB 사용
+ingress:
+  enabled: true
+  className: "alb"
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/target-type: ip
+  grafana:
+    host: "grafana.internal.example.com"
+    tls:
+      enabled: true
+      secretName: "grafana-tls"
+
+# Stateful 워크로드 노드 사용
+tolerations:
+  - key: "workload"
+    operator: "Equal"
+    value: "stateful"
+    effect: "NoSchedule"
+
+nodeSelector:
+  workload: stateful

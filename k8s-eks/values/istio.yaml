@@ -1,0 +1,169 @@
+# Istio Configuration - EKS 운영 환경 설정
+# 기본값: helm/management-base/istio/values.yaml
+
+# Namespace
+namespace:
+  name: ecommerce
+  create: true
+  istioInjection: enabled
+
+# Gateway 설정 - AWS NLB 사용
+gateway:
+  main:
+    enabled: true
+    name: ecommerce-gateway
+    hostname: api.ecommerce.com
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+      service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    listeners:
+      https:
+        enabled: true
+        port: 443
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - name: ecommerce-tls-cert
+              kind: Secret
+      http:
+        enabled: true
+        port: 80
+        redirectToHttps: true
+
+  webhook:
+    enabled: true
+    name: webhook-gateway
+    hostname: webhook.ecommerce.com
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+      service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    listeners:
+      https:
+        enabled: true
+        port: 443
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - name: webhook-tls-cert
+              kind: Secret
+
+# Security 설정 - 운영 환경
+security:
+  mTLS:
+    enabled: true
+    mode: STRICT
+
+  jwt:
+    enabled: true
+    issuer: "https://api.ecommerce.com"
+    jwksUri: "https://api.ecommerce.com/.well-known/jwks.json"
+    audiences:
+      - "ecommerce-api"
+
+  webhook:
+    ipWhitelist: []
+      # - "203.0.113.0/24"  # PG사 IP 대역
+
+  publicEndpoints:
+    - /api/v1/auth/customers/signup
+    - /api/v1/auth/customers/login
+    - /api/v1/auth/owners/signup
+    - /api/v1/auth/owners/login
+    - /api/v1/auth/refresh
+    - /actuator/health
+    - /actuator/prometheus
+
+# HTTPRoute - 모든 서비스 활성화
+httpRoute:
+  enabled: true
+  services:
+    order:
+      enabled: true
+      path: /api/v1/orders
+      serviceName: order-service
+      servicePort: 8080
+    product:
+      enabled: true
+      path: /api/v1/products
+      serviceName: product-service
+      servicePort: 8080
+    payment:
+      enabled: true
+      path: /api/v1/payments
+      serviceName: payment-service
+      servicePort: 8080
+    user:
+      enabled: true
+      path: /api/v1/users
+      serviceName: user-service
+      servicePort: 8080
+    auth:
+      enabled: true
+      path: /api/v1/auth
+      serviceName: auth-service
+      servicePort: 8080
+    store:
+      enabled: true
+      path: /api/v1/stores
+      serviceName: store-service
+      servicePort: 8080
+    review:
+      enabled: true
+      path: /api/v1/reviews
+      serviceName: review-service
+      servicePort: 8080
+    recommendation:
+      enabled: true
+      path: /api/v1/recommendations
+      serviceName: recommendation-service
+      servicePort: 8080
+    analytics:
+      enabled: true
+      path: /api/v1/analytics
+      serviceName: analytics-service
+      servicePort: 8080
+
+# Traffic Management - 운영 환경 활성화
+trafficManagement:
+  destinationRules:
+    enabled: true
+    circuitBreaker:
+      enabled: true
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 40
+
+  virtualServices:
+    enabled: true
+    retries:
+      attempts: 3
+      perTryTimeout: 5s
+      timeout: 5s
+
+# EnvoyFilter - Rate Limiting
+envoyFilter:
+  rateLimit:
+    enabled: true
+    redis:
+      host: redis.ecommerce.svc.cluster.local
+      port: 6379
+    limits:
+      user: 100
+      ip: 50
+
+  tokenBlacklist:
+    enabled: true
+    redis:
+      host: redis.ecommerce.svc.cluster.local
+      port: 6379
+
+# Gateway API
+gatewayAPI:
+  enabled: true
+  version: "v1.0.0"

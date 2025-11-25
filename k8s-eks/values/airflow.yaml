@@ -1,0 +1,100 @@
+# Airflow - EKS 운영 환경 설정
+# 기본값: helm/management-base/airflow/values.yaml
+
+airflow:
+  defaultAirflowRepository: apache/airflow
+  defaultAirflowTag: "2.9.0"
+  defaultAirflowImagePullPolicy: IfNotPresent
+
+  executor: CeleryExecutor
+
+  postgresql:
+    enabled: true
+    auth:
+      username: airflow
+      existingSecret: "airflow-postgresql-secret"
+      existingSecretKey: "password"
+      database: airflow
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClassName: "gp3"
+    primary:
+      resources:
+        requests:
+          memory: "512Mi"
+          cpu: "500m"
+        limits:
+          memory: "1Gi"
+          cpu: "1000m"
+
+  redis:
+    enabled: true
+    persistence:
+      storageClassName: "gp3"
+
+  dags:
+    persistence:
+      enabled: true
+      size: 5Gi
+      storageClassName: "gp3"
+    gitSync:
+      enabled: true
+      repo: ""  # Git 저장소 URL
+      branch: main
+      subPath: dags
+
+  logs:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClassName: "gp3"
+
+  webserver:
+    replicas: 2
+    service:
+      type: ClusterIP
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+
+  scheduler:
+    replicas: 2
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+
+  workers:
+    replicas: 3
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "1000m"
+      limits:
+        memory: "2Gi"
+        cpu: "2000m"
+
+  flower:
+    enabled: true
+
+  triggerer:
+    enabled: true
+
+  ingress:
+    enabled: true
+    web:
+      annotations:
+        alb.ingress.kubernetes.io/scheme: internal
+        alb.ingress.kubernetes.io/target-type: ip
+      host: airflow.internal.example.com
+      tls:
+        enabled: true
+        secretName: airflow-tls
