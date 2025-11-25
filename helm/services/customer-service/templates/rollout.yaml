@@ -19,8 +19,35 @@ spec:
     blueGreen:
       activeService: {{ .Chart.Name }}-active
       previewService: {{ .Chart.Name }}-preview
-      autoPromotionEnabled: false
+      autoPromotionEnabled: false # 처음엔 false로 시작
+      autoPromotionSeconds: 300    # 5분 후 자동 승격
+      scaleDownDelaySeconds: 300   # 이전 버전 5분 후 삭제
 
+      # 자동 검증 단계
+      prePromotionAnalysis:
+        templates:
+            - templateName: blue-green-analysis
+        args:
+          - name: service-name
+            value: my-app
+          - name: namespace
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+
+      # 승격 후 검증 (선택사항)
+      postPromotionAnalysis:
+        templates:
+          - templateName: blue-green-analysis
+        args:
+          - name: service-name
+            value: my-app
+          - name: namespace
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+  #이전 애플리케이션 리비전의 최대 보존 개수 (디폴트:10)
+  #revisionHistoryLimit: 2
   selector:
     matchLabels:
       {{- include "customer-service.selectorLabels" . | nindent 6 }}

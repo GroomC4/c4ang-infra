@@ -1,21 +1,57 @@
 apiVersion: argoproj.io/v1alpha1
 kind: AnalysisTemplate
 metadata:
-  name: error-rate-check
+  name: blue-green-analysis
   labels:
     {{- include "customer-service.labels" . | nindent 4 }}
 spec:
   args:
     - name: service-name
   metrics:
+    # 1. 에러율 체크 (Istio 메트릭 활용)
     - name: error-rate
-      interval: 1m
-      successCondition: result[0] < 0.05
-      failureLimit: 0
+      interval: 30s
+      successCondition: result < 0.05  # 5% 미만
+      failureLimit: 3
       provider:
         prometheus:
           address: {{ .Values.analysis.prometheusUrl | default "http://prometheus-server.monitoring.svc.cluster.local:9090" }}
           query: |
-            sum(rate(http_server_requests_seconds_count{status=~"5.*", uri!="/actuator/health/.*", service="{{ "{{" }} args.service-name {{ "}}" }}"}[1m]))
-            /
-            sum(rate(http_server_requests_seconds_count{service="{{ "{{" }} args.service-name {{ "}}" }}"}[1m]))
+            sum(rate(istio_requests_total{destination_workload="{{args.service-name}}", response_code=~"5.."}[2m])) 
+            / 
+            sum(rate(istio_requests_total{destination_workload="{{args.service-name}}"}[2m]))
+
+    # 2. 응답 시간 (p99 latency)
+    - name: latency-p99
+      interval: 30s
+      successCondition: result < 500  # 500ms 미만
+      failureLimit: 3
+      provider:
+        prometheus:
+          address: {{ .Values.analysis.prometheusUrl | default "http://prometheus-server.monitoring.svc.cluster.local:9090" }}
+          query: |
+            histogram_quantile(0.99,sum(rate(istio_request_duration_milliseconds_bucket{destination_workload="{{args.service-name}}"}[2m])) by (le))
+
+    # 3. 성공률 체크
+    - name: success-rate
+      interval: 30s
+      successCondition: result > 0.95  # 95% 이상
+      failureLimit: 3
+      provider:
+        prometheus:
+          address: {{ .Values.analysis.prometheusUrl | default "http://prometheus-server.monitoring.svc.cluster.local:9090" }}
+          query: |
+            sum(rate(istio_requests_total{destination_workload="{{args.service-name}}", response_code!~"5.."}[2m])) 
+            / 
+            sum(rate(istio_requests_total{destination_workload="{{args.service-name}}"}[2m]))
+
+    # 4. Pod 재시작 체크
+    - name: pod-restart-check
+      interval: 30s
+      successCondition: result < 1
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: {{ .Values.analysis.prometheusUrl | default "http://prometheus-server.monitoring.svc.cluster.local:9090" }}
+          query: |
+            sum(increase( kube_pod_container_status_restarts_total{namespace="{{args.namespace}}",pod=~"{{args.service-name}}-.*"}[5m]))
