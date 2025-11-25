@@ -92,16 +92,6 @@ spec:
               mountPath: /etc/grafana/provisioning/dashboards
             - name: dashboard-argo-rollouts
               mountPath: /var/lib/grafana/dashboards/argo-rollouts
-            - name: dashboard-cache-redis
-              mountPath: /var/lib/grafana/dashboards/cache-redis
-            - name: dashboard-ecommerce-logs-visual
-              mountPath: /var/lib/grafana/dashboards/ecommerce-logs-visual
-            - name: dashboard-ecommerce-overview
-              mountPath: /var/lib/grafana/dashboards/ecommerce-overview
-            - name: dashboard-ecommerce-resources
-              mountPath: /var/lib/grafana/dashboards/ecommerce-resources
-            - name: dashboard-ecommerce-service-detail
-              mountPath: /var/lib/grafana/dashboards/ecommerce-service-detail
             {{- end }}
       
       volumes:
@@ -118,21 +108,6 @@ spec:
         - name: dashboard-argo-rollouts
           configMap:
             name: grafana-dashboard-argo-rollouts
-        - name: dashboard-cache-redis
-          configMap:
-            name: grafana-dashboard-cache-redis
-        - name: dashboard-ecommerce-logs-visual
-          configMap:
-            name: grafana-dashboard-ecommerce-logs-visual
-        - name: dashboard-ecommerce-overview
-          configMap:
-            name: grafana-dashboard-ecommerce-overview
-        - name: dashboard-ecommerce-resources
-          configMap:
-            name: grafana-dashboard-ecommerce-resources
-        - name: dashboard-ecommerce-service-detail
-          configMap:
-            name: grafana-dashboard-ecommerce-service-detail
         {{- end }}
       
       {{- with .Values.nodeSelector }}
