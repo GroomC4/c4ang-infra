@@ -112,32 +112,28 @@ echo
 #################################
 echo "📌 Installing Schema Registry..."
 
-# Confluent Helm Repo 추가
-echo "Adding Confluent Helm Repository..."
-helm repo add confluentinc https://confluentinc.github.io/cp-helm-charts/ 2>/dev/null || true
-helm repo update
+# Schema Registry를 Kubernetes 리소스로 직접 배포
+SCHEMA_REGISTRY_YAML="$(dirname "$0")/schema-registry/schema-registry-deployment.yaml"
 
-# Schema Registry Helm dependencies 빌드
-echo "Building Schema Registry Helm dependencies..."
-cd "$(dirname "$0")/schema-registry"
-helm dependency build
-cd - >/dev/null
-
-# Schema Registry 배포
-echo "Deploying Schema Registry..."
-helm upgrade --install schema-registry \
-  "$(dirname "$0")/schema-registry" \
-  --namespace ${KAFKA_NS} \
-  --wait \
-  --timeout 5m
-
-echo "⏳ Waiting for Schema Registry pods..."
-kubectl wait --for=condition=ready pod \
-  -l app=cp-schema-registry \
-  -n ${KAFKA_NS} \
-  --timeout=300s || echo "⚠️  Schema Registry pods may still be starting..."
-
-echo "✅ Schema Registry deployed"
+if [ -f "$SCHEMA_REGISTRY_YAML" ]; then
+    echo "Deploying Schema Registry from YAML..."
+    kubectl apply -f "$SCHEMA_REGISTRY_YAML" || {
+        echo "❌ Schema Registry 배포 실패"
+        exit 1
+    }
+    
+    echo "⏳ Waiting for Schema Registry pods..."
+    kubectl wait --for=condition=ready pod \
+      -l app=cp-schema-registry \
+      -n ${KAFKA_NS} \
+      --timeout=300s || echo "⚠️  Schema Registry pods may still be starting..."
+    
+    echo "✅ Schema Registry deployed"
+    echo "   Service: schema-registry-cp-schema-registry.${KAFKA_NS}:8081"
+else
+    echo "⚠️  Schema Registry YAML 파일을 찾을 수 없습니다: $SCHEMA_REGISTRY_YAML"
+    echo "⚠️  Schema Registry 설치를 건너뜁니다."
+fi
 echo
 
 
