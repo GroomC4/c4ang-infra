@@ -1,0 +1,95 @@
+
+# 비용 절감 모드 예시 (돈 되는 것만 삭제)
+# - VPC(App, DB)는 유지
+# - NAT, VPN, EKS, RDS, S3 등 비용 리소스는 비활성화 가능
+
+# NAT
+enable_nat_gateway = false
+single_nat_gateway = true
+
+# 주요 워크로드 (필요시만 활성화)
+create_eks_cluster     = false
+create_rds             = false
+create_s3_buckets      = false
+
+# Kubernetes 리소스 (EKS 비활성화 시 false 유지)
+create_k8s_resources   = false
+
+# =============================================================================
+# Production Environment Configuration
+# =============================================================================
+
+# 기본 설정
+project_name = "c4"
+environment  = "production"
+environment_suffix = ""
+resource_prefix = "c4"
+owner        = "c4-team"
+cost_center  = "c4-network"
+
+# AWS 설정
+aws_region = "ap-northeast-2"
+
+# EKS 클러스터 설정
+create_eks_cluster = true
+eks_cluster_name = "c4-cluster"
+
+# VPC 설정
+vpc_app_cidr = "10.0.0.0/16"
+vpc_db_cidr  = "10.1.0.0/16"
+
+# EKS 노드 그룹 설정 (Production - 최소 사양)
+core_node_group = {
+  instance_types = ["t3.large"]
+  min_size       = 2
+  max_size       = 4
+  desired_size   = 2
+  disk_size      = 40
+}
+
+high_traffic_node_group = {
+  instance_types = ["t3.large"]
+  min_size       = 2
+  max_size       = 4
+  desired_size   = 2
+  disk_size      = 40
+}
+
+low_traffic_node_group = {
+  instance_types = ["t3.medium"]
+  min_size       = 2
+  max_size       = 4
+  desired_size   = 2
+  disk_size      = 40
+}
+
+stateful_storage_node_group = {
+  instance_types = ["m5.large"]
+  min_size       = 2
+  max_size       = 4
+  desired_size   = 2
+  disk_size      = 100
+}
+
+kafka_storage_node_group = {
+  instance_types = ["m5.large"]
+  min_size       = 3
+  max_size       = 5
+  desired_size   = 3
+  disk_size      = 200
+}
+
+# RDS 설정 (Production)
+create_rds = true
+rds_instance_class = "db.r6g.large"  # Production: 더 큰 인스턴스
+rds_allocated_storage = 100
+rds_max_allocated_storage = 1000
+rds_engine_version = "17.6"
+rds_backup_retention_period = 7
+rds_backup_window = "03:00-04:00"
+rds_maintenance_window = "sun:04:00-sun:05:00"
+rds_multi_az = true  # Production: Multi-AZ 활성화
+rds_database_name = "app"
+rds_master_username = "appuser"
+
+airflow_logs_bucket_name = "c4-airflow-logs"
