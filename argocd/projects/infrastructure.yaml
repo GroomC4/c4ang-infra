@@ -1,0 +1,61 @@
+# ArgoCD Project - Infrastructure
+# 인프라 컴포넌트를 위한 프로젝트 정의
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: infrastructure
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Infrastructure components (monitoring, istio, airflow, etc.)
+
+  # 소스 리포지토리 허용
+  sourceRepos:
+    - 'https://github.com/GroomC4/c4ang-infra.git'
+    - '*'
+
+  # 대상 클러스터 및 네임스페이스 허용
+  destinations:
+    # Local cluster (k3d)
+    - namespace: '*'
+      server: https://kubernetes.default.svc
+    # EKS cluster (prod)
+    - namespace: '*'
+      server: '*'
+
+  # 클러스터 리소스 허용
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+
+  # 네임스페이스 리소스 허용
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+
+  # 역할 정의
+  roles:
+    - name: admin
+      description: Infrastructure admin
+      policies:
+        - p, proj:infrastructure:admin, applications, *, infrastructure/*, allow
+      groups:
+        - infra-admins
+
+    - name: developer
+      description: Infrastructure developer (read-only)
+      policies:
+        - p, proj:infrastructure:developer, applications, get, infrastructure/*, allow
+        - p, proj:infrastructure:developer, applications, sync, infrastructure/*, allow
+      groups:
+        - developers
+
+  # Sync windows (optional - 운영환경 배포 시간 제한)
+  # syncWindows:
+  #   - kind: allow
+  #     schedule: '0 6-22 * * *'
+  #     duration: 16h
+  #     applications:
+  #       - '*'
+  #     manualSync: true

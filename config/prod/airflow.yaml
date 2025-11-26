@@ -1,0 +1,153 @@
+# EKS 운영 환경 Airflow 설정
+# ArgoCD ApplicationSet에서 사용
+
+airflow:
+  workers:
+    replicas: 2
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+
+  executor: CeleryExecutor
+
+  waitForMigrations:
+    enabled: true
+    timeout: 600
+
+  migrateDatabaseJob:
+    enabled: true
+
+  createUserJob:
+    enabled: true
+
+  defaultAirflowRepository: apache/airflow
+  defaultAirflowTag: "2.9.0"
+
+  serviceAccount:
+    create: true
+    name: ""
+
+  # 운영환경은 외부 RDS PostgreSQL 사용
+  postgresql:
+    enabled: false
+
+  # 외부 데이터베이스 설정
+  data:
+    metadataSecretName: airflow-metadata-secret
+    resultBackendSecretName: airflow-result-backend-secret
+
+  redis:
+    enabled: true
+    persistence:
+      enabled: true
+      storageClassName: gp3
+      size: 10Gi
+
+  dags:
+    persistence:
+      enabled: true
+      storageClassName: gp3
+      size: 10Gi
+    gitSync:
+      enabled: true
+      repo: ""  # Git repo URL
+      branch: main
+      subPath: dags
+
+  logs:
+    persistence:
+      enabled: true
+      storageClassName: gp3
+      size: 50Gi
+
+  webserver:
+    service:
+      type: ClusterIP
+      ports:
+        - name: airflow-ui
+          port: 8080
+          targetPort: 8080
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+    startupProbe:
+      initialDelaySeconds: 0
+      timeoutSeconds: 20
+      failureThreshold: 18
+      periodSeconds: 10
+
+  scheduler:
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+
+  flower:
+    enabled: true
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+  triggerer:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+  env:
+    - name: AIRFLOW__CORE__EXECUTOR
+      value: "CeleryExecutor"
+    - name: AIRFLOW__CORE__LOAD_EXAMPLES
+      value: "False"
+    - name: AIRFLOW__WEBSERVER__EXPOSE_CONFIG
+      value: "False"
+    - name: AIRFLOW__CORE__FERNET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: airflow-fernet-key
+          key: fernet-key
+
+  # Ingress 설정
+  ingress:
+    enabled: true
+    web:
+      enabled: true
+      annotations:
+        kubernetes.io/ingress.class: alb
+        alb.ingress.kubernetes.io/scheme: internal
+        alb.ingress.kubernetes.io/target-type: ip
+      path: /
+      pathType: Prefix
+      hosts:
+        - airflow.internal.ecommerce.com
+
+  # Node Selector
+  nodeSelector:
+    role: airflow
+
+  # Tolerations
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "airflow"
+      effect: "NoSchedule"

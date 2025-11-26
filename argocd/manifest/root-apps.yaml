@@ -1,6 +1,13 @@
-
+# [DEPRECATED] 이 파일은 레거시 방식입니다.
+# 새로운 ApplicationSet 기반 방식을 사용하세요: argocd/applicationsets/
+#
 # 이 파일은 ArgoCD의 "App of Apps" 패턴을 구현하는 핵심 파일입니다.
 # 클러스터에 배포되어야 할 모든 애플리케이션(인프라, 서비스)을 정의합니다.
+#
+# 마이그레이션 안내:
+# 1. ApplicationSet 사용: argocd/applicationsets/*.yaml
+# 2. 환경별 설정: config/local/*.yaml, config/prod/*.yaml
+# 3. 차트 경로: charts/ (기존 helm/ -> charts/)
 
 # 1. 인프라 애플리케이션: 모니터링
 apiVersion: argoproj.io/v1alpha1
@@ -9,13 +16,13 @@ metadata:
   name: infra-monitoring
   namespace: argocd
   finalizers:
-    - resources-finalizer.argocd.argoproj.io # 삭제 시 관련 리소스 함께 정리
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
     targetRevision: main
-    path: helm/management-base/monitoring
+    path: charts/monitoring  # 경로 업데이트: helm/management-base -> charts
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
@@ -26,7 +33,7 @@ spec:
     syncOptions:
       - CreateNamespace=true
 ---
-# 2. 인프라 애플리케이션: Kafka (스크린샷 기반)
+# 2. 인프라 애플리케이션: Kafka
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -39,10 +46,10 @@ spec:
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
     targetRevision: main
-    path: helm/kafka-cluster
+    path: charts/kafka-cluster  # 경로 업데이트
   destination:
     server: https://kubernetes.default.svc
-    namespace: ecommerce # 또는 kafka 네임스페이스
+    namespace: ecommerce
   syncPolicy:
     automated:
       prune: true
@@ -50,7 +57,7 @@ spec:
     syncOptions:
       - CreateNamespace=true
 ---
-# 3. 인프라 애플리케이션: 데이터베이스 (PostgreSQL 가정)
+# 3. 인프라 애플리케이션: 데이터베이스 (PostgreSQL)
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -63,7 +70,7 @@ spec:
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
     targetRevision: main
-    path: helm/statefulset-base/postgresql
+    path: charts/statefulset-base/postgresql  # 경로 업데이트
   destination:
     server: https://kubernetes.default.svc
     namespace: ecommerce
@@ -74,14 +81,14 @@ spec:
     syncOptions:
       - CreateNamespace=true
 ---
-#4. istio
+# 4. Istio
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: infra-istio
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "1"  # 첫 번째로 배포
+    argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -89,29 +96,28 @@ spec:
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
     targetRevision: main
-    path: helm/management-base/istio
+    path: charts/istio  # 경로 업데이트
     helm:
-      # Gateway 설정
-      gateway:
-        main:
-          enabled: true
-          name: ecommerce-gateway
-          hostname: api.ecommerce.com
-      # Security
-      security:
-        mTLS:
-          enabled: true
-          mode: STRICT
+      parameters:
+        - name: gateway.main.enabled
+          value: "true"
+        - name: gateway.main.name
+          value: ecommerce-gateway
+        - name: gateway.main.hostname
+          value: api.ecommerce.com
+        - name: security.mTLS.enabled
+          value: "true"
+        - name: security.mTLS.mode
+          value: STRICT
   destination:
     server: https://kubernetes.default.svc
     namespace: ecommerce
-    syncPolicy:
+  syncPolicy:
     automated:
       prune: true
       selfHeal: true
       allowEmpty: false
     syncOptions:
-      # 중요: Helm 템플릿이 네임스페이스를 생성하므로 false!
       - CreateNamespace=false
       - ServerSideApply=true
     retry:
@@ -122,7 +128,7 @@ spec:
         maxDuration: 3m
 ---
 # --- MSA 서비스 애플리케이션 ---
-# 4. 서비스: Customer Service
+# 5. 서비스: Customer Service
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -135,7 +141,7 @@ spec:
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
     targetRevision: main
-    path: helm/services/customer-service
+    path: charts/services/customer-service  # 경로 업데이트
   destination:
     server: https://kubernetes.default.svc
     namespace: ecommerce
@@ -146,7 +152,7 @@ spec:
     syncOptions:
       - CreateNamespace=true
 ---
-# 5. 서비스: Store Service
+# 6. 서비스: Store Service
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -159,7 +165,7 @@ spec:
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
     targetRevision: main
-    path: helm/services/store-service
+    path: charts/services/store-service  # 경로 업데이트
   destination:
     server: https://kubernetes.default.svc
     namespace: ecommerce
@@ -170,7 +176,7 @@ spec:
     syncOptions:
       - CreateNamespace=true
 ---
-# 6. 서비스: Payment Service
+# 7. 서비스: Payment Service
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -183,7 +189,7 @@ spec:
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
     targetRevision: main
-    path: helm/services/payment-service
+    path: charts/services/payment-service  # 경로 업데이트
   destination:
     server: https://kubernetes.default.svc
     namespace: ecommerce
@@ -194,7 +200,7 @@ spec:
     syncOptions:
       - CreateNamespace=true
 ---
-# 7. 서비스: Order Service
+# 8. 서비스: Order Service
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -207,7 +213,7 @@ spec:
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
     targetRevision: main
-    path: helm/services/order-service
+    path: charts/services/order-service  # 경로 업데이트
   destination:
     server: https://kubernetes.default.svc
     namespace: ecommerce
@@ -218,7 +224,7 @@ spec:
     syncOptions:
       - CreateNamespace=true
 ---
-# 8. 서비스: Product Service
+# 9. 서비스: Product Service
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -231,7 +237,7 @@ spec:
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
     targetRevision: main
-    path: helm/services/product-service
+    path: charts/services/product-service  # 경로 업데이트
   destination:
     server: https://kubernetes.default.svc
     namespace: ecommerce

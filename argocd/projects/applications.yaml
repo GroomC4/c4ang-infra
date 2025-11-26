@@ -1,0 +1,72 @@
+# ArgoCD Project - Applications
+# 애플리케이션 서비스를 위한 프로젝트 정의
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: applications
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Application services (order, payment, user, etc.)
+
+  # 소스 리포지토리 허용
+  sourceRepos:
+    - 'https://github.com/GroomC4/c4ang-infra.git'
+    - '*'
+
+  # 대상 네임스페이스 (애플리케이션 전용)
+  destinations:
+    - namespace: 'ecommerce'
+      server: https://kubernetes.default.svc
+    - namespace: 'ecommerce'
+      server: '*'
+    - namespace: 'msa-quality'
+      server: https://kubernetes.default.svc
+    - namespace: 'msa-quality'
+      server: '*'
+
+  # 네임스페이스 리소스만 허용 (클러스터 리소스 제한)
+  namespaceResourceWhitelist:
+    - group: ''
+      kind: ConfigMap
+    - group: ''
+      kind: Secret
+    - group: ''
+      kind: Service
+    - group: ''
+      kind: ServiceAccount
+    - group: apps
+      kind: Deployment
+    - group: apps
+      kind: StatefulSet
+    - group: apps
+      kind: ReplicaSet
+    - group: argoproj.io
+      kind: Rollout
+    - group: argoproj.io
+      kind: AnalysisTemplate
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+    - group: policy
+      kind: PodDisruptionBudget
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+
+  # 역할 정의
+  roles:
+    - name: admin
+      description: Application admin
+      policies:
+        - p, proj:applications:admin, applications, *, applications/*, allow
+      groups:
+        - app-admins
+
+    - name: developer
+      description: Application developer
+      policies:
+        - p, proj:applications:developer, applications, get, applications/*, allow
+        - p, proj:applications:developer, applications, sync, applications/*, allow
+        - p, proj:applications:developer, applications, override, applications/*, allow
+      groups:
+        - developers

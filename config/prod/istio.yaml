@@ -1,0 +1,131 @@
+# EKS 운영 환경 Istio Configuration
+# ArgoCD ApplicationSet에서 사용
+
+# Namespace 설정
+namespace:
+  name: ecommerce
+  create: false
+
+# Gateway 설정
+gateway:
+  main:
+    enabled: true
+    name: ecommerce-gateway
+    hostname: api.ecommerce.com
+    # AWS NLB 사용
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: external
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    listeners:
+      https:
+        enabled: true
+        port: 443
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - name: ecommerce-tls-cert
+              kind: Secret
+      http:
+        enabled: true
+        port: 80
+        redirectToHttps: true
+    # ReferenceGrant 설정
+    referenceGrant:
+      enabled: true
+      fromNamespaces:
+        - order-service
+        - payment-service
+        - user-service
+
+  webhook:
+    enabled: true
+    name: webhook-gateway
+    hostname: webhook.ecommerce.com
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: external
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    listeners:
+      https:
+        enabled: true
+        port: 443
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - name: webhook-tls-cert
+              kind: Secret
+
+# Security 설정
+security:
+  mTLS:
+    enabled: true
+    mode: STRICT
+
+  jwt:
+    enabled: true
+    issuer: "https://api.ecommerce.com"
+    jwksUri: "https://api.ecommerce.com/.well-known/jwks.json"
+    audiences:
+      - "ecommerce-api"
+
+  publicEndpoints:
+    - /api/v1/users/register
+    - /api/v1/users/login
+    - /api/v1/users/refresh-token
+    - /api/v1/auth/login
+    - /api/v1/auth/refresh
+    - /actuator/health
+    - /actuator/prometheus
+
+# HTTPRoute 설정
+httpRoute:
+  enabled: true
+  services:
+    order:
+      enabled: true
+      path: /api/v1/orders
+      serviceName: order-service
+      servicePort: 8080
+    product:
+      enabled: true
+      path: /api/v1/products
+      serviceName: product-service
+      servicePort: 8080
+    payment:
+      enabled: true
+      path: /api/v1/payments
+      serviceName: payment-service
+      servicePort: 8080
+    user:
+      enabled: true
+      path: /api/v1/users
+      serviceName: user-service
+      servicePort: 8080
+    auth:
+      enabled: true
+      path: /api/v1/auth
+      serviceName: auth-service
+      servicePort: 8080
+    store:
+      enabled: true
+      path: /api/v1/stores
+      serviceName: store-service
+      servicePort: 8080
+    review:
+      enabled: true
+      path: /api/v1/reviews
+      serviceName: review-service
+      servicePort: 8080
+    recommendation:
+      enabled: true
+      path: /api/v1/recommendations
+      serviceName: recommendation-service
+      servicePort: 8080
+    analytics:
+      enabled: true
+      path: /api/v1/analytics
+      serviceName: analytics-service
+      servicePort: 8080

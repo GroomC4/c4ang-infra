@@ -1,0 +1,200 @@
+# EKS 운영 환경 Monitoring 설정
+# ArgoCD ApplicationSet에서 사용
+
+namespace: monitoring
+
+# Image Pull Secrets
+imagePullSecrets: []
+
+# Grafana Alloy - DaemonSet으로 모든 노드에 배포
+alloy:
+  enabled: true
+
+# Prometheus 설정 (메트릭 저장소)
+prometheus:
+  enabled: true
+  image:
+    repository: prom/prometheus
+    tag: v2.50.0
+    pullPolicy: IfNotPresent
+
+  replicas: 1
+
+  # EKS GP3 스토리지 사용
+  storage:
+    size: 50Gi
+    storageClassName: "gp3"
+
+  # 운영 환경 보존 기간
+  retention:
+    time: 30d
+    size: 45GB
+
+  # 운영 환경 리소스
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+
+  service:
+    type: ClusterIP
+    port: 9090
+
+# Loki 설정 (로그 저장소)
+loki:
+  enabled: true
+  image:
+    repository: grafana/loki
+    tag: 2.9.4
+    pullPolicy: IfNotPresent
+
+  replicas: 1
+
+  storage:
+    size: 20Gi
+    storageClassName: "gp3"
+
+  retention:
+    enabled: true
+    period: 90d
+
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+
+  service:
+    type: ClusterIP
+    port: 3100
+
+  limits:
+    maxStreams: 10000
+    ingestionRateMb: 10
+    ingestionBurstSizeMb: 20
+
+# Tempo 설정 (트레이스 저장소)
+tempo:
+  enabled: true
+  image:
+    repository: grafana/tempo
+    tag: 2.3.1
+    pullPolicy: IfNotPresent
+
+  replicas: 1
+
+  storage:
+    size: 20Gi
+    storageClassName: "gp3"
+
+  retention:
+    period: 720h  # 30일
+
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+
+  service:
+    type: ClusterIP
+    otlpGrpcPort: 4317
+    otlpHttpPort: 4318
+    tempoPort: 3200
+
+  sampling:
+    rate: 0.1
+
+# Grafana 설정 (시각화 대시보드)
+grafana:
+  enabled: true
+  image:
+    repository: grafana/grafana
+    tag: 10.3.1
+    pullPolicy: IfNotPresent
+
+  replicas: 1
+
+  # 운영 환경은 Secret 사용
+  admin:
+    user: admin
+    password: ""
+    existingSecret: "grafana-admin-credentials"
+    secretKey: "admin-password"
+
+  storage:
+    size: 5Gi
+    storageClassName: "gp3"
+
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  dashboards:
+    enabled: true
+
+  datasources:
+    prometheus:
+      enabled: true
+      url: http://prometheus:9090
+      isDefault: true
+
+    loki:
+      enabled: true
+      url: http://loki:3100
+
+    tempo:
+      enabled: true
+      url: http://tempo:3200
+
+# Alerting 설정 - 운영 환경 활성화
+alerting:
+  enabled: true
+  slack:
+    enabled: true
+    webhookUrl: ""  # Secret으로 관리
+  email:
+    enabled: false
+
+# ServiceMonitor 설정
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  scrapeTimeout: 10s
+
+# Ingress 설정 - ALB 사용
+ingress:
+  enabled: true
+  className: alb
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/target-type: ip
+
+# Node Selector
+nodeSelector:
+  role: monitoring
+
+# Tolerations
+tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
+
+# Affinity
+affinity: {}
