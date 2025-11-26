@@ -7,17 +7,17 @@ MSA 기반 E-commerce 플랫폼을 위한 Kubernetes 인프라 구성 리포지�
 ```
 c4ang-infra/
 ├── scripts/                       # 운영 스크립트
-│   ├── bootstrap/                # 환경 부트스트랩 스크립트
+│   ├── bootstrap/                # 환경 부트스트랩 (서비스 개발자용)
 │   │   ├── create-cluster.sh    # k3d 클러스터 생성
 │   │   ├── start-environment.sh # 환경 시작
 │   │   ├── stop-environment.sh  # 환경 중지
 │   │   └── cleanup.sh           # 환경 정리
-│   └── platform/                 # 플랫폼 컴포넌트 설치 스크립트
-│       ├── install-argocd.sh    # ArgoCD 설치
-│       ├── install-istio.sh     # Istio 설치
-│       ├── uninstall-istio.sh   # Istio 제거
-│       ├── deploy-monitoring.sh # 모니터링 스택 배포
-│       └── setup-sops-age.sh    # SOPS/Age 시크릿 설정
+│   └── platform/                 # 플랫폼 관리 (인프라 담당자용)
+│       ├── argocd.sh            # ArgoCD 설치/제거/상태 확인
+│       ├── istio.sh             # Istio 설치/제거/상태 확인
+│       ├── kafka.sh             # Kafka 인프라 배포 (Strimzi, Schema Registry)
+│       ├── monitoring.sh        # 모니터링 스택 배포 (Prometheus, Grafana)
+│       └── secrets.sh           # SOPS/Age 시크릿 관리
 │
 ├── charts/                        # Helm 차트 (환경 중립적)
 │   ├── airflow/                  # Apache Airflow
@@ -82,31 +82,56 @@ kubectl get pods -A
 | `stop-environment.sh` | Helm 릴리스 제거 및 클러스터 중지/삭제 선택 |
 | `cleanup.sh` | 모든 k3d 리소스 완전 삭제 |
 
-### 인프라 담당자 (인프라 관리)
+### 인프라 담당자 (플랫폼 관리)
 
-인프라 컴포넌트를 설치하고 관리합니다.
+플랫폼 컴포넌트를 설치하고 관리합니다. 모든 스크립트는 `--help` 옵션으로 상세 사용법을 확인할 수 있습니다.
 
 ```bash
-# ArgoCD 설치 (GitOps)
-./scripts/platform/install-argocd.sh
+# ArgoCD (GitOps)
+./scripts/platform/argocd.sh               # 설치 및 부트스트랩
+./scripts/platform/argocd.sh --status      # 상태 확인
+./scripts/platform/argocd.sh --password    # 관리자 비밀번호 확인
+./scripts/platform/argocd.sh --uninstall   # 제거
 
-# Istio Service Mesh 설치
-./scripts/platform/install-istio.sh
+# Istio Service Mesh
+./scripts/platform/istio.sh                # 설치
+./scripts/platform/istio.sh --status       # 상태 확인
+./scripts/platform/istio.sh --uninstall    # 제거
 
-# 모니터링 스택 배포 (Prometheus, Grafana, Loki, Tempo)
-./scripts/platform/deploy-monitoring.sh
+# Kafka 인프라 (Strimzi Operator, Schema Registry, Connect, UI)
+./scripts/platform/kafka.sh                # 전체 배포
+./scripts/platform/kafka.sh --no-ui        # UI 제외 배포
+./scripts/platform/kafka.sh --status       # 상태 확인
 
-# SOPS/Age 시크릿 관리 설정
-./scripts/platform/setup-sops-age.sh
+# 모니터링 스택 (Prometheus, Grafana, Loki, Tempo)
+./scripts/platform/monitoring.sh           # 배포
+./scripts/platform/monitoring.sh --status  # 상태 확인
+./scripts/platform/monitoring.sh --port-forward  # 포트 포워딩
+
+# 시크릿 관리 (SOPS + Age)
+./scripts/platform/secrets.sh              # Age 키 생성 및 설정
+./scripts/platform/secrets.sh --status     # 상태 확인
+./scripts/platform/secrets.sh --encrypt config/local/db.secrets.yaml  # 암호화
+./scripts/platform/secrets.sh --decrypt config/local/db.secrets.enc.yaml  # 복호화
 ```
 
-| 스크립트 | 설명 |
-|---------|------|
-| `install-argocd.sh` | ArgoCD 설치 및 App of Apps 부트스트랩 |
-| `install-istio.sh` | Istio Control Plane 및 설정 배포 |
-| `uninstall-istio.sh` | Istio 제거 |
-| `deploy-monitoring.sh` | 모니터링 스택 배포 |
-| `setup-sops-age.sh` | Age 키 생성 및 SOPS 설정 |
+#### 플랫폼 스크립트 상세
+
+| 스크립트 | 설명 | 주요 옵션 |
+|---------|------|----------|
+| `argocd.sh` | ArgoCD 설치 및 App of Apps 부트스트랩 | `--status`, `--password`, `--uninstall` |
+| `istio.sh` | Istio Service Mesh 설치/제거 | `--status`, `--uninstall` |
+| `kafka.sh` | Kafka 인프라 전체 배포 (Strimzi, Schema Registry, Connect, UI, Topics) | `--status`, `--no-topics`, `--no-ui`, `--no-connect` |
+| `monitoring.sh` | 모니터링 스택 배포 (Prometheus, Grafana, Loki, Tempo) | `--status`, `--port-forward` |
+| `secrets.sh` | SOPS/Age 시크릿 관리 | `--status`, `--encrypt FILE`, `--decrypt FILE` |
+
+#### 배포 순서 (권장)
+
+1. **시크릿 설정** - `secrets.sh` (Age 키 생성)
+2. **ArgoCD 설치** - `argocd.sh` (GitOps 기반 배포)
+3. **Istio 설치** - `istio.sh` (서비스 메시)
+4. **Kafka 배포** - `kafka.sh` (메시징 인프라)
+5. **모니터링 배포** - `monitoring.sh` (관측성)
 
 ## 환경별 Helm 배포
 
@@ -213,8 +238,8 @@ make version              # 도구 버전 확인
 
 | 디렉토리 | 설명 |
 |---------|------|
-| `scripts/bootstrap/` | 환경 부트스트랩 스크립트 (클러스터 생성, 시작/중지) |
-| `scripts/platform/` | 플랫폼 컴포넌트 설치 스크립트 (ArgoCD, Istio, 모니터링) |
+| `scripts/bootstrap/` | 환경 부트스트랩 (서비스 개발자용 - k3d 클러스터 생성/시작/중지) |
+| `scripts/platform/` | 플랫폼 관리 (인프라 담당자용 - ArgoCD, Istio, Kafka, 모니터링) |
 | `charts/` | 환경 중립적 Helm 차트 |
 | `config/local/` | k3d 환경 Values 오버라이드 |
 | `config/prod/` | EKS 환경 Values 오버라이드 |

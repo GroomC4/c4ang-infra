@@ -93,7 +93,7 @@ spec:
             - name: dashboard-argo-rollouts
               mountPath: /var/lib/grafana/dashboards/argo-rollouts
             {{- end }}
-      
+
       volumes:
         - name: storage
           persistentVolumeClaim:
