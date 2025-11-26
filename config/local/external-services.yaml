@@ -1,0 +1,61 @@
+# =============================================================================
+# External Services - Local Environment (Docker Compose)
+# =============================================================================
+# Docker Desktop for Mac/Windows에서 host.docker.internal 사용
+# Linux에서는 172.17.0.1 또는 host network 사용
+
+namespace: ecommerce
+
+# -----------------------------------------------------------------------------
+# PostgreSQL Databases
+# -----------------------------------------------------------------------------
+postgresql:
+  enabled: true
+  databases:
+    customer:
+      enabled: true
+      externalName: "host.docker.internal"  # 로컬 Docker 호스트
+      port: 5432
+    product:
+      enabled: true
+      externalName: "host.docker.internal"
+      port: 5433
+    order:
+      enabled: true
+      externalName: "host.docker.internal"
+      port: 5434
+    store:
+      enabled: true
+      externalName: "host.docker.internal"
+      port: 5435
+    saga:
+      enabled: true
+      externalName: "host.docker.internal"
+      port: 5436
+
+# -----------------------------------------------------------------------------
+# Redis Instances
+# -----------------------------------------------------------------------------
+redis:
+  enabled: true
+  instances:
+    cache:
+      enabled: true
+      externalName: "host.docker.internal"
+      port: 6379
+    session:
+      enabled: true
+      externalName: "host.docker.internal"
+      port: 6380
+
+# -----------------------------------------------------------------------------
+# Kafka
+# -----------------------------------------------------------------------------
+kafka:
+  enabled: true
+  externalName: "host.docker.internal"
+  port: 9092
+  additionalPorts:
+    - name: external
+      port: 9094
+      targetPort: 9094

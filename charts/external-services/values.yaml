@@ -1,0 +1,74 @@
+# =============================================================================
+# External Services - Default Values
+# =============================================================================
+# 환경별 설정은 config/<env>/external-services.yaml에서 오버라이드
+
+# 네임스페이스 (서비스들이 배포되는 네임스페이스)
+namespace: ecommerce
+
+# -----------------------------------------------------------------------------
+# PostgreSQL Databases (서비스별)
+# -----------------------------------------------------------------------------
+postgresql:
+  enabled: true
+
+  # 서비스별 데이터베이스
+  databases:
+    customer:
+      enabled: true
+      externalName: "customer-db"  # Docker host 또는 RDS endpoint
+      port: 5432
+    product:
+      enabled: true
+      externalName: "product-db"
+      port: 5432
+    order:
+      enabled: true
+      externalName: "order-db"
+      port: 5432
+    store:
+      enabled: true
+      externalName: "store-db"
+      port: 5432
+    saga:
+      enabled: true
+      externalName: "saga-db"
+      port: 5432
+
+# -----------------------------------------------------------------------------
+# Redis Instances
+# -----------------------------------------------------------------------------
+redis:
+  enabled: true
+
+  instances:
+    cache:
+      enabled: true
+      externalName: "cache-redis"
+      port: 6379
+    session:
+      enabled: true
+      externalName: "session-redis"
+      port: 6379
+
+# -----------------------------------------------------------------------------
+# Kafka
+# -----------------------------------------------------------------------------
+kafka:
+  enabled: true
+  externalName: "kafka"
+  port: 9092
+
+  # 추가 포트 (Kafka UI 등에서 사용)
+  additionalPorts:
+    - name: external
+      port: 9094
+      targetPort: 9094
+
+# -----------------------------------------------------------------------------
+# 공통 설정
+# -----------------------------------------------------------------------------
+common:
+  labels:
+    managed-by: helm
+    component: external-services

@@ -1,0 +1,61 @@
+# =============================================================================
+# External Services - Production Environment (AWS)
+# =============================================================================
+# Terraform 출력값을 사용하여 실제 엔드포인트로 교체
+# terraform output -json | jq '.external_services_config.value'
+
+namespace: ecommerce
+
+# -----------------------------------------------------------------------------
+# PostgreSQL Databases (AWS RDS)
+# -----------------------------------------------------------------------------
+postgresql:
+  enabled: true
+  databases:
+    customer:
+      enabled: true
+      # terraform output customer_db_endpoint
+      externalName: "c4ang-prod-customer-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com"
+      port: 5432
+    product:
+      enabled: true
+      externalName: "c4ang-prod-product-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com"
+      port: 5432
+    order:
+      enabled: true
+      externalName: "c4ang-prod-order-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com"
+      port: 5432
+    store:
+      enabled: true
+      externalName: "c4ang-prod-store-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com"
+      port: 5432
+    saga:
+      enabled: true
+      externalName: "c4ang-prod-saga-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com"
+      port: 5432
+
+# -----------------------------------------------------------------------------
+# Redis Instances (AWS ElastiCache)
+# -----------------------------------------------------------------------------
+redis:
+  enabled: true
+  instances:
+    cache:
+      enabled: true
+      # terraform output cache_redis_endpoint
+      externalName: "c4ang-prod-cache-redis.xxxxxxxxxxxx.cache.amazonaws.com"
+      port: 6379
+    session:
+      enabled: true
+      externalName: "c4ang-prod-session-redis.xxxxxxxxxxxx.cache.amazonaws.com"
+      port: 6379
+
+# -----------------------------------------------------------------------------
+# Kafka (K8s 내 Strimzi 사용 - MSK 미사용시)
+# -----------------------------------------------------------------------------
+# MSK 사용시 아래 주석 해제하고 Strimzi 비활성화
+kafka:
+  enabled: false  # K8s 내 Strimzi 사용시 false
+  # enabled: true
+  # externalName: "b-1.c4ang-prod-kafka.xxxx.kafka.ap-northeast-2.amazonaws.com"
+  # port: 9092

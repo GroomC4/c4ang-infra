@@ -1,0 +1,25 @@
+{{- if .Values.postgresql.enabled }}
+{{- range $name, $db := .Values.postgresql.databases }}
+{{- if $db.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}-db
+  namespace: {{ $.Values.namespace }}
+  labels:
+    {{- include "external-services.serviceLabels" $ | nindent 4 }}
+    app.kubernetes.io/name: {{ $name }}-db
+    app.kubernetes.io/component: database
+    service-type: postgresql
+spec:
+  type: ExternalName
+  externalName: {{ $db.externalName }}
+  ports:
+    - port: {{ $db.port }}
+      targetPort: {{ $db.port }}
+      protocol: TCP
+      name: postgresql
+{{- end }}
+{{- end }}
+{{- end }}
