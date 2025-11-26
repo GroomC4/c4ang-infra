@@ -1,0 +1,146 @@
+## 🚀 Schema Registry Deployment 및 Service Manifest
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: schema-registry
+  namespace: kafka
+  labels:
+    app: cp-schema-registry
+spec:
+  # 복제본 수는 그대로 3을 유지합니다.
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cp-schema-registry
+  template:
+    metadata:
+      labels:
+        app: cp-schema-registry
+    spec:
+      # Pod의 고유한 호스트 이름을 환경 변수에 주입하기 위해 ServiceAccount가 필요합니다.
+      serviceAccountName: schema-registry
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: schema-registry
+        image: confluentinc/cp-schema-registry:7.5.1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8081
+          name: http
+        env:
+        # 🚨 수정된 부분 1: SCHEMA_REGISTRY_HOST_NAME을 Pod의 고유한 이름으로 설정 (Downward API 사용)
+        - name: SCHEMA_REGISTRY_HOST_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name # Pod의 고유한 이름 (예: schema-registry-6864d869b9-47qc8)을 사용
+        
+        # 🚨 수정된 부분 2: 다른 인스턴스가 접속할 수 있도록 고유한 주소를 광고
+        # 형식: http://[Pod 이름].[Service 이름].[Namespace].svc.cluster.local:8081
+        - name: SCHEMA_REGISTRY_ADVERTISED_LISTENERS
+          value: http://$(SCHEMA_REGISTRY_HOST_NAME).schema-registry-cp-schema-registry.kafka.svc.cluster.local:8081
+          
+        # 리스너는 모든 Pod에서 8081로 들어오는 요청을 받도록 유지합니다.
+        - name: SCHEMA_REGISTRY_LISTENERS
+          value: "http://0.0.0.0:8081"
+
+        # Kafka 접속 정보는 기존 설정과 동일하게 유지
+        - name: SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS
+          value: "PLAINTEXT://c4-kafka-kafka-bootstrap.kafka:9092"
+        - name: SCHEMA_REGISTRY_KAFKASTORE_TOPIC
+          value: "_schemas"
+        - name: SCHEMA_REGISTRY_KAFKASTORE_TOPIC_REPLICATION_FACTOR
+          value: "3"
+        - name: SCHEMA_REGISTRY_KAFKASTORE_TIMEOUT_MS
+          value: "10000"
+        - name: SCHEMA_REGISTRY_KAFKASTORE_INIT_TIMEOUT_MS
+          value: "60000"
+        - name: SCHEMA_REGISTRY_SCHEMA_COMPATIBILITY_LEVEL
+          value: "BACKWARD"
+        - name: SCHEMA_REGISTRY_MASTER_ELIGIBILITY
+          value: "true"
+        - name: SCHEMA_REGISTRY_GROUP_ID
+          value: "schema-registry"
+        - name: SCHEMA_REGISTRY_HEAP_OPTS
+          value: "-Xms512m -Xmx1g"
+        - name: SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL
+          value: "INFO"
+        resources:
+          requests:
+            memory: "768Mi"
+            cpu: "250m"
+          limits:
+            memory: "1536Mi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8081
+          initialDelaySeconds: 45
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /subjects
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - cp-schema-registry
+              topologyKey: kubernetes.io/hostname
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: schema-registry-cp-schema-registry # 이 서비스 이름이 ADVERTISED_LISTENERS에서 사용됩니다.
+  namespace: kafka
+  labels:
+    app: cp-schema-registry
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8081
+    targetPort: 8081
+    protocol: TCP
+    name: http
+  selector:
+    app: cp-schema-registry
+
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: schema-registry # Deployment에서 참조하는 ServiceAccount
+  namespace: kafka
+
+---
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: schema-registry-pdb
+  namespace: kafka
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: cp-schema-registry
