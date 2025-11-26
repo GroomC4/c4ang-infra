@@ -1,0 +1,67 @@
+# ArgoCD ApplicationSet - MSA Services
+# MSA 서비스를 환경별로 배포
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: services
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          # 환경 정의
+          - list:
+              elements:
+                - env: local
+                  cluster: https://kubernetes.default.svc
+                - env: prod
+                  cluster: https://eks-cluster.region.eks.amazonaws.com
+
+          # 서비스 목록
+          - list:
+              elements:
+                - name: customer-service
+                - name: order-service
+                - name: payment-service
+                - name: product-service
+                - name: recommendation-service
+                - name: saga-tracker
+                - name: store-service
+
+  template:
+    metadata:
+      name: '{{.name}}-{{.env}}'
+      namespace: argocd
+      labels:
+        app.kubernetes.io/component: '{{.name}}'
+        app.kubernetes.io/env: '{{.env}}'
+        app.kubernetes.io/type: service
+      annotations:
+        argocd.argoproj.io/sync-wave: "30"
+    spec:
+      project: applications
+      source:
+        repoURL: https://github.com/GroomC4/c4ang-infra.git
+        targetRevision: HEAD
+        path: 'charts/services/{{.name}}'
+        helm:
+          valueFiles:
+            - values.yaml
+            - ../../../config/{{.env}}/services/{{.name}}.yaml
+      destination:
+        server: '{{.cluster}}'
+        namespace: ecommerce
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 5m
