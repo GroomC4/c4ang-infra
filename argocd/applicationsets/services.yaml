@@ -49,7 +49,7 @@ spec:
         helm:
           valueFiles:
             - values.yaml
-            - ../../../config/{{.env}}/services/{{.name}}.yaml
+            - ../../../config/{{.env}}/{{.name}}.yaml
       destination:
         server: '{{.cluster}}'
         namespace: ecommerce

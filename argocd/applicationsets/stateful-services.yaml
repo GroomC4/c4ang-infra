@@ -7,7 +7,6 @@ metadata:
   namespace: argocd
 spec:
   goTemplate: true
-  goTemplateOptions: ["missingkey=error"]
   generators:
     - matrix:
         generators:
@@ -25,6 +24,7 @@ spec:
                 - name: redis
                   namespace: msa-quality
                   chart: charts/statefulset-base/redis
+                  repoURL: ""
                   syncWave: "10"
                 - name: postgresql
                   namespace: msa-quality
