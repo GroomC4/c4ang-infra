@@ -1,0 +1,26 @@
+{{- if .Values.kafka.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "external-services.serviceLabels" . | nindent 4 }}
+    app.kubernetes.io/name: kafka
+    app.kubernetes.io/component: messaging
+    service-type: kafka
+spec:
+  type: ExternalName
+  externalName: {{ .Values.kafka.externalName }}
+  ports:
+    - port: {{ .Values.kafka.port }}
+      targetPort: {{ .Values.kafka.port }}
+      protocol: TCP
+      name: kafka
+    {{- range .Values.kafka.additionalPorts }}
+    - port: {{ .port }}
+      targetPort: {{ .targetPort }}
+      protocol: TCP
+      name: {{ .name }}
+    {{- end }}
+{{- end }}

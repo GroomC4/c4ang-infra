@@ -1,0 +1,25 @@
+{{- if .Values.redis.enabled }}
+{{- range $name, $instance := .Values.redis.instances }}
+{{- if $instance.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}-redis
+  namespace: {{ $.Values.namespace }}
+  labels:
+    {{- include "external-services.serviceLabels" $ | nindent 4 }}
+    app.kubernetes.io/name: {{ $name }}-redis
+    app.kubernetes.io/component: cache
+    service-type: redis
+spec:
+  type: ExternalName
+  externalName: {{ $instance.externalName }}
+  ports:
+    - port: {{ $instance.port }}
+      targetPort: {{ $instance.port }}
+      protocol: TCP
+      name: redis
+{{- end }}
+{{- end }}
+{{- end }}
