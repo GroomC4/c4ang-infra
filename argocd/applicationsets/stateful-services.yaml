@@ -34,6 +34,9 @@ spec:
                   chartVersion: "15.5.0"
                   syncWave: "10"
 
+  syncPolicy:
+    applicationsSync: create-only  # 생성만 하고 이후 수동 변경 유지
+
   template:
     metadata:
       name: '{{.name}}-{{.env}}'

@@ -18,6 +18,9 @@ spec:
             cluster: https://eks-cluster.region.eks.amazonaws.com
             namespace: airflow
 
+  syncPolicy:
+    applicationsSync: create-only  # 생성만 하고 이후 수동 변경 유지
+
   template:
     metadata:
       name: 'airflow-{{.env}}'
