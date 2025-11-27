@@ -20,7 +20,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
-    targetRevision: main
+    targetRevision: feature/argoRollout
     # 레거시 매니페스트 경로 (개별 Application 정의)
     path: argocd/manifest
 

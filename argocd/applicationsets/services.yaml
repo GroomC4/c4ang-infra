@@ -49,7 +49,6 @@ spec:
         helm:
           valueFiles:
             - values.yaml
-            - ../../../config/{{.env}}/{{.name}}.yaml
       destination:
         server: '{{.cluster}}'
         namespace: ecommerce
