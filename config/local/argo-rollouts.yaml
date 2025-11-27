@@ -1,0 +1,17 @@
+# k3d 로컬 환경 Argo Rollouts 설정
+# 기본 values.yaml을 오버라이드하는 로컬 환경 설정
+
+namespace: argo-rollouts
+
+# Metrics 서비스 설정
+metrics:
+  enabled: true
+  port: 8090
+  targetPort: 8090
+
+# Prometheus 연동 설정
+prometheus:
+  enabled: true
+  scrape: true
+  path: /metrics
+  port: 8090
