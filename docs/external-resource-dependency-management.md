@@ -18,18 +18,11 @@ Kubernetes 환경에서 외부 리소스(DB, Redis, Kafka 등)에 의존하는 �
 
 외부 리소스 의존성 관리는 크게 세 가지 레이어에서 처리할 수 있습니다:
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  1. ArgoCD 레벨 (배포 시점)                              │
-│     - Sync Wave, PreSync Hook, App-of-Apps              │
-├─────────────────────────────────────────────────────────┤
-│  2. Pod 레벨 (컨테이너 시작 시점)                         │
-│     - Init Container, Sidecar, Probes                   │
-├─────────────────────────────────────────────────────────┤
-│  3. 애플리케이션 레벨 (런타임)                            │
-│     - Circuit Breaker, Retry, Timeout, Fallback         │
-└─────────────────────────────────────────────────────────┘
-```
+| 레이어           | 시점         | 주요 전략                                     |
+|---------------|------------|-------------------------------------------|
+| **1. ArgoCD** | 배포 시점      | Sync Wave, PreSync Hook, App-of-Apps      |
+| **2. Pod**    | 컨테이너 시작 시점 | Init Container, Sidecar, Probes           |
+| **3. 애플리케이션** | 런타임        | Circuit Breaker, Retry, Timeout, Fallback |
 
 각 레이어는 서로 다른 시점과 목적을 가지며, 조합하여 사용하면 더 강력한 복원력을 갖출 수 있습니다.
 
@@ -235,11 +228,21 @@ containers:
 
 연속적인 실패를 감지하여 빠르게 실패 처리하고, 백엔드 서비스를 보호합니다.
 
-```
-상태 흐름:
-CLOSED → (실패 임계치 도달) → OPEN → (대기 시간 경과) → HALF-OPEN → (성공) → CLOSED
-                                                                    ↓ (실패)
-                                                                   OPEN
+```mermaid
+---
+config:
+  layout: dagre
+---
+stateDiagram
+    direction TB
+    [*] --> CLOSED
+    CLOSED --> OPEN:실패 임계치 도달
+    OPEN --> HALF_OPEN:대기 시간 경과
+    HALF_OPEN --> CLOSED:요청 성공
+    HALF_OPEN --> OPEN:요청 실패
+    note right of CLOSED : 정상 상태<br>요청 전달
+    note right of OPEN : 차단 상태<br>즉시 실패 반환
+    note right of HALF_OPEN : 테스트 상태<br>제한된 요청 허용
 ```
 
 **Istio DestinationRule 설정**:
@@ -349,22 +352,38 @@ public Customer getCustomerFallback(String id, Exception e) {
 
 데이터베이스, 메시지 큐 등 필수 인프라가 준비되지 않으면 애플리케이션이 시작되면 안 되는 경우입니다.
 
-```
-추천: PreSync Hook + Init Container (이중 보호)
+> **추천: PreSync Hook + Init Container (이중 보호)**
 
-┌─────────────────────────────────────────────────────┐
-│ ArgoCD PreSync Hook                                 │
-│ - 배포 전 외부 리소스 상태 확인                            │
-│ - 실패 시 Sync 자체가 실패 → 명확한 에러                   │
-└─────────────────────────────────────────────────────┘
-                        ↓ (성공 시)
-┌─────────────────────────────────────────────────────┐
-│ Pod Init Container                                  │
-│ - Pod 시작 전 최종 확인                                 │
-│ - PreSync 이후 상태 변경 대비                            │
-└─────────────────────────────────────────────────────┘
-                        ↓ (성공 시)
-                    앱 컨테이너 시작
+```mermaid
+---
+config:
+  layout: dagre
+---
+flowchart TD
+    subgraph ArgoCD["ArgoCD PreSync Hook"]
+        A1[배포 전 외부 리소스 상태 확인]
+        A2[실패 시 Sync 자체가 실패 → 명확한 에러]
+    end
+
+    subgraph Pod["Pod Init Container"]
+        B1[Pod 시작 전 최종 확인]
+        B2[PreSync 이후 상태 변경 대비]
+    end
+
+    subgraph App["앱 컨테이너"]
+        C1[애플리케이션 시작]
+    end
+
+    ArgoCD -->|성공| Pod
+    Pod -->|성공| App
+    ArgoCD -.->|실패| X1[Sync 중단]
+    Pod -.->|실패| X2[Pod 대기]
+
+    style ArgoCD fill:#e3f2fd
+    style Pod fill:#fff8e1
+    style App fill:#e8f5e9
+    style X1 fill:#ffebee
+    style X2 fill:#ffebee
 ```
 
 **적합한 경우**:
@@ -376,17 +395,26 @@ public Customer getCustomerFallback(String id, Exception e) {
 
 외부 서비스가 일시적으로 불안정할 수 있지만, 재시도로 복구 가능한 경우입니다.
 
-```
-추천: Circuit Breaker + Retry (Istio 또는 앱 레벨)
+> **추천: Circuit Breaker + Retry (Istio 또는 앱 레벨)**
 
-요청 → Retry (3회, Exponential Backoff)
-         ↓
-    [성공] → 정상 응답
-         ↓
-    [실패] → Circuit Breaker 상태 업데이트
-                    ↓
-              [OPEN] → 빠른 실패 (503)
-              [CLOSED/HALF-OPEN] → 요청 전달
+```mermaid
+---
+config:
+  layout: dagre
+---
+flowchart LR
+    A[요청] --> B{Retry}
+    B -->|1~3회 시도| C{응답}
+    C -->|성공| D[정상 응답]
+    C -->|실패| E{Circuit Breaker}
+    E -->|OPEN| F[빠른 실패 503]
+    E -->|CLOSED| G[요청 전달]
+    E -->|HALF-OPEN| H[제한적 요청]
+
+    style D fill:#c8e6c9
+    style F fill:#ffcdd2
+    style G fill:#e3f2fd
+    style H fill:#fff9c4
 ```
 
 **적합한 경우**:
@@ -398,20 +426,29 @@ public Customer getCustomerFallback(String id, Exception e) {
 
 외부 리소스 장애 시에도 일부 기능은 유지해야 하는 경우입니다.
 
-```
-추천: Readiness Probe (앱 자체만) + Circuit Breaker + Fallback
+> **추천: Readiness Probe (앱 자체만) + Circuit Breaker + Fallback**
 
-┌─────────────────────────────────────────────────────┐
-│ 정상 상태                                             │
-│ - DB 조회 → 최신 데이터 반환                             │
-└─────────────────────────────────────────────────────┘
-                        ↓ (DB 장애 발생)
-┌─────────────────────────────────────────────────────┐
-│ Degraded 상태                                        │
-│ - Circuit Breaker OPEN                              │
-│ - Fallback: 캐시 데이터 반환                            │
-│ - 쓰기 요청: 503 또는 큐잉                               │
-└─────────────────────────────────────────────────────┘
+```mermaid
+---
+config:
+  layout: dagre
+---
+flowchart TD
+    subgraph Normal["정상 상태"]
+        N1[DB 조회] --> N2[최신 데이터 반환]
+    end
+
+    subgraph Degraded["Degraded 상태"]
+        D1[Circuit Breaker OPEN]
+        D2[Fallback: 캐시 데이터 반환]
+        D3[쓰기 요청: 503 또는 큐잉]
+    end
+
+    Normal -->|DB 장애 발생| Degraded
+    Degraded -->|DB 복구| Normal
+
+    style Normal fill:#e8f5e9
+    style Degraded fill:#fff3e0
 ```
 
 **적합한 경우**:
