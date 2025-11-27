@@ -22,36 +22,32 @@ env:
     value: "8081"
   - name: SPRING_PROFILES_ACTIVE
     value: "local"
-  # PostgreSQL (store-db:5435)
+  # PostgreSQL (ExternalName 서비스 사용)
   - name: SPRING_DATASOURCE_MASTER_URL
-    value: "jdbc:postgresql://host.docker.internal:5435/store_db"
+    value: "jdbc:postgresql://store-db:5432/store_db"
   - name: SPRING_DATASOURCE_REPLICA_URL
-    value: "jdbc:postgresql://host.docker.internal:5435/store_db"
+    value: "jdbc:postgresql://store-db:5432/store_db"
   - name: SPRING_DATASOURCE_USERNAME
     value: "postgres"
   - name: SPRING_DATASOURCE_PASSWORD
     value: "postgres"
-  # Redis (cache-redis:6379)
+  # Redis (ExternalName 서비스 사용)
   - name: SPRING_REDIS_HOST
-    value: "host.docker.internal"
+    value: "cache-redis"
   - name: SPRING_REDIS_PORT
     value: "6379"
   - name: SPRING_REDIS_PASSWORD
     value: ""
   - name: SPRING_REDISSON_ADDRESS
-    value: "redis://host.docker.internal:6379"
+    value: "redis://cache-redis:6379"
   - name: SPRING_REDISSON_PASSWORD
     value: ""
-  # Kafka (kafka:9094)
+  # Kafka (ExternalName 서비스 사용)
   - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
-    value: "host.docker.internal:9094"
+    value: "kafka:9092"
   - name: SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS
-    value: "host.docker.internal:9094"
+    value: "kafka:9092"
   - name: SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS
-    value: "host.docker.internal:9094"
+    value: "kafka:9092"
 
-# 로컬에서는 Istio 비활성화
-istio:
-  enabled: false
-  gatewayAPI:
-    enabled: false
+# Istio 설정 (기본값 사용)
