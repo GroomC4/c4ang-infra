@@ -28,6 +28,7 @@ spec:
 
   # 네임스페이스 리소스만 허용 (클러스터 리소스 제한)
   namespaceResourceWhitelist:
+    # Core
     - group: ''
       kind: ConfigMap
     - group: ''
@@ -36,22 +37,41 @@ spec:
       kind: Service
     - group: ''
       kind: ServiceAccount
+    # Apps
     - group: apps
       kind: Deployment
     - group: apps
       kind: StatefulSet
     - group: apps
       kind: ReplicaSet
+    # Argo Rollouts
     - group: argoproj.io
       kind: Rollout
     - group: argoproj.io
       kind: AnalysisTemplate
+    # Autoscaling & Policy
     - group: autoscaling
       kind: HorizontalPodAutoscaler
     - group: policy
       kind: PodDisruptionBudget
     - group: networking.k8s.io
       kind: NetworkPolicy
+    # Istio
+    - group: networking.istio.io
+      kind: VirtualService
+    - group: networking.istio.io
+      kind: DestinationRule
+    - group: security.istio.io
+      kind: AuthorizationPolicy
+    - group: security.istio.io
+      kind: PeerAuthentication
+    - group: security.istio.io
+      kind: RequestAuthentication
+    # Gateway API
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+    - group: gateway.networking.k8s.io
+      kind: GRPCRoute
 
   # 역할 정의
   roles:
