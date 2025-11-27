@@ -56,7 +56,7 @@ spec:
       project: infrastructure
       source:
         repoURL: https://github.com/GroomC4/c4ang-infra.git
-        targetRevision: HEAD
+        targetRevision: feature/argoRollout
         path: '{{.chart}}'
         helm:
           valueFiles:
