@@ -12,6 +12,7 @@ airflow:
 
   migrateDatabaseJob:
     enabled: true
+    useHelmHooks: false
 
   createUserJob:
     useHelmHooks: false
