@@ -1,0 +1,27 @@
+version: 0.1
+
+# Infracost 설정 파일
+# 이 파일은 Infracost가 Terraform 코드를 분석할 때 사용하는 설정입니다.
+
+# Terraform 작업 디렉토리
+terraform_dir: .
+
+# Terraform 변수 파일
+terraform_var_files:
+  - only-rds.tfvars
+  # - terraform.tfvars  # 필요시 추가
+
+# 환경 변수 설정 (옵션)
+# terraform_plan_flags: "-var-file=only-rds.tfvars"
+
+# 비용 계산 시 사용할 설정
+# currency: USD  # 기본값은 USD
+
+# 출력 형식 설정
+# format: table  # table, json, html, diff
+
+# 예산 알림 설정 (옵션)
+# budget:
+#   monthly_budget: 1000
+#   currency: USD
+
