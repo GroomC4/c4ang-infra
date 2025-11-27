@@ -46,12 +46,24 @@ spec:
       kind: Rollout
     - group: argoproj.io
       kind: AnalysisTemplate
+    - group: argoproj.io
+      kind: AnalysisRun
     - group: autoscaling
       kind: HorizontalPodAutoscaler
     - group: policy
       kind: PodDisruptionBudget
     - group: networking.k8s.io
       kind: NetworkPolicy
+    - group: networking.istio.io
+      kind: VirtualService
+    - group: networking.istio.io
+      kind: DestinationRule
+    - group: networking.istio.io
+      kind: Gateway
+    - group: security.istio.io
+      kind: RequestAuthentication
+    - group: security.istio.io
+      kind: AuthorizationPolicy
 
   # 역할 정의
   roles:
