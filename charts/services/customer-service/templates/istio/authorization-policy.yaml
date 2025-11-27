@@ -69,6 +69,7 @@ spec:
 
     # ====== PROTECTED ENDPOINTS (인증 필요) ======
     # Customer logout - requires CUSTOMER role
+    # Note: x-user-id header presence is validated by the gateway/application
     - to:
         - operation:
             paths:
@@ -77,8 +78,6 @@ spec:
       when:
         - key: request.headers[x-user-role]
           values: ["CUSTOMER"]
-        - key: request.headers[x-user-id]
-          notValues: [""]
 
     # Owner logout - requires OWNER role
     - to:
@@ -89,8 +88,6 @@ spec:
       when:
         - key: request.headers[x-user-role]
           values: ["OWNER"]
-        - key: request.headers[x-user-id]
-          notValues: [""]
 
     # ====== CUSTOMER PROFILE ENDPOINTS ======
     # Customer profile management - requires CUSTOMER role
@@ -103,8 +100,6 @@ spec:
       when:
         - key: request.headers[x-user-role]
           values: ["CUSTOMER"]
-        - key: request.headers[x-user-id]
-          notValues: [""]
 
     # ====== OWNER PROFILE ENDPOINTS ======
     # Owner profile management - requires OWNER role
@@ -117,8 +112,6 @@ spec:
       when:
         - key: request.headers[x-user-role]
           values: ["OWNER"]
-        - key: request.headers[x-user-id]
-          notValues: [""]
 
     # ====== ADMIN ENDPOINTS ======
     # Admin-only endpoints - requires ADMIN role
@@ -131,8 +124,6 @@ spec:
       when:
         - key: request.headers[x-user-role]
           values: ["ADMIN"]
-        - key: request.headers[x-user-id]
-          notValues: [""]
 
     # ====== INTER-SERVICE COMMUNICATION ======
     # Allow internal service-to-service calls (with service account)
