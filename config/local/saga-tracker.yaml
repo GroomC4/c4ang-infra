@@ -1,0 +1,57 @@
+# saga-tracker 로컬 환경 설정
+# docker-compose로 띄운 외부 서비스에 연결
+
+replicaCount: 1
+
+image:
+  pullPolicy: IfNotPresent
+
+autoscaling:
+  enabled: false
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 100m
+  limits:
+    memory: 1Gi
+    cpu: 250m
+
+env:
+  - name: SERVER_PORT
+    value: "8081"
+  - name: SPRING_PROFILES_ACTIVE
+    value: "local"
+  # PostgreSQL (saga-db:5436)
+  - name: SPRING_DATASOURCE_MASTER_URL
+    value: "jdbc:postgresql://host.docker.internal:5436/saga_db"
+  - name: SPRING_DATASOURCE_REPLICA_URL
+    value: "jdbc:postgresql://host.docker.internal:5436/saga_db"
+  - name: SPRING_DATASOURCE_USERNAME
+    value: "postgres"
+  - name: SPRING_DATASOURCE_PASSWORD
+    value: "postgres"
+  # Redis (cache-redis:6379)
+  - name: SPRING_REDIS_HOST
+    value: "host.docker.internal"
+  - name: SPRING_REDIS_PORT
+    value: "6379"
+  - name: SPRING_REDIS_PASSWORD
+    value: ""
+  - name: SPRING_REDISSON_ADDRESS
+    value: "redis://host.docker.internal:6379"
+  - name: SPRING_REDISSON_PASSWORD
+    value: ""
+  # Kafka (kafka:9094)
+  - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+    value: "host.docker.internal:9094"
+  - name: SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS
+    value: "host.docker.internal:9094"
+  - name: SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS
+    value: "host.docker.internal:9094"
+
+# 로컬에서는 Istio 비활성화
+istio:
+  enabled: false
+  gatewayAPI:
+    enabled: false
