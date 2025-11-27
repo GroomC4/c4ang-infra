@@ -6,6 +6,12 @@
 
 set -e  # 오류 발생 시 스크립트 중단
 
+# 스크립트 위치 기준으로 terraform 루트 디렉토리로 이동
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "${SCRIPT_DIR}/.."
+
+echo "[INFO] Working directory: $(pwd)"
+
 # 색상 정의
 RED='\033[0;31m'
 GREEN='\033[0;32m'
