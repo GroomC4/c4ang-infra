@@ -35,7 +35,7 @@ spec:
       project: infrastructure
       source:
         repoURL: https://github.com/GroomC4/c4ang-infra.git
-        targetRevision: HEAD
+        targetRevision: feature/adding-db-schema-and-enhancement-external-service  # TODO: 개발 완료 후 HEAD로 복구
         path: charts/airflow
         helm:
           valueFiles:
