@@ -336,9 +336,9 @@ setup_helm_repos() {
 # 클러스터 상태 확인
 verify_cluster() {
     log_info "클러스터 상태를 확인합니다..."
-    
+
     export KUBECONFIG="${KUBECONFIG_FILE}"
-    
+
     if kubectl cluster-info &> /dev/null; then
         log_info "클러스터 연결 성공"
         kubectl get nodes
@@ -348,10 +348,24 @@ verify_cluster() {
     fi
 }
 
+# Istio 설치
+install_istio() {
+    log_step "Istio 설치 중..."
+
+    local istio_script="${SCRIPT_DIR}/../platform/istio.sh"
+
+    if [ -f "${istio_script}" ]; then
+        bash "${istio_script}"
+    else
+        log_warn "Istio 설치 스크립트를 찾을 수 없습니다: ${istio_script}"
+        log_info "수동으로 설치하세요: ./scripts/platform/istio.sh"
+    fi
+}
+
 # 메인 함수
 main() {
     log_info "=== k3d/k3s 클러스터 부트스트랩 시작 ==="
-    
+
     check_docker
     check_and_install_k3d
     check_and_install_helm
@@ -361,7 +375,8 @@ main() {
     setup_kubeconfig
     setup_helm_repos
     verify_cluster
-    
+    install_istio
+
     log_info "=== 부트스트랩 완료 ==="
     log_info ""
     log_info "다음 명령어로 클러스터를 사용하세요:"
