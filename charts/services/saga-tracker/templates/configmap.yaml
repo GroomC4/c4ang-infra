@@ -5,7 +5,6 @@ metadata:
   labels:
     {{- include "saga-tracker.labels" . | nindent 4 }}
 data:
-  application.yaml: |
-    # Application configuration
-    # Add any application-specific configuration here
-
+  {{- range $key, $value := .Values.config }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}

@@ -13,6 +13,7 @@ data:
       {{- if .Values.grafana.datasources.prometheus.enabled }}
       - name: Prometheus
         type: prometheus
+        uid: prometheus
         access: proxy
         url: {{ .Values.grafana.datasources.prometheus.url }}
         isDefault: {{ .Values.grafana.datasources.prometheus.isDefault }}
@@ -25,6 +26,7 @@ data:
       {{- if .Values.grafana.datasources.loki.enabled }}
       - name: Loki
         type: loki
+        uid: loki
         access: proxy
         url: {{ .Values.grafana.datasources.loki.url }}
         editable: true
@@ -35,13 +37,14 @@ data:
       {{- if .Values.grafana.datasources.tempo.enabled }}
       - name: Tempo
         type: tempo
+        uid: tempo
         access: proxy
         url: {{ .Values.grafana.datasources.tempo.url }}
         editable: true
         jsonData:
           httpMethod: GET
           tracesToLogs:
-            datasourceUid: Loki
+            datasourceUid: loki
             tags: ['job', 'instance', 'pod', 'namespace']
             mappedTags: [{ key: 'service.name', value: 'service' }]
             mapTagNamesEnabled: false
@@ -50,7 +53,7 @@ data:
             filterByTraceID: false
             filterBySpanID: false
           serviceMap:
-            datasourceUid: Prometheus
+            datasourceUid: prometheus
           nodeGraph:
             enabled: true
       {{- end }}

@@ -1,60 +1,51 @@
 fullnameOverride: store-api
 replicaCount: 2
 
-# 테스트용 간단한 HTTP echo 서버 이미지
 image:
-  repository: hashicorp/http-echo
+  repository: ""  # Set in environment config (config/local/*.yaml or config/prod/*.yaml)
   pullPolicy: IfNotPresent
-  tag: "1.0.0"
+  tag: ""         # Set in environment config
 
 imagePullSecrets: []
 
 service:
   type: ClusterIP
   port: 8080
-  targetPort: 5678  # http-echo의 기본 포트
+  targetPort: 8081
 
 resources:
   requests:
-    memory: 64Mi
-    cpu: 50m
-  limits:
-    memory: 128Mi
+    memory: 512Mi
     cpu: 100m
+  limits:
+    memory: 1Gi
+    cpu: 250m
 
 autoscaling:
-  enabled: false  # 테스트용으로 비활성화
+  enabled: false
 
-env:
-  - name: SERVER_PORT
-    value: "8081"  # Spring Boot server port
-  - name: SPRING_PROFILES_ACTIVE
-    value: "prod"
-  - name: SPRING_DATASOURCE_MASTER_URL
-    value: "jdbc:postgresql://infra-database-postgresql-primary.ecommerce.svc.cluster.local:5432/store_db"
-  - name: SPRING_DATASOURCE_REPLICA_URL
-    value: "jdbc:postgresql://infra-database-postgresql-read.ecommerce.svc.cluster.local:5432/store_db"
-  - name: SPRING_DATASOURCE_MASTER_USERNAME
-    value: "application"
-  - name: SPRING_DATASOURCE_MASTER_PASSWORD
-    value: "application"
-  - name: SPRING_DATA_REDIS_HOST
-    value: "store-service-redis-service.cache-tier.svc.cluster.local"
-  - name: SPRING_DATA_REDIS_PORT
-    value: "6379"
-  - name: SPRING_REDIS_PASSWORD
-    value: ""
-  # Redisson specific properties
-  - name: SPRING_REDISSON_ADDRESS
-    value: "redis://store-service-redis-service.cache-tier.svc.cluster.local:6379"
-  - name: SPRING_REDISSON_PASSWORD
-    value: ""
+# Application configuration (injected via ConfigMap)
+config:
+  SERVER_PORT: "8081"
+  SPRING_PROFILES_ACTIVE: "prod"
+  SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://infra-database-postgresql-primary.ecommerce.svc.cluster.local:5432/store_db"
+  SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://infra-database-postgresql-read.ecommerce.svc.cluster.local:5432/store_db"
+  SPRING_DATA_REDIS_HOST: "store-service-redis-service.cache-tier.svc.cluster.local"
+  SPRING_DATA_REDIS_PORT: "6379"
+  SPRING_REDISSON_ADDRESS: "redis://store-service-redis-service.cache-tier.svc.cluster.local:6379"
 
-# 테스트용 command override (http-echo 설정)
-command: ["/http-echo"]
-args:
-  - "-listen=:5678"
-  - "-text=Store Service Test Response"
+# Sensitive data (injected via Secret)
+secrets:
+  SPRING_DATASOURCE_MASTER_USERNAME: "application"
+  SPRING_DATASOURCE_MASTER_PASSWORD: "application"
+  SPRING_DATASOURCE_REPLICA_USERNAME: "application"
+  SPRING_DATASOURCE_REPLICA_PASSWORD: "application"
+  SPRING_REDIS_PASSWORD: ""
+  SPRING_REDISSON_PASSWORD: ""
+
+# Extra environment variables (optional, injected directly as env)
+extraEnv: []
+
 # Set to true for local/dev environments
 # Disabled for EKS - using existing redis in cache-tier namespace
 redis:

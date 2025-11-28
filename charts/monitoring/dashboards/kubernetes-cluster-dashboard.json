@@ -43,11 +43,11 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "title": "CPU Usage",
+      "title": "CPU Usage (Cluster)",
       "type": "gauge",
       "targets": [
         {
-          "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{id=\"/\"}[5m])) * 100",
           "refId": "A"
         }
       ]
@@ -86,11 +86,11 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "title": "Memory Usage",
+      "title": "Memory Usage (Cluster)",
       "type": "gauge",
       "targets": [
         {
-          "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+          "expr": "sum(container_memory_working_set_bytes{id=\"/\"}) / sum(machine_memory_bytes) * 100",
           "refId": "A"
         }
       ]
@@ -184,7 +184,7 @@
               { "color": "green", "value": null }
             ]
           },
-          "unit": "percent"
+          "unit": "short"
         }
       },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
@@ -201,11 +201,11 @@
           "sort": "none"
         }
       },
-      "title": "CPU Usage Over Time",
+      "title": "CPU Usage by Namespace",
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace!=\"\"}[5m])) by (namespace) * 100",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace!=\"\", image!=\"\"}[5m])) by (namespace)",
           "legendFormat": "{{namespace}}",
           "refId": "A"
         }
@@ -275,11 +275,11 @@
           "sort": "none"
         }
       },
-      "title": "Memory Usage Over Time",
+      "title": "Memory Usage by Namespace",
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(container_memory_working_set_bytes{namespace!=\"\"}) by (namespace)",
+          "expr": "sum(container_memory_working_set_bytes{namespace!=\"\", image!=\"\"}) by (namespace)",
           "legendFormat": "{{namespace}}",
           "refId": "A"
         }

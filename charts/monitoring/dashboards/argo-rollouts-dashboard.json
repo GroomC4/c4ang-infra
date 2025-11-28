@@ -25,7 +25,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -87,7 +87,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "rollout_info{namespace=~\"$namespace\", name=~\"$rollout\"}",
           "refId": "A",
@@ -100,7 +100,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -178,7 +178,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "rollout_info_replicas_available{namespace=~\"$namespace\", rollout=~\"$rollout\"}",
           "refId": "A",
@@ -187,7 +187,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "rollout_info_replicas_desired{namespace=~\"$namespace\", rollout=~\"$rollout\"}",
           "refId": "B",
@@ -196,7 +196,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "rollout_info_replicas_updated{namespace=~\"$namespace\", rollout=~\"$rollout\"}",
           "refId": "C",
@@ -209,7 +209,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -287,7 +287,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "rate(rollout_reconcile_sum{namespace=~\"$namespace\", name=~\"$rollout\"}[5m]) / rate(rollout_reconcile_count{namespace=~\"$namespace\", name=~\"$rollout\"}[5m])",
           "refId": "A",
@@ -300,7 +300,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -381,7 +381,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "rate(rollout_reconcile_error{namespace=~\"$namespace\", name=~\"$rollout\"}[5m])",
           "refId": "A",
@@ -394,7 +394,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -446,7 +446,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "sum(rate(rollout_reconcile_error{namespace=~\"$namespace\"}[5m]))",
           "refId": "A",
@@ -459,7 +459,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -536,7 +536,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "rollout_phase{namespace=~\"$namespace\", name=~\"$rollout\"}",
           "refId": "A",
@@ -549,7 +549,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -627,7 +627,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "rate(controller_clientset_k8s_request_total{namespace=\"argo-rollouts\"}[5m])",
           "refId": "A",
@@ -660,7 +660,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "${DS_PROMETHEUS}"
+          "uid": "prometheus"
         },
         "definition": "label_values(rollout_info, namespace)",
         "hide": 0,
@@ -690,7 +690,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "${DS_PROMETHEUS}"
+          "uid": "prometheus"
         },
         "definition": "label_values(rollout_info{namespace=~\"$namespace\"}, name)",
         "hide": 0,

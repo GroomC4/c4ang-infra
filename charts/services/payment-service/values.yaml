@@ -3,9 +3,9 @@ fullnameOverride: payment-api
 replicaCount: 3
 
 image:
-  repository: 963403601423.dkr.ecr.ap-northeast-2.amazonaws.com/c4ang-payment-service
+  repository: ""  # Set in environment config (config/local/*.yaml or config/prod/*.yaml)
   pullPolicy: IfNotPresent
-  tag: "v0.0.1-RC1"
+  tag: ""         # Set in environment config
 
 imagePullSecrets: []
 
@@ -29,29 +29,26 @@ autoscaling:
   targetCPUUtilizationPercentage: 70
   targetMemoryUtilizationPercentage: 80
 
-env:
-  - name: SERVER_PORT
-    value: "8081"  # Spring Boot server port
-  - name: SPRING_PROFILES_ACTIVE
-    value: "prod"
-  - name: SPRING_DATASOURCE_PRIMARY_URL
-    value: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/payment_db"
-  - name: SPRING_DATASOURCE_REPLICA_URL
-    value: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/payment_db"
-  - name: SPRING_DATASOURCE_MASTER_USERNAME
-    valueFrom:
-      secretKeyRef:
-        name: payment-service-db-secret
-        key: username
-  - name: SPRING_DATASOURCE_MASTER_PASSWORD
-    valueFrom:
-      secretKeyRef:
-        name: payment-service-db-secret
-        key: password
-  - name: SPRING_DATA_REDIS_HOST
-    value: "redis-master"
-  - name: SPRING_DATA_REDIS_PORT
-    value: "6379"
+# Application configuration (injected via ConfigMap)
+config:
+  SERVER_PORT: "8081"
+  SPRING_PROFILES_ACTIVE: "prod"
+  SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/payment_db"
+  SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/payment_db"
+  SPRING_DATA_REDIS_HOST: "redis-master"
+  SPRING_DATA_REDIS_PORT: "6379"
+
+# Sensitive data (injected via Secret)
+secrets:
+  SPRING_DATASOURCE_MASTER_USERNAME: ""
+  SPRING_DATASOURCE_MASTER_PASSWORD: ""
+  SPRING_DATASOURCE_REPLICA_USERNAME: ""
+  SPRING_DATASOURCE_REPLICA_PASSWORD: ""
+  SPRING_REDIS_PASSWORD: ""
+  SPRING_REDISSON_PASSWORD: ""
+
+# Extra environment variables (optional, injected directly as env)
+extraEnv: []
 
 # Redis dependency - disabled by default for EKS (use ElastiCache)
 # Set to true for local/dev environments
