@@ -1,5 +1,6 @@
 # ArgoCD ApplicationSet - MSA Services
 # MSA 서비스를 환경별로 배포
+# Multiple Sources를 사용하여 환경별 설정 파일을 명확하게 참조
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -45,14 +46,20 @@ spec:
         argocd.argoproj.io/sync-wave: "30"
     spec:
       project: applications
-      source:
-        repoURL: https://github.com/GroomC4/c4ang-infra.git
-        targetRevision: feature/argoRollout
-        path: 'charts/services/{{.name}}'
-        helm:
-          valueFiles:
-            - values.yaml
-            - ../../../config/{{.env}}/{{.name}}.yaml
+      # Multiple Sources: 상대경로 대신 명확한 경로 사용 (ArgoCD 2.6+)
+      sources:
+        # Source 1: 환경별 설정 파일 (ref로 참조용)
+        - repoURL: https://github.com/GroomC4/c4ang-infra.git
+          targetRevision: feature/argoRollout
+          ref: values
+        # Source 2: Helm 차트 + values 파일 참조
+        - repoURL: https://github.com/GroomC4/c4ang-infra.git
+          targetRevision: feature/argoRollout
+          path: 'charts/services/{{.name}}'
+          helm:
+            valueFiles:
+              - values.yaml
+              - '$values/config/{{.env}}/{{.name}}.yaml'
       destination:
         server: '{{.cluster}}'
         namespace: ecommerce
