@@ -31,9 +31,9 @@ env:
     value: "jdbc:postgresql://infra-database-postgresql-primary.ecommerce.svc.cluster.local:5432/customer_db"
   - name: SPRING_DATASOURCE_REPLICA_URL
     value: "jdbc:postgresql://infra-database-postgresql-read.ecommerce.svc.cluster.local:5432/customer_db"
-  - name: SPRING_DATASOURCE_USERNAME
+  - name: SPRING_DATASOURCE_MASTER_USERNAME
     value: "application"
-  - name: SPRING_DATASOURCE_PASSWORD
+  - name: SPRING_DATASOURCE_MASTER_PASSWORD
     value: "application"
   - name: SPRING_DATA_REDIS_HOST
     value: "customer-service-redis-service.cache-tier.svc.cluster.local"

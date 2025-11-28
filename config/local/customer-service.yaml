@@ -31,9 +31,13 @@ env:
     value: "jdbc:postgresql://customer-db:5432/customer_db"
   - name: SPRING_DATASOURCE_REPLICA_URL
     value: "jdbc:postgresql://customer-db:5432/customer_db"
-  - name: SPRING_DATASOURCE_USERNAME
+  - name: SPRING_DATASOURCE_MASTER_USERNAME
     value: "postgres"
-  - name: SPRING_DATASOURCE_PASSWORD
+  - name: SPRING_DATASOURCE_MASTER_PASSWORD
+    value: "postgres"
+  - name: SPRING_DATASOURCE_REPLICA_USERNAME
+    value: "postgres"
+  - name: SPRING_DATASOURCE_REPLICA_PASSWORD
     value: "postgres"
   # Redis (ExternalName 서비스 사용)
   - name: SPRING_DATA_REDIS_HOST
