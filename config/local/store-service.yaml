@@ -6,6 +6,10 @@ replicaCount: 1
 image:
   pullPolicy: IfNotPresent
 
+# ECR 이미지 pull을 위한 secret
+imagePullSecrets:
+  - name: ecr-secret
+
 autoscaling:
   enabled: false
 
