@@ -38,12 +38,12 @@ env:
     value: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/saga_db"
   - name: SPRING_DATASOURCE_REPLICA_URL
     value: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/saga_db"
-  - name: SPRING_DATASOURCE_USERNAME
+  - name: SPRING_DATASOURCE_MASTER_USERNAME
     valueFrom:
       secretKeyRef:
         name: saga-tracker-db-secret
         key: username
-  - name: SPRING_DATASOURCE_PASSWORD
+  - name: SPRING_DATASOURCE_MASTER_PASSWORD
     valueFrom:
       secretKeyRef:
         name: saga-tracker-db-secret
