@@ -25,7 +25,7 @@ env:
   - name: SERVER_PORT
     value: "8081"
   - name: SPRING_PROFILES_ACTIVE
-    value: "local"
+    value: "prod"
   # PostgreSQL (ExternalName 서비스 사용)
   - name: SPRING_DATASOURCE_MASTER_URL
     value: "jdbc:postgresql://customer-db:5432/customer_db"
