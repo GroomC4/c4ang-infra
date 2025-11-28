@@ -238,11 +238,38 @@ setup_ecr_secret() {
 }
 
 # =============================================================================
-# Phase 4: ArgoCD Bootstrap
+# Phase 4: Istio Control Plane 설치
+# =============================================================================
+
+setup_istio() {
+    log_step "Phase 4: Istio Control Plane 설치"
+
+    export KUBECONFIG="${KUBECONFIG_FILE}"
+
+    local istio_script="${PROJECT_ROOT}/scripts/platform/istio.sh"
+
+    if [ -f "${istio_script}" ]; then
+        # Istio가 이미 설치되어 있는지 확인
+        if kubectl get namespace istio-system &>/dev/null && \
+           kubectl get deployment istiod -n istio-system &>/dev/null; then
+            log_info "Istio가 이미 설치되어 있습니다."
+            return 0
+        fi
+
+        log_info "Istio Control Plane 설치 중..."
+        bash "${istio_script}"
+    else
+        log_warn "Istio 스크립트를 찾을 수 없습니다: ${istio_script}"
+        log_warn "Istio 없이 계속합니다. 일부 애플리케이션이 실패할 수 있습니다."
+    fi
+}
+
+# =============================================================================
+# Phase 5: ArgoCD Bootstrap
 # =============================================================================
 
 bootstrap_argocd() {
-    log_step "Phase 4: ArgoCD Bootstrap (App of Apps)"
+    log_step "Phase 5: ArgoCD Bootstrap (App of Apps)"
 
     export KUBECONFIG="${KUBECONFIG_FILE}"
 
@@ -395,7 +422,10 @@ full_init() {
     # Phase 3: ECR Secret
     setup_ecr_secret
 
-    # Phase 4: ArgoCD Bootstrap
+    # Phase 4: Istio Control Plane
+    setup_istio
+
+    # Phase 5: ArgoCD Bootstrap
     bootstrap_argocd
 
     log_header "초기화 완료"
@@ -488,7 +518,12 @@ usage() {
      - AWS 자격증명으로 ECR 토큰 발급
      - docker-registry Secret 생성 (12시간 유효)
 
-  4. ArgoCD Bootstrap
+  4. Istio Control Plane 설치
+     - Gateway API CRD 설치
+     - Istio Control Plane (istiod) 설치
+     - 서비스 메시 기반 트래픽 관리
+
+  5. ArgoCD Bootstrap
      - App of Apps 패턴
      - ApplicationSet으로 환경별 자동 배포
 

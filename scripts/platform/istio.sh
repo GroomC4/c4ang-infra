@@ -104,25 +104,11 @@ install_istio() {
     log_info "Istio 설치 확인 중..."
     kubectl wait --for=condition=available --timeout=300s deployment/istiod -n "$ISTIO_NS"
 
-    # Istio Helm 차트가 있으면 추가 리소스 배포
-    if [ -d "${CHARTS_DIR}/istio" ]; then
-        log_info "Istio 추가 리소스 배포 중..."
+    # 참고: Istio Helm 차트(Gateway, HTTPRoute 등)는 ArgoCD가 관리합니다.
+    # 이 스크립트는 Istio Control Plane만 설치합니다.
 
-        # 환경 감지 (로컬 vs 프로덕션)
-        local values_file="${CONFIG_DIR}/local/istio.yaml"
-        if [ -f "${CONFIG_DIR}/prod/istio.yaml" ] && kubectl get nodes -o jsonpath='{.items[0].spec.providerID}' 2>/dev/null | grep -q "aws"; then
-            values_file="${CONFIG_DIR}/prod/istio.yaml"
-        fi
-
-        if [ -f "$values_file" ]; then
-            helm upgrade --install istio-resources "${CHARTS_DIR}/istio" \
-                -n "$ISTIO_NS" \
-                -f "$values_file" \
-                --wait --timeout 5m || log_warn "Istio 추가 리소스 배포 실패"
-        fi
-    fi
-
-    log_success "=== Istio 설치 완료 ==="
+    log_success "=== Istio Control Plane 설치 완료 ==="
+    log_info "Gateway, HTTPRoute 등 추가 리소스는 ArgoCD가 관리합니다."
     show_status
 }
 
