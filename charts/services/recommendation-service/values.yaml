@@ -53,12 +53,12 @@ env:
     value: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/recommendation_db"
   - name: SPRING_DATASOURCE_REPLICA_URL
     value: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/recommendation_db"
-  - name: SPRING_DATASOURCE_USERNAME
+  - name: SPRING_DATASOURCE_MASTER_USERNAME
     valueFrom:
       secretKeyRef:
         name: recommendation-service-db-secret
         key: username
-  - name: SPRING_DATASOURCE_PASSWORD
+  - name: SPRING_DATASOURCE_MASTER_PASSWORD
     valueFrom:
       secretKeyRef:
         name: recommendation-service-db-secret

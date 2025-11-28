@@ -32,6 +32,14 @@ postgresql:
       enabled: true
       externalName: "host.docker.internal"
       port: 5436
+    payment:
+      enabled: true
+      externalName: "host.docker.internal"
+      port: 5437
+    recommendation:
+      enabled: true
+      externalName: "host.docker.internal"
+      port: 5438
 
 # -----------------------------------------------------------------------------
 # Redis Instances
@@ -59,3 +67,11 @@ kafka:
     - name: external
       port: 9094
       targetPort: 9094
+
+# -----------------------------------------------------------------------------
+# Schema Registry
+# -----------------------------------------------------------------------------
+schemaRegistry:
+  enabled: true
+  externalName: "host.docker.internal"
+  port: 8081

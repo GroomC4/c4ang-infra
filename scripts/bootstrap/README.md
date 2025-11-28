@@ -1,6 +1,7 @@
-# 환경별 통합 스크립트
+# 환경 부트스트랩 스크립트
 
-환경별로 전체 플로우를 자동화하는 통합 스크립트입니다.
+환경별로 전체 플로우를 자동화하는 부트스트랩 스크립트입니다.
+도메인 서비스 개발자가 인프라 상세 내용을 몰라도 스크립트 하나로 개발 환경을 구축할 수 있습니다.
 
 ## 전체 플로우
 
@@ -24,7 +25,13 @@
 │  │  - Traefik disabled           │    - Managed node groups            │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
 │                                     ↓                                        │
-│  Phase 3: ArgoCD Bootstrap (App of Apps)                                    │
+│  Phase 3: ECR Secret 설정 (로컬 환경)                                       │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  - AWS 자격증명으로 ECR 토큰 발급                                     │    │
+│  │  - docker-registry Secret 생성 (12시간 유효)                          │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                     ↓                                        │
+│  Phase 4: ArgoCD Bootstrap (App of Apps)                                    │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
 │  │  - ArgoCD 설치                                                       │    │
 │  │  - Projects 생성                                                     │    │
@@ -39,7 +46,7 @@
 
 | 스크립트 | 환경 | 설명 |
 |---------|------|------|
-| `local.sh` | 로컬 개발 | Docker Compose + k3d + ArgoCD |
+| `local.sh` | 로컬 개발 | Docker Compose + k3d + ECR Secret + ArgoCD |
 | `prod.sh` | AWS 프로덕션 | Terraform + EKS + ArgoCD |
 
 ## 사용법
@@ -48,20 +55,24 @@
 
 ```bash
 # 최초 환경 구축 (전체 플로우 실행)
-./scripts/env/local.sh
+./scripts/bootstrap/local.sh
 
 # 환경 시작 (이미 초기화된 경우)
-./scripts/env/local.sh --up
+./scripts/bootstrap/local.sh --up
 
 # 환경 중지 (데이터 유지)
-./scripts/env/local.sh --down
+./scripts/bootstrap/local.sh --down
 
 # 상태 확인
-./scripts/env/local.sh --status
+./scripts/bootstrap/local.sh --status
 
 # 환경 완전 삭제 (데이터 포함)
-./scripts/env/local.sh --destroy
+./scripts/bootstrap/local.sh --destroy
 ```
+
+**사전 요구사항:**
+- Docker Desktop 실행
+- AWS CLI 설치 및 자격증명 설정 (`aws configure` 또는 `aws sso login`)
 
 ### AWS 프로덕션 환경
 
@@ -72,48 +83,43 @@
 # 3. external-services/aws/terraform.tfvars 설정
 
 # 전체 환경 구축
-./scripts/env/prod.sh
+./scripts/bootstrap/prod.sh
 
 # Terraform plan만 실행
-./scripts/env/prod.sh --plan
+./scripts/bootstrap/prod.sh --plan
 
 # Terraform apply만 실행
-./scripts/env/prod.sh --apply
+./scripts/bootstrap/prod.sh --apply
 
 # EKS 연결만 설정
-./scripts/env/prod.sh --connect
+./scripts/bootstrap/prod.sh --connect
 
 # ArgoCD bootstrap만 실행
-./scripts/env/prod.sh --bootstrap
+./scripts/bootstrap/prod.sh --bootstrap
 
 # 상태 확인
-./scripts/env/prod.sh --status
+./scripts/bootstrap/prod.sh --status
 
 # 환경 삭제 (주의!)
-./scripts/env/prod.sh --destroy
+./scripts/bootstrap/prod.sh --destroy
 ```
 
 ## 디렉토리 구조
 
 ```
 scripts/
-├── env/                  # 환경별 통합 스크립트 (이 디렉토리)
-│   ├── local.sh          # 로컬 개발 환경
+├── bootstrap/            # 환경 부트스트랩 (이 디렉토리)
+│   ├── local.sh          # 로컬 개발 환경 (도메인 개발자용)
 │   ├── prod.sh           # AWS 프로덕션 환경
 │   └── README.md
 │
-├── bootstrap/            # 개별 부트스트랩 스크립트
-│   ├── create-cluster.sh # k3d 클러스터 생성
-│   ├── start-environment.sh
-│   ├── stop-environment.sh
-│   └── cleanup.sh        # 리소스 정리
-│
-└── platform/             # 플랫폼 컴포넌트 관리
+└── platform/             # 플랫폼 컴포넌트 관리 (인프라 담당자용)
     ├── argocd.sh         # ArgoCD 설치/관리
     ├── istio.sh          # Istio 설치/관리
     ├── kafka.sh          # Kafka (Strimzi) 설치/관리
     ├── monitoring.sh     # Prometheus/Grafana 설치/관리
-    └── secrets.sh        # SOPS/Age 시크릿 관리
+    ├── secrets.sh        # SOPS/Age 시크릿 관리
+    └── ecr.sh            # ECR Secret 관리 (로컬 k3d용)
 ```
 
 ## 외부 서비스 접근

@@ -1,0 +1,37 @@
+# PreSync Hook: ApplicationSet Controller 준비 대기
+# Root Application이 ApplicationSet을 생성하기 전에 Controller가 준비될 때까지 대기
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: wait-for-applicationset-controller
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  ttlSecondsAfterFinished: 60
+  backoffLimit: 3
+  template:
+    spec:
+      serviceAccountName: argocd-application-controller
+      restartPolicy: Never
+      containers:
+      - name: wait
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Waiting for ApplicationSet Controller to be ready..."
+
+          # Deployment가 존재하고 Ready 상태가 될 때까지 대기
+          kubectl wait --for=condition=available deployment/argocd-applicationset-controller \
+            -n argocd --timeout=300s
+
+          # 추가로 Pod가 Running 상태인지 확인
+          kubectl wait --for=condition=ready pod \
+            -l app.kubernetes.io/name=argocd-applicationset-controller \
+            -n argocd --timeout=60s
+
+          echo "ApplicationSet Controller is ready!"

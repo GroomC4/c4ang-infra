@@ -24,7 +24,7 @@ CONFIG_DIR="${PROJECT_ROOT}/config"
 # 설정
 ISTIO_NS="istio-system"
 ISTIO_VERSION="${ISTIO_VERSION:-1.20.0}"
-GATEWAY_API_VERSION="${GATEWAY_API_VERSION:-v1.0.0}"
+GATEWAY_API_VERSION="${GATEWAY_API_VERSION:-v1.2.0}"
 
 # 로그 함수
 log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
@@ -76,9 +76,22 @@ ensure_istioctl() {
 
 # Gateway API CRD 설치
 install_gateway_api() {
-    log_info "Gateway API CRD 설치 중..."
+    log_info "Gateway API CRD 설치 중... (버전: ${GATEWAY_API_VERSION})"
 
-    kubectl apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/${GATEWAY_API_VERSION}/standard-install.yaml" 2>/dev/null || true
+    # Gateway CRD 존재 확인
+    if kubectl get crd gateways.gateway.networking.k8s.io &>/dev/null; then
+        log_info "Gateway API CRDs가 이미 설치되어 있습니다."
+        return 0
+    fi
+
+    # CRD 설치
+    kubectl apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/${GATEWAY_API_VERSION}/standard-install.yaml"
+
+    # CRD가 등록될 때까지 대기
+    log_info "Gateway CRD 등록 대기 중..."
+    kubectl wait --for=condition=established crd/gateways.gateway.networking.k8s.io --timeout=60s
+    kubectl wait --for=condition=established crd/httproutes.gateway.networking.k8s.io --timeout=60s
+    kubectl wait --for=condition=established crd/gatewayclasses.gateway.networking.k8s.io --timeout=60s
 
     log_success "Gateway API CRD 설치 완료"
 }
@@ -104,25 +117,11 @@ install_istio() {
     log_info "Istio 설치 확인 중..."
     kubectl wait --for=condition=available --timeout=300s deployment/istiod -n "$ISTIO_NS"
 
-    # Istio Helm 차트가 있으면 추가 리소스 배포
-    if [ -d "${CHARTS_DIR}/istio" ]; then
-        log_info "Istio 추가 리소스 배포 중..."
+    # 참고: Istio Helm 차트(Gateway, HTTPRoute 등)는 ArgoCD가 관리합니다.
+    # 이 스크립트는 Istio Control Plane만 설치합니다.
 
-        # 환경 감지 (로컬 vs 프로덕션)
-        local values_file="${CONFIG_DIR}/local/istio.yaml"
-        if [ -f "${CONFIG_DIR}/prod/istio.yaml" ] && kubectl get nodes -o jsonpath='{.items[0].spec.providerID}' 2>/dev/null | grep -q "aws"; then
-            values_file="${CONFIG_DIR}/prod/istio.yaml"
-        fi
-
-        if [ -f "$values_file" ]; then
-            helm upgrade --install istio-resources "${CHARTS_DIR}/istio" \
-                -n "$ISTIO_NS" \
-                -f "$values_file" \
-                --wait --timeout 5m || log_warn "Istio 추가 리소스 배포 실패"
-        fi
-    fi
-
-    log_success "=== Istio 설치 완료 ==="
+    log_success "=== Istio Control Plane 설치 완료 ==="
+    log_info "Gateway, HTTPRoute 등 추가 리소스는 ArgoCD가 관리합니다."
     show_status
 }
 

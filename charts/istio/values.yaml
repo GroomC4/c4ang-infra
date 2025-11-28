@@ -4,10 +4,10 @@
 
 # CRD 설치 설정
 crds:
-  install: false  # CRD는 Helm 차트 설치 전에 별도로 설치해야 합니다
+  install: false  # CRD는 PreSync Hook으로 자동 설치됩니다
   gatewayAPI:
-    install: false
-    version: "v1.0.0"  # Gateway API CRD 버전
+    install: true   # PreSync Hook에서 Gateway API CRD 설치
+    version: "v1.2.0"  # Gateway API CRD 버전
 
 # Namespace 설정
 namespace:

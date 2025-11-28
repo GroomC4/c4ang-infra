@@ -1,0 +1,20 @@
+{{- if .Values.schemaRegistry.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: schema-registry
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "external-services.serviceLabels" . | nindent 4 }}
+    app.kubernetes.io/name: schema-registry
+    app.kubernetes.io/component: schema-registry
+    service-type: schema-registry
+spec:
+  type: ExternalName
+  externalName: {{ .Values.schemaRegistry.externalName }}
+  ports:
+    - port: {{ .Values.schemaRegistry.port }}
+      targetPort: {{ .Values.schemaRegistry.port }}
+      protocol: TCP
+      name: http
+{{- end }}

@@ -34,13 +34,13 @@ env:
     value: "jdbc:postgresql://infra-database-postgresql-primary.ecommerce.svc.cluster.local:5432/store_db"
   - name: SPRING_DATASOURCE_REPLICA_URL
     value: "jdbc:postgresql://infra-database-postgresql-read.ecommerce.svc.cluster.local:5432/store_db"
-  - name: SPRING_DATASOURCE_USERNAME
+  - name: SPRING_DATASOURCE_MASTER_USERNAME
     value: "application"
-  - name: SPRING_DATASOURCE_PASSWORD
+  - name: SPRING_DATASOURCE_MASTER_PASSWORD
     value: "application"
-  - name: SPRING_REDIS_HOST
+  - name: SPRING_DATA_REDIS_HOST
     value: "store-service-redis-service.cache-tier.svc.cluster.local"
-  - name: SPRING_REDIS_PORT
+  - name: SPRING_DATA_REDIS_PORT
     value: "6379"
   - name: SPRING_REDIS_PASSWORD
     value: ""

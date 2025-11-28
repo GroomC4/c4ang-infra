@@ -10,6 +10,7 @@ spec:
   metrics:
     # 1. 에러율 체크 (Istio 메트릭 활용)
     - name: error-rate
+      count: 5
       interval: 30s
       successCondition: result < 0.05  # 5% 미만
       failureLimit: 3
@@ -23,6 +24,7 @@ spec:
 
     # 2. 응답 시간 (p99 latency)
     - name: latency-p99
+      count: 5
       interval: 30s
       successCondition: result < 500  # 500ms 미만
       failureLimit: 3
@@ -34,6 +36,7 @@ spec:
 
     # 3. 성공률 체크
     - name: success-rate
+      count: 5
       interval: 30s
       successCondition: result > 0.95  # 95% 이상
       failureLimit: 3
@@ -47,6 +50,7 @@ spec:
 
     # 4. Pod 재시작 체크
     - name: pod-restart-check
+      count: 5
       interval: 30s
       successCondition: result < 1
       failureLimit: 2

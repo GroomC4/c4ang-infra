@@ -34,7 +34,7 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 CLUSTER_NAME="${CLUSTER_NAME:-msa-quality-cluster}"
 KUBECONFIG_DIR="${PROJECT_ROOT}/k8s-dev-k3d/kubeconfig"
 KUBECONFIG_FILE="${KUBECONFIG_DIR}/config"
-EXTERNAL_SERVICES_DIR="${PROJECT_ROOT}/external-services/local"
+EXTERNAL_SERVICES_DIR="${PROJECT_ROOT}/external-services/docker"
 NAMESPACE="ecommerce"
 
 # 로그 함수
@@ -210,11 +210,66 @@ destroy_cluster() {
 }
 
 # =============================================================================
-# Phase 3: ArgoCD Bootstrap
+# Phase 3: ECR Secret 설정
+# =============================================================================
+
+setup_ecr_secret() {
+    log_step "Phase 3: ECR Secret 설정"
+
+    export KUBECONFIG="${KUBECONFIG_FILE}"
+
+    # ECR 스크립트 실행
+    local ecr_script="${PROJECT_ROOT}/scripts/platform/ecr.sh"
+
+    if [ -f "${ecr_script}" ]; then
+        # AWS 자격증명 확인
+        if aws sts get-caller-identity &>/dev/null; then
+            log_info "AWS 자격증명 확인됨. ECR Secret 생성 중..."
+            bash "${ecr_script}"
+        else
+            log_warn "AWS 자격증명이 설정되지 않았습니다."
+            log_warn "ECR 이미지 pull이 필요하면 다음을 실행하세요:"
+            echo "  aws configure  # 또는 aws sso login"
+            echo "  ${ecr_script}"
+        fi
+    else
+        log_warn "ECR 스크립트를 찾을 수 없습니다: ${ecr_script}"
+    fi
+}
+
+# =============================================================================
+# Phase 4: Istio Control Plane 설치
+# =============================================================================
+
+setup_istio() {
+    log_step "Phase 4: Istio Control Plane 설치"
+
+    export KUBECONFIG="${KUBECONFIG_FILE}"
+
+    local istio_script="${PROJECT_ROOT}/scripts/platform/istio.sh"
+
+    if [ -f "${istio_script}" ]; then
+        # Istio가 이미 설치되어 있는지 확인
+        if kubectl get namespace istio-system &>/dev/null && \
+           kubectl get deployment istiod -n istio-system &>/dev/null; then
+            log_info "Istio가 이미 설치되어 있습니다."
+            return 0
+        fi
+
+        log_info "Istio Control Plane 설치 중..."
+        bash "${istio_script}"
+    else
+        log_warn "Istio 스크립트를 찾을 수 없습니다: ${istio_script}"
+        log_warn "Istio 없이 계속합니다. 일부 애플리케이션이 실패할 수 있습니다."
+    fi
+}
+
+# =============================================================================
+# Phase 5: ArgoCD Bootstrap
 # =============================================================================
 
 bootstrap_argocd() {
-    log_step "Phase 3: ArgoCD Bootstrap (App of Apps)"
+    log_step "Phase 5: ArgoCD Bootstrap (App of Apps)"
 
     export KUBECONFIG="${KUBECONFIG_FILE}"
 
@@ -289,6 +344,42 @@ show_status() {
             else
                 echo "  네임스페이스 없음"
             fi
+            echo ""
+
+            echo -e "${CYAN}[ECR Secret]${NC}"
+            if kubectl get secret ecr-secret -n "${NAMESPACE}" &>/dev/null; then
+                local created_at
+                created_at=$(kubectl get secret ecr-secret -n "${NAMESPACE}" \
+                    -o jsonpath='{.metadata.annotations.ecr-secret/created-at}' 2>/dev/null || echo "")
+                if [ -n "$created_at" ]; then
+                    echo "  상태: 존재함"
+                    echo "  생성 시간: ${created_at}"
+                    # 남은 시간 계산
+                    local created_epoch expires_epoch now_epoch remaining
+                    if [[ "$OSTYPE" == "darwin"* ]]; then
+                        created_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "${created_at}" "+%s" 2>/dev/null || echo "0")
+                    else
+                        created_epoch=$(date -d "${created_at}" "+%s" 2>/dev/null || echo "0")
+                    fi
+                    if [ "$created_epoch" != "0" ]; then
+                        expires_epoch=$((created_epoch + 43200))
+                        now_epoch=$(date +%s)
+                        remaining=$((expires_epoch - now_epoch))
+                        if [ $remaining -gt 0 ]; then
+                            local hours=$((remaining / 3600))
+                            local minutes=$(((remaining % 3600) / 60))
+                            echo -e "  남은 시간: ${GREEN}${hours}시간 ${minutes}분${NC}"
+                        else
+                            echo -e "  상태: ${RED}만료됨 - 갱신 필요${NC}"
+                        fi
+                    fi
+                else
+                    echo "  상태: 존재함 (생성 시간 알 수 없음)"
+                fi
+            else
+                echo "  상태: 없음"
+                echo "  생성: ./scripts/platform/ecr.sh"
+            fi
         else
             echo "  클러스터 연결 불가"
         fi
@@ -328,7 +419,13 @@ full_init() {
     # Phase 2: K3D Cluster
     start_cluster
 
-    # Phase 3: ArgoCD Bootstrap
+    # Phase 3: ECR Secret
+    setup_ecr_secret
+
+    # Phase 4: Istio Control Plane
+    setup_istio
+
+    # Phase 5: ArgoCD Bootstrap
     bootstrap_argocd
 
     log_header "초기화 완료"
@@ -417,7 +514,16 @@ usage() {
      - msa-quality-cluster 생성
      - Traefik 비활성화 (Istio 사용)
 
-  3. ArgoCD Bootstrap
+  3. ECR Secret 설정
+     - AWS 자격증명으로 ECR 토큰 발급
+     - docker-registry Secret 생성 (12시간 유효)
+
+  4. Istio Control Plane 설치
+     - Gateway API CRD 설치
+     - Istio Control Plane (istiod) 설치
+     - 서비스 메시 기반 트래픽 관리
+
+  5. ArgoCD Bootstrap
      - App of Apps 패턴
      - ApplicationSet으로 환경별 자동 배포
 

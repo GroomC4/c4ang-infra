@@ -34,6 +34,14 @@ postgresql:
       enabled: true
       externalName: "saga-db"
       port: 5432
+    payment:
+      enabled: true
+      externalName: "payment-db"
+      port: 5432
+    recommendation:
+      enabled: true
+      externalName: "recommendation-db"
+      port: 5432
 
 # -----------------------------------------------------------------------------
 # Redis Instances
@@ -64,6 +72,14 @@ kafka:
     - name: external
       port: 9094
       targetPort: 9094
+
+# -----------------------------------------------------------------------------
+# Schema Registry
+# -----------------------------------------------------------------------------
+schemaRegistry:
+  enabled: true
+  externalName: "schema-registry"
+  port: 8081
 
 # -----------------------------------------------------------------------------
 # 공통 설정
