@@ -5,6 +5,21 @@ namespace: monitoring
 imagePullSecrets: []
   # - name: ecr-creds
 
+# kube-state-metrics (Kubernetes 상태 메트릭 수집)
+kubeStateMetrics:
+  enabled: true
+  image:
+    repository: registry.k8s.io/kube-state-metrics/kube-state-metrics
+    tag: v2.10.1
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: "100m"
+      memory: "128Mi"
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+
 # Grafana Alloy DaemonSet settings (메트릭, 로그, 트레이스 수집 에이전트)
 alloy:
   enabled: true
