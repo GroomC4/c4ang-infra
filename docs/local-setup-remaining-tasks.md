@@ -6,43 +6,47 @@
 - AnalysisTemplate에 count 값 추가 완료
 - Argo Rollouts CRD 설치 완료
 - AppProject에 Istio/Gateway API 리소스 권한 추가 완료
+- **ECR Secret 관리 스크립트 추가 완료** (`scripts/platform/ecr.sh`)
 
-## 남은 작업
+## ECR 이미지 Pull Secret
 
-### 1. ECR 이미지 Pull Secret 생성
+### 자동 설정 (권장)
 
-k3d 클러스터에서 AWS ECR 이미지를 pull하려면 인증 Secret이 필요합니다.
-
-#### 사전 요구사항
-- AWS CLI 설치
-- AWS 자격증명 설정 (ECR pull 권한 필요)
-
-#### 실행 명령어
+`local.sh` 스크립트가 클러스터 초기화 시 ECR Secret을 자동으로 생성합니다.
 
 ```bash
-# 1. AWS CLI 설치 (macOS)
-brew install awscli
-
-# 2. AWS 자격증명 설정 (이미 설정되어 있으면 스킵)
-aws configure
-# AWS Access Key ID: <your-access-key>
-# AWS Secret Access Key: <your-secret-key>
-# Default region name: ap-northeast-2
-# Default output format: json
-
-# 3. ecommerce 네임스페이스에 ECR Secret 생성
-ECR_TOKEN=$(aws ecr get-login-password --region ap-northeast-2)
-kubectl create secret docker-registry ecr-secret \
-  --docker-server=963403601423.dkr.ecr.ap-northeast-2.amazonaws.com \
-  --docker-username=AWS \
-  --docker-password=$ECR_TOKEN \
-  -n ecommerce
-
-# 4. Secret 생성 확인
-kubectl get secret ecr-secret -n ecommerce
+# 전체 환경 초기화 (ECR Secret 포함)
+./scripts/bootstrap/local.sh
 ```
 
-#### Helm Chart 설정 (선택)
+**사전 요구사항:**
+- AWS CLI 설치: `brew install awscli`
+- AWS 자격증명 설정: `aws configure` 또는 `aws sso login`
+
+### 수동 관리
+
+ECR Secret을 수동으로 관리하려면 전용 스크립트를 사용합니다:
+
+```bash
+# Secret 생성/갱신
+./scripts/platform/ecr.sh
+
+# 상태 확인 (만료 시간 포함)
+./scripts/platform/ecr.sh --status
+
+# Secret 삭제
+./scripts/platform/ecr.sh --delete
+```
+
+### 토큰 만료 시 갱신 (12시간 후)
+
+로컬 환경에서 12시간 이상 작업하는 경우, Secret을 수동으로 갱신해야 합니다:
+
+```bash
+./scripts/platform/ecr.sh
+```
+
+### Helm Chart 설정
 
 imagePullSecrets를 values에 추가하려면 `config/local/customer-service.yaml`에 다음 추가:
 
@@ -51,60 +55,16 @@ imagePullSecrets:
   - name: ecr-secret
 ```
 
-또는 모든 서비스에 적용하려면 차트의 기본 values.yaml을 수정하거나,
-ServiceAccount에 imagePullSecrets를 추가합니다:
+또는 모든 서비스에 적용하려면 ServiceAccount에 imagePullSecrets를 추가:
 
 ```bash
 kubectl patch serviceaccount default -n ecommerce \
   -p '{"imagePullSecrets": [{"name": "ecr-secret"}]}'
 ```
 
-### 2. ECR Token 갱신 (12시간마다 필요)
+## 남은 작업
 
-ECR 토큰은 12시간 후 만료됩니다. 갱신 명령어:
-
-```bash
-# Secret 삭제 후 재생성
-kubectl delete secret ecr-secret -n ecommerce
-
-ECR_TOKEN=$(aws ecr get-login-password --region ap-northeast-2)
-kubectl create secret docker-registry ecr-secret \
-  --docker-server=963403601423.dkr.ecr.ap-northeast-2.amazonaws.com \
-  --docker-username=AWS \
-  --docker-password=$ECR_TOKEN \
-  -n ecommerce
-```
-
-#### 자동 갱신 스크립트
-
-`scripts/refresh-ecr-secret.sh` 생성 권장:
-
-```bash
-#!/bin/bash
-set -e
-
-NAMESPACE=${1:-ecommerce}
-SECRET_NAME=${2:-ecr-secret}
-ECR_REGISTRY="963403601423.dkr.ecr.ap-northeast-2.amazonaws.com"
-REGION="ap-northeast-2"
-
-echo "Refreshing ECR secret in namespace: $NAMESPACE"
-
-# Delete existing secret if exists
-kubectl delete secret $SECRET_NAME -n $NAMESPACE 2>/dev/null || true
-
-# Create new secret
-ECR_TOKEN=$(aws ecr get-login-password --region $REGION)
-kubectl create secret docker-registry $SECRET_NAME \
-  --docker-server=$ECR_REGISTRY \
-  --docker-username=AWS \
-  --docker-password=$ECR_TOKEN \
-  -n $NAMESPACE
-
-echo "ECR secret refreshed successfully"
-```
-
-### 3. ArgoCD 동기화 확인
+### 1. ArgoCD 동기화 확인
 
 ECR Secret 생성 후 ArgoCD에서 customer-service-local 동기화:
 
@@ -121,7 +81,7 @@ argocd app sync customer-service-local
 kubectl get pods -n ecommerce -l app.kubernetes.io/name=customer-service
 ```
 
-### 4. 개발 완료 후 targetRevision 복구
+### 2. 개발 완료 후 targetRevision 복구
 
 개발 작업 완료 시 ApplicationSet의 targetRevision을 HEAD로 복구:
 

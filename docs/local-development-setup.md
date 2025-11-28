@@ -72,18 +72,23 @@ cd external-services/docker
 ./stop.sh --clean
 ```
 
-### 2. k3d 클러스터 생성
+### 2. 전체 환경 구축 (권장)
+
+모든 설정을 한 번에 구축합니다:
 
 ```bash
-./scripts/bootstrap/create-cluster.sh
+./scripts/bootstrap/local.sh
 ```
 
-### 3. ExternalName 서비스 배포
+또는 개별 단계로 진행:
+
+### 2-1. k3d 클러스터 + ArgoCD 설정 (개별 단계)
 
 ```bash
-helm upgrade --install external-services ./charts/external-services \
-  -f config/local/external-services.yaml \
-  -n ecommerce --create-namespace
+# k3d 클러스터 생성 + ECR Secret + ArgoCD
+./scripts/bootstrap/local.sh
+
+# ExternalName 서비스는 ArgoCD ApplicationSet이 자동 배포
 ```
 
 ## 서비스 포트 매핑
