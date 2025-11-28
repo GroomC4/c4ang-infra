@@ -38,9 +38,9 @@ env:
     value: "application"
   - name: SPRING_DATASOURCE_PASSWORD
     value: "application"
-  - name: SPRING_REDIS_HOST
+  - name: SPRING_DATA_REDIS_HOST
     value: "store-service-redis-service.cache-tier.svc.cluster.local"
-  - name: SPRING_REDIS_PORT
+  - name: SPRING_DATA_REDIS_PORT
     value: "6379"
   - name: SPRING_REDIS_PASSWORD
     value: ""

@@ -151,7 +151,7 @@ spec:
 env:
   - name: SPRING_DATASOURCE_MASTER_URL
     value: "jdbc:postgresql://customer-db:5432/customer_db"
-  - name: SPRING_REDIS_HOST
+  - name: SPRING_DATA_REDIS_HOST
     value: "cache-redis"
   - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
     value: "kafka:9092"

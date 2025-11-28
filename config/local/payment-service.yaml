@@ -36,9 +36,9 @@ env:
   - name: SPRING_DATASOURCE_PASSWORD
     value: "postgres"
   # Redis (ExternalName 서비스 사용)
-  - name: SPRING_REDIS_HOST
+  - name: SPRING_DATA_REDIS_HOST
     value: "cache-redis"
-  - name: SPRING_REDIS_PORT
+  - name: SPRING_DATA_REDIS_PORT
     value: "6379"
   - name: SPRING_REDIS_PASSWORD
     value: ""
