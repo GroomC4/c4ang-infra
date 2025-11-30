@@ -6,8 +6,15 @@ metadata:
   labels:
     {{- include "customer-service.labels" . | nindent 4 }}
 spec:
+  # [수정 1] 외부 접속을 허용하려면 Gateway를 명시해야 합니다.
+  gateways:
+    # values.yaml에 있는 설정값을 가져오거나, 없으면 기본값 사용
+    - { { .Values.istio.gatewayAPI.gatewayNamespace | default "ecommerce" } }/{{ .Values.istio.gatewayAPI.gatewayName | default "ecommerce-gateway" }}
+
+  # [수정 2] localhost 접속을 위해 hosts를 "*"로 변경합니다.
+  # (실무에서는 실제 도메인을 쓰지만, 지금 데모를 위해 와일드카드 사용)
   hosts:
-    - {{ include "customer-service.fullname" . }}
+    - "*"
   http:
     - match:
         - uri:
