@@ -96,6 +96,12 @@ spec:
               mountPath: /var/lib/grafana/dashboards/k8s-cluster
             - name: dashboard-k8s-pods
               mountPath: /var/lib/grafana/dashboards/k8s-pods
+            - name: dashboard-kafka-lag
+              mountPath: /var/lib/grafana/dashboards/kafka-lag
+            - name: dashboard-kafka-comprehensive
+              mountPath: /var/lib/grafana/dashboards/kafka-comprehensive
+            - name: dashboard-kafka-broker-failure-test
+              mountPath: /var/lib/grafana/dashboards/kafka-broker-failure-test
             {{- end }}
 
       volumes:
@@ -118,6 +124,15 @@ spec:
         - name: dashboard-k8s-pods
           configMap:
             name: grafana-dashboard-k8s-pods
+        - name: dashboard-kafka-lag
+          configMap:
+            name: grafana-dashboard-kafka-lag
+        - name: dashboard-kafka-comprehensive
+          configMap:
+            name: grafana-dashboard-kafka-comprehensive
+        - name: dashboard-kafka-broker-failure-test
+          configMap:
+            name: grafana-dashboard-kafka-broker-failure-test
         {{- end }}
       
       {{- with .Values.nodeSelector }}

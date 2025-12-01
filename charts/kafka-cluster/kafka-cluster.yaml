@@ -29,6 +29,21 @@ spec:
         port: 9092
         type: internal
         tls: false
+        # advertised.listeners 설정
+        # Producer/Consumer(포트 포워딩)용: localhost 사용
+        # 각 브로커를 다른 포트로 설정하여 포트 포워딩과 매칭
+        # Kafka Exporter는 내부 서비스 이름을 직접 사용하므로 문제없음
+        configuration:
+          brokers:
+            - broker: 0
+              advertisedHost: localhost
+              advertisedPort: 9092
+            - broker: 1
+              advertisedHost: localhost
+              advertisedPort: 9093
+            - broker: 2
+              advertisedHost: localhost
+              advertisedPort: 9094
     config:
       offsets.topic.replication.factor: 3
       transaction.state.log.replication.factor: 3

@@ -35,4 +35,40 @@ metadata:
 data:
   kubernetes-pods-dashboard.json: |-
 {{ .Files.Get "dashboards/kubernetes-pods-dashboard.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-kafka-lag
+  namespace: {{ include "monitoring.namespace" . }}
+  labels:
+    {{- include "monitoring.grafana.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  kafka-lag-dashboard.json: |-
+{{ .Files.Get "dashboards/kafka-lag-dashboard.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-kafka-comprehensive
+  namespace: {{ include "monitoring.namespace" . }}
+  labels:
+    {{- include "monitoring.grafana.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  kafka-comprehensive-dashboard.json: |-
+{{ .Files.Get "dashboards/kafka-comprehensive-dashboard.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-kafka-broker-failure-test
+  namespace: {{ include "monitoring.namespace" . }}
+  labels:
+    {{- include "monitoring.grafana.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  kafka-broker-failure-test-dashboard.json: |-
+{{ .Files.Get "dashboards/kafka-broker-failure-test-dashboard.json" | indent 4 }}
 {{- end }}
