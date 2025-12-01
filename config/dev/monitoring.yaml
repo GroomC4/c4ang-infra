@@ -1,5 +1,5 @@
-# k3d 로컬 환경 최적화 Monitoring 설정
-# 이 파일은 로컬 k3d 클러스터에서 Argo Rollouts 모니터링을 위한 설정입니다.
+# k3d 개발 환경 최적화 Monitoring 설정
+# 이 파일은 k3d 개발 클러스터에서 Argo Rollouts 모니터링을 위한 설정입니다.
 
 namespace: monitoring
 

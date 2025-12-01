@@ -1,7 +1,7 @@
 # Makefile for C4ang Infrastructure
 # 개발자 친화적인 로컬 환경 관리 인터페이스
 
-.PHONY: help local-up local-down local-clean local-restart local-status
+.PHONY: help dev-up dev-down dev-clean dev-restart dev-status
 .PHONY: install-tools helm-deps helm-build
 .PHONY: istio-install istio-uninstall istio-status
 .PHONY: k3d-create k3d-start k3d-stop k3d-delete k3d-list
@@ -21,7 +21,7 @@ NC     := \033[0m
 # 설정 변수
 CLUSTER_NAME ?= msa-quality-cluster
 NAMESPACE ?= msa-quality
-KUBECONFIG_PATH := $(CURDIR)/environments/local/kubeconfig/config
+KUBECONFIG_PATH := $(CURDIR)/environments/dev/kubeconfig/config
 
 # Help 명령어 - 모든 타겟과 설명을 보여줌
 help: ## 사용 가능한 명령어 표시
@@ -40,39 +40,39 @@ help: ## 사용 가능한 명령어 표시
 	@echo "  NAMESPACE=$(NAMESPACE)"
 	@echo "  KUBECONFIG_PATH=$(KUBECONFIG_PATH)"
 
-##@ 로컬 환경 관리 (k3d)
+##@ 개발 환경 관리 (k3d)
 
-local-up: ## 로컬 k3d 환경 시작 (이미 초기화된 경우)
-	@echo "$(BLUE)🚀 로컬 환경 시작 중...$(NC)"
-	@./scripts/bootstrap/local.sh --up
-	@echo "$(GREEN)✅ 로컬 환경이 시작되었습니다$(NC)"
+dev-up: ## k3d 개발 환경 시작 (이미 초기화된 경우)
+	@echo "$(BLUE)🚀 개발 환경 시작 중...$(NC)"
+	@./scripts/bootstrap/dev.sh --up
+	@echo "$(GREEN)✅ 개발 환경이 시작되었습니다$(NC)"
 
-local-init: ## 로컬 환경 전체 초기화 (Docker Compose + k3d + ECR + ArgoCD)
-	@echo "$(BLUE)🚀 로컬 환경 전체 초기화 중...$(NC)"
-	@./scripts/bootstrap/local.sh
+dev-init: ## 개발 환경 전체 초기화 (Docker Compose + k3d + ECR + ArgoCD)
+	@echo "$(BLUE)🚀 개발 환경 전체 초기화 중...$(NC)"
+	@./scripts/bootstrap/dev.sh
 	@echo ""
-	@echo "$(GREEN)✅ 로컬 환경이 준비되었습니다!$(NC)"
+	@echo "$(GREEN)✅ 개발 환경이 준비되었습니다!$(NC)"
 	@echo ""
 	@echo "$(YELLOW)📋 다음 명령으로 kubectl을 사용하세요:$(NC)"
 	@echo "  export KUBECONFIG=$(KUBECONFIG_PATH)"
 	@echo ""
 	@echo "$(YELLOW)📊 상태 확인:$(NC)"
-	@echo "  make local-status"
+	@echo "  make dev-status"
 
-local-down: ## 로컬 환경 중지 (데이터 유지)
-	@echo "$(BLUE)⏸️  로컬 환경 중지 중...$(NC)"
-	@./scripts/bootstrap/local.sh --down
-	@echo "$(GREEN)✅ 로컬 환경이 중지되었습니다$(NC)"
+dev-down: ## 개발 환경 중지 (데이터 유지)
+	@echo "$(BLUE)⏸️  개발 환경 중지 중...$(NC)"
+	@./scripts/bootstrap/dev.sh --down
+	@echo "$(GREEN)✅ 개발 환경이 중지되었습니다$(NC)"
 
-local-clean: ## 로컬 환경 완전 제거 (클러스터 삭제)
-	@echo "$(RED)🗑️  로컬 환경 완전 제거 중...$(NC)"
-	@./scripts/bootstrap/local.sh --destroy
-	@echo "$(GREEN)✅ 로컬 환경이 제거되었습니다$(NC)"
+dev-clean: ## 개발 환경 완전 제거 (클러스터 삭제)
+	@echo "$(RED)🗑️  개발 환경 완전 제거 중...$(NC)"
+	@./scripts/bootstrap/dev.sh --destroy
+	@echo "$(GREEN)✅ 개발 환경이 제거되었습니다$(NC)"
 
-local-restart: local-down local-up ## 로컬 환경 재시작
+dev-restart: dev-down dev-up ## 개발 환경 재시작
 
-local-status: ## 로컬 환경 상태 확인
-	@echo "$(BLUE)📊 로컬 환경 상태:$(NC)"
+dev-status: ## 개발 환경 상태 확인
+	@echo "$(BLUE)📊 개발 환경 상태:$(NC)"
 	@echo ""
 	@echo "$(YELLOW)k3d 클러스터:$(NC)"
 	@k3d cluster list 2>/dev/null || echo "  k3d가 설치되지 않았거나 클러스터가 없습니다"
@@ -115,10 +115,10 @@ helm-build: ## Helm 차트 의존성 빌드
 
 ##@ k3d 클러스터 관리
 
-k3d-create: ## k3d 클러스터 생성 (local-init 권장)
+k3d-create: ## k3d 클러스터 생성 (dev-init 권장)
 	@echo "$(BLUE)🏗️  k3d 클러스터 생성 중...$(NC)"
-	@echo "$(YELLOW)⚠️  전체 환경 구축은 'make local-init'을 사용하세요$(NC)"
-	@./scripts/bootstrap/local.sh
+	@echo "$(YELLOW)⚠️  전체 환경 구축은 'make dev-init'을 사용하세요$(NC)"
+	@./scripts/bootstrap/dev.sh
 	@echo "$(GREEN)✅ k3d 클러스터 생성 완료$(NC)"
 
 k3d-start: ## k3d 클러스터 시작

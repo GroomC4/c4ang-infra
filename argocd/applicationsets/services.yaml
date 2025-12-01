@@ -15,7 +15,7 @@ spec:
           # 환경 정의
           - list:
               elements:
-                - env: local
+                - env: dev
                   cluster: https://kubernetes.default.svc
                 - env: prod
                   cluster: https://eks-cluster.region.eks.amazonaws.com

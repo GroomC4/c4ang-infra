@@ -11,8 +11,8 @@ spec:
   generators:
     - list:
         elements:
-          # local 환경은 AWS RDS 설정이 필요하여 비활성화
-          # - env: local
+          # dev 환경은 AWS RDS 설정이 필요하여 비활성화
+          # - env: dev
           #   cluster: https://kubernetes.default.svc
           #   namespace: airflow
           - env: prod

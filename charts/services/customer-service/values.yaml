@@ -7,8 +7,8 @@ image:
 imagePullSecrets: []
 service:
   type: ClusterIP
-  port: 8080
-  targetPort: 8081 # Application runs on 8081
+  port: 80          # Standard HTTP port for internal service discovery
+  targetPort: 8081  # Application runs on 8081
 resources:
   requests:
     memory: 1Gi

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Chart.Name }}-active
+  name: {{ include "saga-tracker.fullname" . }}
   labels:
     {{- include "saga-tracker.labels" . | nindent 4 }}
 spec:
@@ -15,7 +15,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Chart.Name }}-preview
+  name: {{ include "saga-tracker.fullname" . }}-preview
   labels:
     {{- include "saga-tracker.labels" . | nindent 4 }}
 spec:

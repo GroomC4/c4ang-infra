@@ -11,8 +11,8 @@ spec:
 
   strategy:
     blueGreen:
-      activeService: {{ .Chart.Name }}-active
-      previewService: {{ .Chart.Name }}-preview
+      activeService: {{ include "order-service.fullname" . }}
+      previewService: {{ include "order-service.fullname" . }}-preview
       autoPromotionEnabled: false
 
   selector:
