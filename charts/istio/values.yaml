@@ -38,7 +38,7 @@ gateway:
       http:
         enabled: true
         port: 80
-        redirectToHttps: true
+        redirectToHttps: false
   
   webhook:
     enabled: true
