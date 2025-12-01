@@ -28,9 +28,7 @@ build/
 Thumbs.db
 
 # Embeddings
-*.pkl
-*_embeddings.pkl
-*_metadata.json
+
 
 # Data (optional - uncomment if you don't want to commit CSV files)
 # *.csv

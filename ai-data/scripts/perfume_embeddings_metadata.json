@@ -1,0 +1,142 @@
+[
+  {
+    "id": "perfume_da4dd656e12bc7dc",
+    "metadata": {
+      "id": "perfume_da4dd656e12bc7dc",
+      "brand": "겔랑",
+      "name": "랭스땅 드 겔랑 오 드 퍼퓸",
+      "concentration": "오 드 퍼퓸",
+      "gender": "Female",
+      "sizes": "[75]",
+      "season_score": "fall",
+      "day_night_score": "day",
+      "text": "강렬한 매혹의 향기."
+    }
+  },
+  {
+    "id": "perfume_b88e79b3bf4bebd1",
+    "metadata": {
+      "id": "perfume_b88e79b3bf4bebd1",
+      "brand": "겔랑",
+      "name": "레전더리 미츠코 오 드 퍼퓸",
+      "concentration": "오 드 퍼퓸",
+      "gender": "Female",
+      "sizes": "[75]",
+      "season_score": "winter",
+      "day_night_score": "day",
+      "text": "이루어질 수 없는 사랑의 전설 스파이시한 복숭아와 페출리의 비밀스러운 만남"
+    }
+  },
+  {
+    "id": "perfume_486182a360098d83",
+    "metadata": {
+      "id": "perfume_486182a360098d83",
+      "brand": "겔랑",
+      "name": "레전더리 삼사라 오 드 뚜왈렛",
+      "concentration": "오 드 뚜왈렛",
+      "gender": "Female",
+      "sizes": "[75]",
+      "season_score": "fall",
+      "day_night_score": "day",
+      "text": "자스민과 샌달우드의 조화로 이루어진 신성한 사랑의 향기"
+    }
+  },
+  {
+    "id": "perfume_fbee807a93044508",
+    "metadata": {
+      "id": "perfume_fbee807a93044508",
+      "brand": "겔랑",
+      "name": "몽 겔랑 스파클링 부케 오 드 퍼퓸",
+      "concentration": "오 드 퍼퓸",
+      "gender": "Female",
+      "sizes": "[50, 100]",
+      "season_score": "winter",
+      "day_night_score": "day",
+      "text": "기분 좋은 프루티 앰버 향"
+    }
+  },
+  {
+    "id": "perfume_4620fb7b68487ec8",
+    "metadata": {
+      "id": "perfume_4620fb7b68487ec8",
+      "brand": "겔랑",
+      "name": "몽 겔랑 오 드 퍼퓸",
+      "concentration": "오 드 퍼퓸",
+      "gender": "Female",
+      "sizes": "[30, 50, 100]",
+      "season_score": "fall",
+      "day_night_score": "day",
+      "text": "보이지 않는 나만의 문신 같은 나의 향기"
+    }
+  },
+  {
+    "id": "perfume_5f97f72b28ffe4f0",
+    "metadata": {
+      "id": "perfume_5f97f72b28ffe4f0",
+      "brand": "겔랑",
+      "name": "몽 겔랑 오 드 퍼퓸 인텐스",
+      "concentration": "오 드 퍼퓸",
+      "gender": "Female",
+      "sizes": "[30, 50, 100]",
+      "season_score": "fall",
+      "day_night_score": "day",
+      "text": "독특하고 감각적인 우디 앰버"
+    }
+  },
+  {
+    "id": "perfume_7a57d8be626df9a5",
+    "metadata": {
+      "id": "perfume_7a57d8be626df9a5",
+      "brand": "겔랑",
+      "name": "샹젤리제 오 드 뚜왈렛",
+      "concentration": "오 드 뚜왈렛",
+      "gender": "Female",
+      "sizes": "[75]",
+      "season_score": "winter",
+      "day_night_score": "day",
+      "text": "빛의 도시에서 만난 향기"
+    }
+  },
+  {
+    "id": "perfume_fa30a19784db6290",
+    "metadata": {
+      "id": "perfume_fa30a19784db6290",
+      "brand": "겔랑",
+      "name": "샹젤리제 오 드 퍼퓸",
+      "concentration": "오 드 퍼퓸",
+      "gender": "Female",
+      "sizes": "[75]",
+      "season_score": "winter",
+      "day_night_score": "day",
+      "text": "빛의 도시에서 만난 향기"
+    }
+  },
+  {
+    "id": "perfume_fbfeac44098182c5",
+    "metadata": {
+      "id": "perfume_fbfeac44098182c5",
+      "brand": "겔랑",
+      "name": "아쿠아 알레고리아 그라나다 살비아 오 드 뚜왈렛",
+      "concentration": "오 드 뚜왈렛",
+      "gender": "Unisex",
+      "sizes": "[75]",
+      "season_score": "winter",
+      "day_night_score": "night",
+      "text": "블랙커런트 사이프러스 레몬 베르가못 노트의 신선함이 느껴지는 감미로운 석류 어코드와 화이트 머스크 모스 패츌리 위에 펼쳐지는 우아한 세이지와 장미향이 조화롭게 어우러집니다."
+    }
+  },
+  {
+    "id": "perfume_6e093c44e0a33ab2",
+    "metadata": {
+      "id": "perfume_6e093c44e0a33ab2",
+      "brand": "겔랑",
+      "name": "아쿠아 알레고리아 로사 로싸 오 드 뚜왈렛",
+      "concentration": "오 드 뚜왈렛",
+      "gender": "Female",
+      "sizes": "[75]",
+      "season_score": "winter",
+      "day_night_score": "night",
+      "text": "부드럽고 머스키한 샌달우드 속에서 수줍게 피어나는 장미 향에 블랙 커런트와 리치의 프루티 노트가 더해지며 화사하고 싱그러운 매력을 더합니다."
+    }
+  }
+]
