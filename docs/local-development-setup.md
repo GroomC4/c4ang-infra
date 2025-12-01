@@ -1,12 +1,12 @@
-# 로컬 개발 환경 설정 가이드
+# k3d 개발 환경 설정 가이드
 
-이 문서는 k3d 기반 로컬 개발 환경에서 외부 데이터 서비스(PostgreSQL, Redis, Kafka, Schema Registry)를 docker-compose로 실행하고, Kubernetes ExternalName 서비스를 통해 연결하는 방법을 설명합니다.
+이 문서는 k3d 기반 개발 환경에서 외부 데이터 서비스(PostgreSQL, Redis, Kafka, Schema Registry)를 docker-compose로 실행하고, Kubernetes ExternalName 서비스를 통해 연결하는 방법을 설명합니다.
 
 ## 아키텍처 개요
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        로컬 개발 환경                              │
+│                        k3d 개발 환경                               │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌─────────────────────────┐    ┌─────────────────────────────┐ │
@@ -77,7 +77,7 @@ cd external-services/docker
 모든 설정을 한 번에 구축합니다:
 
 ```bash
-./scripts/bootstrap/local.sh
+./scripts/bootstrap/dev.sh
 ```
 
 또는 개별 단계로 진행:
@@ -86,7 +86,7 @@ cd external-services/docker
 
 ```bash
 # k3d 클러스터 생성 + ECR Secret + ArgoCD
-./scripts/bootstrap/local.sh
+./scripts/bootstrap/dev.sh
 
 # ExternalName 서비스는 ArgoCD ApplicationSet이 자동 배포
 ```
@@ -144,10 +144,10 @@ spec:
 
 ### 도메인 서비스 연결 설정
 
-로컬 환경의 도메인 서비스는 ExternalName 서비스 이름을 사용합니다:
+k3d 개발 환경의 도메인 서비스는 ExternalName 서비스 이름을 사용합니다:
 
 ```yaml
-# config/local/customer-service.yaml
+# config/dev/customer-service.yaml
 env:
   - name: SPRING_DATASOURCE_MASTER_URL
     value: "jdbc:postgresql://customer-db:5432/customer_db"
@@ -159,10 +159,10 @@ env:
 
 ## 환경별 설정
 
-### 로컬 환경 (k3d + docker-compose)
+### 개발 환경 (k3d + docker-compose)
 
-- `config/local/external-services.yaml`: ExternalName → `host.docker.internal`
-- `config/local/*-service.yaml`: 각 도메인 서비스 설정
+- `config/dev/external-services.yaml`: ExternalName → `host.docker.internal`
+- `config/dev/*-service.yaml`: 각 도메인 서비스 설정
 
 ### 프로덕션 환경 (EKS + AWS 관리형 서비스)
 
@@ -231,5 +231,5 @@ cd external-services/docker
 - `external-services/docker/start.sh`: 서비스 시작 스크립트
 - `external-services/docker/stop.sh`: 서비스 종료 스크립트
 - `charts/external-services/`: ExternalName 서비스 Helm 차트
-- `config/local/`: 로컬 환경 설정
+- `config/dev/`: k3d 개발 환경 설정
 - `config/prod/`: 프로덕션 환경 설정

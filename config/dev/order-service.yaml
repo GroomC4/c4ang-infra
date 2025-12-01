@@ -1,4 +1,4 @@
-# order-service 로컬 환경 설정
+# order-service 개발 환경 설정 (k3d)
 # docker-compose로 띄운 외부 서비스에 연결
 
 replicaCount: 1
@@ -26,7 +26,7 @@ resources:
 # Application configuration (injected via ConfigMap)
 config:
   SERVER_PORT: "8081"
-  SPRING_PROFILES_ACTIVE: "local"
+  SPRING_PROFILES_ACTIVE: "dev"
   # PostgreSQL (ExternalName 서비스 사용)
   SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://order-db:5432/order_db"
   SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://order-db:5432/order_db"

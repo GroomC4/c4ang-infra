@@ -12,8 +12,8 @@ spec:
   # [중요] Blue/Green 전략 설정
   strategy:
     blueGreen:
-      activeService: {{ .Chart.Name }}-active
-      previewService: {{ .Chart.Name }}-preview
+      activeService: {{ include "product-service.fullname" . }}
+      previewService: {{ include "product-service.fullname" . }}-preview
       autoPromotionEnabled: false
 
   selector:

@@ -20,7 +20,7 @@ spec:
             type: PathPrefix
             value: {{ .Values.istio.pathPrefix | default "/api/v1/saga" }}
       backendRefs:
-        - name: {{ .Chart.Name }}-active
+        - name: {{ include "saga-tracker.fullname" . }}
           port: {{ .Values.service.port }}
           weight: 100
 {{- end }}

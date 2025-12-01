@@ -1,5 +1,5 @@
 # =============================================================================
-# External Services - Local Environment (Docker Compose)
+# External Services - Dev Environment (k3d + Docker Compose)
 # =============================================================================
 # Docker Desktop for Mac/Windows에서 host.docker.internal 사용
 # Linux에서는 172.17.0.1 또는 host network 사용

@@ -6,7 +6,7 @@
 #
 # 마이그레이션 안내:
 # 1. ApplicationSet 사용: argocd/applicationsets/*.yaml
-# 2. 환경별 설정: config/local/*.yaml, config/prod/*.yaml
+# 2. 환경별 설정: config/dev/*.yaml, config/prod/*.yaml
 # 3. 차트 경로: charts/ (기존 helm/ -> charts/)
 
 # 1. 인프라 애플리케이션: 모니터링

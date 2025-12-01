@@ -46,28 +46,28 @@
 
 | 스크립트 | 환경 | 설명 |
 |---------|------|------|
-| `local.sh` | 로컬 개발 | Docker Compose + k3d + ECR Secret + ArgoCD |
+| `dev.sh` | k3d 개발 | Docker Compose + k3d + ECR Secret + ArgoCD |
 | `prod.sh` | AWS 프로덕션 | Terraform + EKS + ArgoCD |
 
 ## 사용법
 
-### 로컬 개발 환경
+### k3d 개발 환경
 
 ```bash
 # 최초 환경 구축 (전체 플로우 실행)
-./scripts/bootstrap/local.sh
+./scripts/bootstrap/dev.sh
 
 # 환경 시작 (이미 초기화된 경우)
-./scripts/bootstrap/local.sh --up
+./scripts/bootstrap/dev.sh --up
 
 # 환경 중지 (데이터 유지)
-./scripts/bootstrap/local.sh --down
+./scripts/bootstrap/dev.sh --down
 
 # 상태 확인
-./scripts/bootstrap/local.sh --status
+./scripts/bootstrap/dev.sh --status
 
 # 환경 완전 삭제 (데이터 포함)
-./scripts/bootstrap/local.sh --destroy
+./scripts/bootstrap/dev.sh --destroy
 ```
 
 **사전 요구사항:**
@@ -109,7 +109,7 @@
 ```
 scripts/
 ├── bootstrap/            # 환경 부트스트랩 (이 디렉토리)
-│   ├── local.sh          # 로컬 개발 환경 (도메인 개발자용)
+│   ├── dev.sh            # k3d 개발 환경 (도메인 개발자용)
 │   ├── prod.sh           # AWS 프로덕션 환경
 │   └── README.md
 │
@@ -119,7 +119,7 @@ scripts/
     ├── kafka.sh          # Kafka (Strimzi) 설치/관리
     ├── monitoring.sh     # Prometheus/Grafana 설치/관리
     ├── secrets.sh        # SOPS/Age 시크릿 관리
-    └── ecr.sh            # ECR Secret 관리 (로컬 k3d용)
+    └── ecr.sh            # ECR Secret 관리 (k3d 개발용)
 ```
 
 ## 외부 서비스 접근
@@ -139,7 +139,7 @@ ArgoCD가 배포하는 ExternalName Service를 통해 외부 데이터 서비스
 
 ## 환경 변수
 
-### 로컬 환경 (local.sh)
+### 개발 환경 (dev.sh)
 
 | 변수 | 기본값 | 설명 |
 |------|-------|------|
@@ -154,11 +154,11 @@ ArgoCD가 배포하는 ExternalName Service를 통해 외부 데이터 서비스
 
 ## 트러블슈팅
 
-### 로컬 환경
+### 개발 환경
 
 ```bash
 # Docker 서비스 상태 확인
-cd external-services/local && docker-compose ps
+cd external-services/docker && docker-compose ps
 
 # k3d 클러스터 상태 확인
 k3d cluster list

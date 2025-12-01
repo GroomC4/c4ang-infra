@@ -17,8 +17,8 @@ spec:
   # Blue/Green 전략
   strategy:
     blueGreen:
-      activeService: {{ .Chart.Name }}-active
-      previewService: {{ .Chart.Name }}-preview
+      activeService: {{ include "customer-service.fullname" . }}
+      previewService: {{ include "customer-service.fullname" . }}-preview
       autoPromotionEnabled: false # 처음엔 false로 시작
       autoPromotionSeconds: 300    # 5분 후 자동 승격
       scaleDownDelaySeconds: 300   # 이전 버전 5분 후 삭제

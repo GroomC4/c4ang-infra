@@ -31,14 +31,14 @@ detect_environment() {
 
     # k3d 클러스터 확인
     if kubectl config current-context 2>/dev/null | grep -q "k3d"; then
-        ENV="local"
-        log_info "k3d 클러스터 감지됨 (local 환경)"
+        ENV="dev"
+        log_info "k3d 클러스터 감지됨 (dev 환경)"
     elif kubectl config current-context 2>/dev/null | grep -q "eks"; then
         ENV="prod"
         log_info "EKS 클러스터 감지됨 (prod 환경)"
     else
         log_warn "환경을 자동으로 감지할 수 없습니다."
-        read -p "환경을 선택하세요 (local/prod): " ENV
+        read -p "환경을 선택하세요 (dev/prod): " ENV
     fi
 
     export ENV
@@ -180,7 +180,7 @@ show_access_info() {
     echo "   Password: (위에서 출력된 비밀번호)"
     echo ""
 
-    if [ "$ENV" = "local" ]; then
+    if [ "$ENV" = "dev" ]; then
         log_info "4. (선택) NodePort로 접속:"
         echo "   kubectl patch svc argocd-server -n $ARGOCD_NAMESPACE -p '{\"spec\": {\"type\": \"NodePort\"}}'"
     fi

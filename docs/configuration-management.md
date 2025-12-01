@@ -21,8 +21,8 @@ charts/services/<service-name>/
 └── values.yaml           # 기본값 (prod 환경)
 
 config/
-├── local/
-│   └── <service-name>.yaml   # 로컬 환경 오버라이드
+├── dev/
+│   └── <service-name>.yaml   # k3d 개발 환경 오버라이드
 └── prod/
     └── <service-name>.yaml   # 프로덕션 환경 오버라이드
 ```
@@ -34,9 +34,9 @@ config/
 ```yaml
 # 이미지 설정 - 환경별 config 파일에서 설정
 image:
-  repository: ""  # config/local/*.yaml 또는 config/prod/*.yaml에서 설정
+  repository: ""  # config/dev/*.yaml 또는 config/prod/*.yaml에서 설정
   pullPolicy: IfNotPresent
-  tag: ""         # config/local/*.yaml 또는 config/prod/*.yaml에서 설정
+  tag: ""         # config/dev/*.yaml 또는 config/prod/*.yaml에서 설정
 
 # 비민감 애플리케이션 설정 (ConfigMap으로 주입)
 config:
@@ -60,7 +60,7 @@ secrets:
 extraEnv: []
 ```
 
-### 환경별 오버라이드 (config/local/<service-name>.yaml)
+### 환경별 오버라이드 (config/dev/<service-name>.yaml)
 
 ```yaml
 # 이미지 설정
@@ -73,15 +73,15 @@ image:
 imagePullSecrets:
   - name: ecr-secret
 
-# 로컬 환경용 설정
+# 개발 환경용 설정
 config:
-  SPRING_PROFILES_ACTIVE: "local"
+  SPRING_PROFILES_ACTIVE: "dev"
   SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://<service>-db:5432/<service>_db"
   SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://<service>-db:5432/<service>_db"
   SPRING_DATA_REDIS_HOST: "cache-redis"
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
 
-# 로컬 환경용 비밀번호
+# 개발 환경용 비밀번호
 secrets:
   SPRING_DATASOURCE_MASTER_USERNAME: "postgres"
   SPRING_DATASOURCE_MASTER_PASSWORD: "postgres"
@@ -94,7 +94,7 @@ secrets:
 | 변수명 | 설명 |
 |--------|------|
 | SERVER_PORT | Spring Boot 서버 포트 |
-| SPRING_PROFILES_ACTIVE | 활성 프로파일 (local, prod) |
+| SPRING_PROFILES_ACTIVE | 활성 프로파일 (dev, prod) |
 | SPRING_DATASOURCE_MASTER_URL | 마스터 DB JDBC URL |
 | SPRING_DATASOURCE_REPLICA_URL | 레플리카 DB JDBC URL |
 | SPRING_DATA_REDIS_HOST | Redis 호스트 |
@@ -170,10 +170,10 @@ containers:
 2. 민감 설정: `values.yaml` 또는 환경별 config 파일의 `secrets:` 섹션에 추가
 3. 특수 케이스 (valueFrom 등): `extraEnv:` 섹션 사용
 
-### 로컬 개발 환경 배포
+### k3d 개발 환경 배포
 
 ```bash
-# ArgoCD ApplicationSet이 config/local/<service>.yaml을 자동으로 병합
+# ArgoCD ApplicationSet이 config/dev/<service>.yaml을 자동으로 병합
 # Multiple Sources 패턴 사용
 ```
 

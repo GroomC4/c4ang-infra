@@ -12,8 +12,8 @@ spec:
   # Blue/Green 배포 전략 정의
   strategy:
     blueGreen:
-      activeService: {{ .Chart.Name }}-active
-      previewService: {{ .Chart.Name }}-preview
+      activeService: {{ include "saga-tracker.fullname" . }}
+      previewService: {{ include "saga-tracker.fullname" . }}-preview
       autoPromotionEnabled: false
 
   selector:

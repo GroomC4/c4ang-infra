@@ -7,7 +7,7 @@ metadata:
     {{- include "payment-service.labels" . | nindent 4 }}
 spec:
   # Active Service 호스트로 변경
-  host: {{ .Chart.Name }}-active
+  host: {{ include "payment-service.fullname" . }}
   trafficPolicy:
     connectionPool:
       tcp:

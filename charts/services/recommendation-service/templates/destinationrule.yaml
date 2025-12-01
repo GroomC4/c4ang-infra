@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "recommendation-service.labels" . | nindent 4 }}
 spec:
-  host: {{ .Chart.Name }}-active
+  host: {{ include "recommendation-service.fullname" . }}
   trafficPolicy:
     connectionPool:
       tcp:

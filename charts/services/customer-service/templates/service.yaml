@@ -1,9 +1,10 @@
-# Active Service (Blue): Points to the stable, production version.
-# Argo Rollouts manages the endpoints of this service to point to the blue pods.
+# Active Service: Points to the stable, production version.
+# Argo Rollouts manages the endpoints of this service to point to the active (blue) pods.
+# Best practice: Use base service name for active, add -preview suffix for preview.
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Chart.Name }}-active
+  name: {{ include "customer-service.fullname" . }}
   labels:
     {{- include "customer-service.labels" . | nindent 4 }}
 spec:
@@ -16,12 +17,12 @@ spec:
   # No selector is needed. Argo Rollouts will manage the Endpoints.
 ---
 
-# Preview Service (Green): Points to the new version for testing.
-# Argo Rollouts manages the endpoints of this service to point to the green pods.
+# Preview Service: Points to the new version for testing.
+# Argo Rollouts manages the endpoints of this service to point to the preview (green) pods.
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Chart.Name }}-preview
+  name: {{ include "customer-service.fullname" . }}-preview
   labels:
     {{- include "customer-service.labels" . | nindent 4 }}
 spec:

@@ -1,0 +1,55 @@
+# customer-service EKS 프로덕션 환경 설정
+# AWS RDS, ElastiCache, MSK 사용
+
+replicaCount: 3
+
+image:
+  repository: 963403601423.dkr.ecr.ap-northeast-2.amazonaws.com/c4ang-customer-service
+  pullPolicy: IfNotPresent
+  tag: "v1.0.10"
+
+# ECR 이미지 pull을 위한 secret
+imagePullSecrets:
+  - name: ecr-secret
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+resources:
+  requests:
+    memory: 1Gi
+    cpu: 500m
+  limits:
+    memory: 2Gi
+    cpu: 1000m
+
+# Application configuration (injected via ConfigMap)
+config:
+  SERVER_PORT: "8081"
+  SPRING_PROFILES_ACTIVE: "prod"
+  # AWS RDS PostgreSQL
+  SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/customer_db"
+  SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/customer_db"
+  # AWS ElastiCache Redis
+  SPRING_DATA_REDIS_HOST: "redis-master"
+  SPRING_DATA_REDIS_PORT: "6379"
+  SPRING_REDISSON_ADDRESS: "redis://redis-master:6379"
+  # AWS MSK Kafka
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: "kafka:9092"
+  SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: "kafka:9092"
+
+# Sensitive data (injected via Secret) - 실제 값은 External Secrets 또는 AWS Secrets Manager에서 주입
+secrets:
+  SPRING_DATASOURCE_MASTER_USERNAME: ""
+  SPRING_DATASOURCE_MASTER_PASSWORD: ""
+  SPRING_DATASOURCE_REPLICA_USERNAME: ""
+  SPRING_DATASOURCE_REPLICA_PASSWORD: ""
+  SPRING_REDIS_PASSWORD: ""
+  SPRING_REDISSON_PASSWORD: ""
+
+# Istio 설정 (기본값 사용)
