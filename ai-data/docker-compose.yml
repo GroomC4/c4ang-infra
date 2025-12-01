@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  pinecone-local:
+    image: ghcr.io/pinecone-io/pinecone-index:latest
+    container_name: pinecone-local
+    ports:
+      - "5081:5081"
+    environment:
+      - INDEX_NAME=perfume-vectordb
+      - DIMENSION=1536
+      - METRIC=cosine
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5081/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped

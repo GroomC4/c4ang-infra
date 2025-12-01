@@ -1,0 +1,7 @@
+# requirements.txt
+pinecone>=5.0.0
+openai>=1.12.0
+pandas>=2.2.1
+python-dotenv>=1.0.1
+tqdm>=4.66.2
+langchain-core>=0.1.0
