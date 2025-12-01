@@ -12,7 +12,7 @@ gateway:
   main:
     enabled: true
     name: ecommerce-gateway
-    hostname: api.ecommerce.com
+    #hostname: api.ecommerce.com  # (이게 없어야 localhost 접속이 허용됩니다)
     # k3d 환경에서는 LoadBalancer 타입이 NodePort로 매핑됨
     # AWS NLB 어노테이션은 k3d에서 무시됨
     annotations:
@@ -30,7 +30,7 @@ gateway:
       http:
         enabled: true
         port: 80
-        redirectToHttps: true
+        redirectToHttps: false  # <-- true -> false로 변경  # (로컬 시연 중에는 HTTP로 통신해야 합니다)
   
   webhook:
     enabled: true
