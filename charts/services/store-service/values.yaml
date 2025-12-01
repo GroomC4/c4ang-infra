@@ -74,7 +74,7 @@ istio:
       maxEjectionPercent: 50
       minHealthPercent: 40
   gatewayAPI:
-    enabled: true # Set to true to use Kubernetes Gateway API
+    enabled: false # Set to true to use Kubernetes Gateway API
     gatewayName: ecommerce-gateway
     gatewayNamespace: ecommerce
     hostnames:
