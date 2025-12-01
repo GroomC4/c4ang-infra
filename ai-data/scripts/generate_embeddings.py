@@ -157,6 +157,10 @@ class EmbeddingGenerator:
     # -------------------------------------
     def save_vectors(self, vectors: List[Dict], output_path: str) -> None:
         """벡터를 pickle 파일로 저장"""
+        # 상대 경로 처리: scripts/ 에서 실행되므로 ../data/ 에 저장
+        if not os.path.isabs(output_path):
+            output_path = os.path.join(os.path.dirname(__file__), "..", "data", output_path)
+        
         print(f"💾 벡터 저장 중: {output_path}")
         with open(output_path, "wb") as f:
             pickle.dump(vectors, f)

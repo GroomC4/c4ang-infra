@@ -63,6 +63,10 @@ class PineconeUploader:
     # -------------------------------------
     def load_vectors(self, file_path: str) -> List[Dict]:
         """pickle 파일에서 벡터 로드"""
+        # 상대 경로 처리: scripts/ 에서 실행되므로 ../data/ 참조
+        if not os.path.isabs(file_path):
+            file_path = os.path.join(os.path.dirname(__file__), "..", "data", file_path)
+        
         print(f"📂 벡터 로딩 중: {file_path}")
         with open(file_path, "rb") as f:
             vectors = pickle.load(f)

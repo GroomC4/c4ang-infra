@@ -5,18 +5,20 @@
 ## 디렉토리 구조
 
 ```
-pinecone-local-dev/
+ai-data/
 ├── docker-compose.yml          # Pinecone Local 컨테이너 설정
 ├── .env.example                # 환경 변수 템플릿
 ├── .env                        # 환경 변수 (gitignore)
 ├── Makefile                    # 편리한 명령어 모음
 ├── README.md                   # 이 파일
-├── data/                       # 원본 데이터
-│   ├── perfume_final.csv
-│   └── keyword_dictionary_final.csv
+├── data/                       # 데이터 파일
+│   ├── perfume_final.csv                   # 원본 CSV
+│   ├── keyword_dictionary_final.csv        # 원본 CSV
+│   ├── perfume_embeddings.pkl              # 임베딩 벡터 (gitignore)
+│   └── perfume_embeddings_metadata.json    # 메타데이터 샘플 (gitignore)
 └── scripts/                    # Python 스크립트
-    ├── generate_embeddings.py      # 임베딩 생성 → 파일 저장
-    ├── upsert_from_file.py         # 파일 → Pinecone 업로드
+    ├── generate_embeddings.py      # 임베딩 생성 → data/ 폴더에 저장
+    ├── upsert_from_file.py         # data/ 폴더에서 읽어 Pinecone 업로드
     ├── requirements.txt            # Python 의존성
     └── venv/                       # 가상환경 (gitignore)
 ```
@@ -92,7 +94,7 @@ make upsert-cloud    # 클라우드에 업로드
    ```
    - `data/perfume_final.csv` 읽기
    - OpenAI로 임베딩 생성
-   - `scripts/perfume_embeddings.pkl` 저장
+   - `data/perfume_embeddings.pkl` 저장
    - 비용 발생 (한 번만)
 
 2. **Pinecone에 업로드 (여러 번 가능)**
@@ -113,12 +115,12 @@ make upsert-cloud    # 클라우드에 업로드
 ## 스크립트 설명
 
 ### generate_embeddings.py
-- CSV 파일을 읽어서 OpenAI 임베딩 생성
-- pickle 파일로 저장 (`perfume_embeddings.pkl`)
+- `data/perfume_final.csv` 파일을 읽어서 OpenAI 임베딩 생성
+- `data/` 폴더에 pickle 파일로 저장 (`perfume_embeddings.pkl`)
 - 메타데이터 샘플 JSON 파일도 생성
 
 ### upsert_from_file.py
-- 저장된 임베딩 파일을 Pinecone에 업로드
+- `data/` 폴더에서 저장된 임베딩 파일을 읽어 Pinecone에 업로드
 - `--cloud` 옵션으로 Local/Cloud 선택
 - `--file` 옵션으로 커스텀 파일 지정
 
@@ -172,9 +174,11 @@ make clean
 ## 생성되는 파일
 
 ```
-scripts/
+data/
+├── perfume_final.csv                   # 원본 CSV
+├── keyword_dictionary_final.csv        # 원본 CSV
 ├── perfume_embeddings.pkl              # 임베딩 벡터 (gitignore)
 └── perfume_embeddings_metadata.json    # 메타데이터 샘플 (gitignore)
 ```
 
-이 파일들은 `.gitignore`에 포함되어 있어 Git에 커밋되지 않습니다.
+임베딩 파일(`.pkl`, `_metadata.json`)은 `.gitignore`에 포함되어 있어 Git에 커밋되지 않습니다.
