@@ -97,7 +97,7 @@ security:
 
 # HTTPRoute 설정
 httpRoute:
-  enabled: true
+  enabled: false
   services:
     # 각 서비스별 라우팅 설정
     # 배포 시 자동으로 활성화
