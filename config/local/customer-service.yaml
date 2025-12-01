@@ -3,14 +3,20 @@
 
 replicaCount: 1
 
+# 1. 이미지 교체 (데모용)
 image:
-  repository: 963403601423.dkr.ecr.ap-northeast-2.amazonaws.com/c4ang-customer-service
-  pullPolicy: IfNotPresent
-  tag: "v1.0.10"
+  repository: argoproj/rollouts-demo
+  pullPolicy: Always
+  tag: "blue"   # 중요: v1.0.10 아님! blue로 해야 함
 
-# ECR 이미지 pull을 위한 secret
-imagePullSecrets:
-  - name: ecr-secret
+# 2. 시크릿 비우기 (공개 이미지라 필요 없음)
+imagePullSecrets: []
+
+# 3. 서비스 포트 맞추기 (데모앱은 8080 씀)
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080 # 중요: 8081 아님!
 
 autoscaling:
   enabled: false
