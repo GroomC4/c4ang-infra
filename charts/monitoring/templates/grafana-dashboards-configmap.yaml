@@ -1,4 +1,5 @@
 {{- if and .Values.grafana.enabled .Values.grafana.dashboards.enabled }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -10,4 +11,28 @@ metadata:
 data:
   argo-rollouts-dashboard.json: |-
 {{ .Files.Get "dashboards/argo-rollouts-dashboard.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-k8s-cluster
+  namespace: {{ include "monitoring.namespace" . }}
+  labels:
+    {{- include "monitoring.grafana.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  kubernetes-cluster-dashboard.json: |-
+{{ .Files.Get "dashboards/kubernetes-cluster-dashboard.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-k8s-pods
+  namespace: {{ include "monitoring.namespace" . }}
+  labels:
+    {{- include "monitoring.grafana.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  kubernetes-pods-dashboard.json: |-
+{{ .Files.Get "dashboards/kubernetes-pods-dashboard.json" | indent 4 }}
 {{- end }}

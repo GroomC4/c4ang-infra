@@ -1,0 +1,51 @@
+# payment-service 로컬 환경 설정
+# docker-compose로 띄운 외부 서비스에 연결
+
+replicaCount: 1
+
+image:
+  repository: 963403601423.dkr.ecr.ap-northeast-2.amazonaws.com/c4ang-payment-service
+  pullPolicy: IfNotPresent
+  tag: "v0.0.1-RC1"
+
+# ECR 이미지 pull을 위한 secret
+imagePullSecrets:
+  - name: ecr-secret
+
+autoscaling:
+  enabled: false
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 100m
+  limits:
+    memory: 1Gi
+    cpu: 250m
+
+# Application configuration (injected via ConfigMap)
+config:
+  SERVER_PORT: "8081"
+  SPRING_PROFILES_ACTIVE: "local"
+  # PostgreSQL (ExternalName 서비스 사용)
+  SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://payment-db:5432/payment_db"
+  SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://payment-db:5432/payment_db"
+  # Redis (ExternalName 서비스 사용)
+  SPRING_DATA_REDIS_HOST: "cache-redis"
+  SPRING_DATA_REDIS_PORT: "6379"
+  SPRING_REDISSON_ADDRESS: "redis://cache-redis:6379"
+  # Kafka (ExternalName 서비스 사용)
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: "kafka:9092"
+  SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: "kafka:9092"
+
+# Sensitive data (injected via Secret)
+secrets:
+  SPRING_DATASOURCE_MASTER_USERNAME: "postgres"
+  SPRING_DATASOURCE_MASTER_PASSWORD: "postgres"
+  SPRING_DATASOURCE_REPLICA_USERNAME: "postgres"
+  SPRING_DATASOURCE_REPLICA_PASSWORD: "postgres"
+  SPRING_REDIS_PASSWORD: ""
+  SPRING_REDISSON_PASSWORD: ""
+
+# Istio 설정 (기본값 사용)

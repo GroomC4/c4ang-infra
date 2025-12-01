@@ -92,6 +92,10 @@ spec:
               mountPath: /etc/grafana/provisioning/dashboards
             - name: dashboard-argo-rollouts
               mountPath: /var/lib/grafana/dashboards/argo-rollouts
+            - name: dashboard-k8s-cluster
+              mountPath: /var/lib/grafana/dashboards/k8s-cluster
+            - name: dashboard-k8s-pods
+              mountPath: /var/lib/grafana/dashboards/k8s-pods
             {{- end }}
 
       volumes:
@@ -108,6 +112,12 @@ spec:
         - name: dashboard-argo-rollouts
           configMap:
             name: grafana-dashboard-argo-rollouts
+        - name: dashboard-k8s-cluster
+          configMap:
+            name: grafana-dashboard-k8s-cluster
+        - name: dashboard-k8s-pods
+          configMap:
+            name: grafana-dashboard-k8s-pods
         {{- end }}
       
       {{- with .Values.nodeSelector }}

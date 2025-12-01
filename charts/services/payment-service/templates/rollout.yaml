@@ -65,9 +65,16 @@ spec:
             - name: http
               containerPort: {{ .Values.service.targetPort }}
               protocol: TCP
-          {{- if .Values.env }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "payment-service.fullname" . }}-config
+            {{- if .Values.secrets }}
+            - secretRef:
+                name: {{ include "payment-service.fullname" . }}-secret
+            {{- end }}
+          {{- if .Values.extraEnv }}
           env:
-          {{- toYaml .Values.env | nindent 8 }}
+            {{- toYaml .Values.extraEnv | nindent 12 }}
           {{- end }}
           volumeMounts:
             - name: logs-dir

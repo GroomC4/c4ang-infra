@@ -11,12 +11,16 @@ spec:
   generators:
     - list:
         elements:
-          - env: local
-            cluster: https://kubernetes.default.svc
-            namespace: airflow
+          # local 환경은 AWS RDS 설정이 필요하여 비활성화
+          # - env: local
+          #   cluster: https://kubernetes.default.svc
+          #   namespace: airflow
           - env: prod
             cluster: https://eks-cluster.region.eks.amazonaws.com
             namespace: airflow
+
+  syncPolicy:
+    applicationsSync: create-only  # 생성만 하고 이후 수동 변경 유지
 
   template:
     metadata:
@@ -31,7 +35,7 @@ spec:
       project: infrastructure
       source:
         repoURL: https://github.com/GroomC4/c4ang-infra.git
-        targetRevision: HEAD
+        targetRevision: feature/argoRollout
         path: charts/airflow
         helm:
           valueFiles:

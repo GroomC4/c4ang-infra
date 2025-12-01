@@ -33,6 +33,14 @@ postgresql:
       enabled: true
       externalName: "c4ang-prod-saga-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com"
       port: 5432
+    payment:
+      enabled: true
+      externalName: "c4ang-prod-payment-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com"
+      port: 5432
+    recommendation:
+      enabled: true
+      externalName: "c4ang-prod-recommendation-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com"
+      port: 5432
 
 # -----------------------------------------------------------------------------
 # Redis Instances (AWS ElastiCache)
@@ -59,3 +67,12 @@ kafka:
   # enabled: true
   # externalName: "b-1.c4ang-prod-kafka.xxxx.kafka.ap-northeast-2.amazonaws.com"
   # port: 9092
+
+# -----------------------------------------------------------------------------
+# Schema Registry (K8s 내 Strimzi와 함께 사용)
+# -----------------------------------------------------------------------------
+schemaRegistry:
+  enabled: false  # K8s 내 Strimzi 사용시 false
+  # enabled: true
+  # externalName: "schema-registry.kafka.svc.cluster.local"
+  # port: 8081

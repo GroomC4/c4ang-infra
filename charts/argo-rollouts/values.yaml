@@ -1,13 +1,39 @@
-# Argo Rollouts 모니터링 설정
+# Argo Rollouts Helm Chart 설정
+# dependency chart (argo-rollouts)의 값은 'argo-rollouts' 키 아래에 설정
+
 namespace: argo-rollouts
 
-# Metrics 서비스 설정
+argo-rollouts:
+  # 컨트롤러 설정
+  controller:
+    replicas: 1
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: false  # Prometheus Operator 사용 시 true로 변경
+
+  # Dashboard 설정
+  dashboard:
+    enabled: true
+    service:
+      type: ClusterIP
+      port: 3100
+
+  # CRD 설치 (필수)
+  installCRDs: true
+
+  # 알림 설정
+  notifications:
+    secret:
+      create: true
+    notifiers: {}
+
+# 추가 모니터링 설정 (커스텀 리소스)
 metrics:
   enabled: true
   port: 8090
   targetPort: 8090
 
-# Prometheus 연동 설정
 prometheus:
   enabled: true
   scrape: true

@@ -25,9 +25,9 @@ spec:
         sidecar.istio.io/inject: "true"
       labels:
         {{- include "order-service.selectorLabels" . | nindent 8 }}
-          {{- if .Values.istio.enabled }}
-          version: {{ .Values.image.tag | default .Chart.AppVersion }}
-          {{- end }}
+        {{- if .Values.istio.enabled }}
+        version: {{ .Values.image.tag | default .Chart.AppVersion }}
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -59,9 +59,16 @@ spec:
             - name: http
               containerPort: {{ .Values.service.targetPort }}
               protocol: TCP
-          {{- if .Values.env }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "order-service.fullname" . }}-config
+            {{- if .Values.secrets }}
+            - secretRef:
+                name: {{ include "order-service.fullname" . }}-secret
+            {{- end }}
+          {{- if .Values.extraEnv }}
           env:
-          {{- toYaml .Values.env | nindent 12 }}
+          {{- toYaml .Values.extraEnv | nindent 12 }}
           {{- end }}
           volumeMounts:
             - name: logs-dir

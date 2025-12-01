@@ -5,6 +5,6 @@ metadata:
   labels:
     {{- include "store-service.labels" . | nindent 4 }}
 data:
-  application.yaml: |
-    # Application configuration
-    # Add any application-specific configuration here
+  {{- range $key, $value := .Values.config }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}

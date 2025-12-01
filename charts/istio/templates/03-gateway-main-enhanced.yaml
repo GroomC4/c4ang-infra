@@ -96,7 +96,7 @@ spec:
   from:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
-      namespace: "*"  # 또는 특정 네임스페이스 목록
+      namespace: {{ .Values.namespace.name }}
   to:
     - group: gateway.networking.k8s.io
       kind: Gateway

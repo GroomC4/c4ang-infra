@@ -55,32 +55,40 @@ c4ang-infra/
 
 로컬에서 마이크로서비스를 개발하고 테스트하기 위한 k3d 환경을 구성합니다.
 
+**사전 요구사항:**
+- Docker Desktop 실행
+- AWS CLI 설치 및 자격증명 설정: `aws configure`
+
 ```bash
-# 1. k3d 클러스터 생성
-./scripts/bootstrap/create-cluster.sh
+# 1. 로컬 환경 전체 구축 (한 번만 실행)
+./scripts/bootstrap/local.sh
 
 # 2. kubectl 설정
-export KUBECONFIG=$(pwd)/environments/local/kubeconfig/config
+export KUBECONFIG=$(pwd)/k8s-dev-k3d/kubeconfig/config
 
-# 3. 환경 시작 (Redis, PostgreSQL 등 기본 서비스 배포)
-./scripts/bootstrap/start-environment.sh
+# 3. 환경 상태 확인
+./scripts/bootstrap/local.sh --status
 
-# 4. 환경 상태 확인
-kubectl get pods -A
+# 4. 환경 중지 (퇴근시, 데이터 유지)
+./scripts/bootstrap/local.sh --down
 
-# 5. 환경 중지 (클러스터 유지)
-./scripts/bootstrap/stop-environment.sh
+# 5. 환경 시작 (다음날)
+./scripts/bootstrap/local.sh --up
 
-# 6. 환경 완전 삭제
-./scripts/bootstrap/cleanup.sh
+# 6. ECR Secret 갱신 (12시간 이상 작업 시)
+./scripts/platform/ecr.sh
+
+# 7. 환경 완전 삭제
+./scripts/bootstrap/local.sh --destroy
 ```
 
-| 스크립트 | 설명 |
-|---------|------|
-| `create-cluster.sh` | k3d 클러스터 생성 및 기본 설정 |
-| `start-environment.sh` | 클러스터 시작 및 기본 서비스 배포 |
-| `stop-environment.sh` | Helm 릴리스 제거 및 클러스터 중지/삭제 선택 |
-| `cleanup.sh` | 모든 k3d 리소스 완전 삭제 |
+| 옵션 | 설명 |
+|------|------|
+| (없음) | 전체 환경 초기화 (Docker Compose + k3d + ECR + ArgoCD) |
+| `--up` | 환경 시작 (이미 초기화된 경우) |
+| `--down` | 환경 중지 (데이터 유지) |
+| `--status` | 현재 상태 확인 |
+| `--destroy` | 환경 완전 삭제 |
 
 ### 인프라 담당자 (플랫폼 관리)
 
@@ -113,6 +121,11 @@ kubectl get pods -A
 ./scripts/platform/secrets.sh --status     # 상태 확인
 ./scripts/platform/secrets.sh --encrypt config/local/db.secrets.yaml  # 암호화
 ./scripts/platform/secrets.sh --decrypt config/local/db.secrets.enc.yaml  # 복호화
+
+# ECR Secret 관리 (로컬 k3d 환경용)
+./scripts/platform/ecr.sh                  # ECR Secret 생성/갱신
+./scripts/platform/ecr.sh --status         # 상태 확인 (만료 시간 포함)
+./scripts/platform/ecr.sh --delete         # Secret 삭제
 ```
 
 #### 플랫폼 스크립트 상세
@@ -124,6 +137,7 @@ kubectl get pods -A
 | `kafka.sh` | Kafka 인프라 전체 배포 (Strimzi, Schema Registry, Connect, UI, Topics) | `--status`, `--no-topics`, `--no-ui`, `--no-connect` |
 | `monitoring.sh` | 모니터링 스택 배포 (Prometheus, Grafana, Loki, Tempo) | `--status`, `--port-forward` |
 | `secrets.sh` | SOPS/Age 시크릿 관리 | `--status`, `--encrypt FILE`, `--decrypt FILE` |
+| `ecr.sh` | AWS ECR Secret 관리 (로컬 k3d용, 12시간 유효) | `--status`, `--delete` |
 
 #### 배포 순서 (권장)
 
@@ -238,8 +252,8 @@ make version              # 도구 버전 확인
 
 | 디렉토리 | 설명 |
 |---------|------|
-| `scripts/bootstrap/` | 환경 부트스트랩 (서비스 개발자용 - k3d 클러스터 생성/시작/중지) |
-| `scripts/platform/` | 플랫폼 관리 (인프라 담당자용 - ArgoCD, Istio, Kafka, 모니터링) |
+| `scripts/bootstrap/` | 환경 부트스트랩 (서비스 개발자용 - local.sh, prod.sh) |
+| `scripts/platform/` | 플랫폼 관리 (인프라 담당자용 - ArgoCD, Istio, Kafka, 모니터링, ECR) |
 | `charts/` | 환경 중립적 Helm 차트 |
 | `config/local/` | k3d 환경 Values 오버라이드 |
 | `config/prod/` | EKS 환경 Values 오버라이드 |

@@ -12,11 +12,11 @@ spec:
 
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
-    targetRevision: HEAD
+    targetRevision: feature/argoRollout
     path: argocd
     directory:
       recurse: true
-      include: '{projects/*.yaml,applicationsets/*.yaml}'
+      include: '{hooks/*.yaml,projects/*.yaml,applicationsets/*.yaml}'
 
   destination:
     server: https://kubernetes.default.svc

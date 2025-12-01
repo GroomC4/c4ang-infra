@@ -42,6 +42,9 @@ spec:
                   chart: charts/argo-rollouts
                   syncWave: "3"
 
+  syncPolicy:
+    applicationsSync: create-only  # 생성만 하고 이후 수동 변경 유지
+
   template:
     metadata:
       name: '{{.name}}-{{.env}}'
@@ -56,7 +59,7 @@ spec:
       project: infrastructure
       source:
         repoURL: https://github.com/GroomC4/c4ang-infra.git
-        targetRevision: HEAD
+        targetRevision: feature/argoRollout
         path: '{{.chart}}'
         helm:
           valueFiles:

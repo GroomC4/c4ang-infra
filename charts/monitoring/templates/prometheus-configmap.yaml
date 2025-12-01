@@ -142,6 +142,11 @@ data:
             action: replace
             target_label: kubernetes_pod_name
 
+      # kube-state-metrics
+      - job_name: 'kube-state-metrics'
+        static_configs:
+          - targets: ['kube-state-metrics.{{ include "monitoring.namespace" . }}.svc.cluster.local:8080']
+
       # Argo Rollouts Controller 메트릭
       - job_name: 'argo-rollouts'
         kubernetes_sd_configs:
