@@ -17,6 +17,8 @@ spec:
     - match:
         - uri:
             prefix: {{ .Values.istio.pathPrefix | default "/api/v1/customers" }}
+      rewrite:
+        uri: /
       route:
         - destination:
             host: {{ .Chart.Name }}-active
