@@ -15,7 +15,9 @@ spec:
   listeners:
     {{- if .Values.gateway.main.listeners.https.enabled }}
     - name: https
+      { { - if .Values.gateway.main.hostname } }
       hostname: "{{ .Values.gateway.main.hostname }}"
+      { { - end } }
       port: {{ .Values.gateway.main.listeners.https.port }}
       protocol: HTTPS
       {{- if .Values.gateway.main.listeners.https.tls }}
@@ -37,7 +39,9 @@ spec:
     
     {{- if .Values.gateway.main.listeners.http.enabled }}
     - name: http-redirect
+      { { - if .Values.gateway.main.hostname } }
       hostname: "{{ .Values.gateway.main.hostname }}"
+      { { - end } }
       port: {{ .Values.gateway.main.listeners.http.port }}
       protocol: HTTP
       allowedRoutes:
@@ -60,7 +64,9 @@ spec:
     - name: {{ include "istio.gateway.main.name" . }}
       sectionName: http-redirect
   hostnames:
-    - "{{ .Values.gateway.main.hostname }}"
+    - { { - if .Values.gateway.main.hostname } }
+    - hostname: "{{ .Values.gateway.main.hostname }}"
+    - { { - end } }
   rules:
     - filters:
         - type: RequestRedirect
