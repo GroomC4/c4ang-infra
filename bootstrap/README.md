@@ -63,7 +63,7 @@ root-application.yaml
 
 ### 환경별 설정
 
-- **local (k3d)**: `config/local/*.yaml` 값 파일 사용
+- **dev (k3d)**: `config/dev/*.yaml` 값 파일 사용
 - **prod (EKS)**: `config/prod/*.yaml` 값 파일 사용
 
 ApplicationSet의 Matrix Generator가 환경과 컴포넌트를 조합하여 자동으로 Application을 생성합니다.

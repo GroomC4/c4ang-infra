@@ -2,7 +2,7 @@ fullnameOverride: store-api
 replicaCount: 2
 
 image:
-  repository: ""  # Set in environment config (config/local/*.yaml or config/prod/*.yaml)
+  repository: ""  # Set in environment config (config/dev/*.yaml or config/prod/*.yaml)
   pullPolicy: IfNotPresent
   tag: ""         # Set in environment config
 

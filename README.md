@@ -29,11 +29,11 @@ c4ang-infra/
 │   └── statefulset-base/         # StatefulSet 템플릿 (Redis, PostgreSQL)
 │
 ├── config/                        # 환경별 Values 오버라이드
-│   ├── local/                    # 로컬 k3d 환경 설정
+│   ├── dev/                      # k3d 개발 환경 설정
 │   └── prod/                     # 운영 환경 설정 (EKS)
 │
 ├── environments/                  # 환경별 리소스
-│   ├── local/                    # k3d 로컬 환경
+│   ├── dev/                      # k3d 개발 환경
 │   │   ├── kubeconfig/          # kubeconfig 저장
 │   │   └── docs/                # 환경별 문서
 │   └── prod/                     # 운영 환경
@@ -51,35 +51,35 @@ c4ang-infra/
 
 ## 사용자 가이드
 
-### 서비스 개발자 (로컬 테스트 환경)
+### 서비스 개발자 (k3d 개발 환경)
 
-로컬에서 마이크로서비스를 개발하고 테스트하기 위한 k3d 환경을 구성합니다.
+k3d 기반 개발 환경에서 마이크로서비스를 개발하고 테스트합니다.
 
 **사전 요구사항:**
 - Docker Desktop 실행
 - AWS CLI 설치 및 자격증명 설정: `aws configure`
 
 ```bash
-# 1. 로컬 환경 전체 구축 (한 번만 실행)
-./scripts/bootstrap/local.sh
+# 1. 개발 환경 전체 구축 (한 번만 실행)
+./scripts/bootstrap/dev.sh
 
 # 2. kubectl 설정
 export KUBECONFIG=$(pwd)/k8s-dev-k3d/kubeconfig/config
 
 # 3. 환경 상태 확인
-./scripts/bootstrap/local.sh --status
+./scripts/bootstrap/dev.sh --status
 
 # 4. 환경 중지 (퇴근시, 데이터 유지)
-./scripts/bootstrap/local.sh --down
+./scripts/bootstrap/dev.sh --down
 
 # 5. 환경 시작 (다음날)
-./scripts/bootstrap/local.sh --up
+./scripts/bootstrap/dev.sh --up
 
 # 6. ECR Secret 갱신 (12시간 이상 작업 시)
 ./scripts/platform/ecr.sh
 
 # 7. 환경 완전 삭제
-./scripts/bootstrap/local.sh --destroy
+./scripts/bootstrap/dev.sh --destroy
 ```
 
 | 옵션 | 설명 |
@@ -119,8 +119,8 @@ export KUBECONFIG=$(pwd)/k8s-dev-k3d/kubeconfig/config
 # 시크릿 관리 (SOPS + Age)
 ./scripts/platform/secrets.sh              # Age 키 생성 및 설정
 ./scripts/platform/secrets.sh --status     # 상태 확인
-./scripts/platform/secrets.sh --encrypt config/local/db.secrets.yaml  # 암호화
-./scripts/platform/secrets.sh --decrypt config/local/db.secrets.enc.yaml  # 복호화
+./scripts/platform/secrets.sh --encrypt config/dev/db.secrets.yaml  # 암호화
+./scripts/platform/secrets.sh --decrypt config/dev/db.secrets.enc.yaml  # 복호화
 
 # ECR Secret 관리 (로컬 k3d 환경용)
 ./scripts/platform/ecr.sh                  # ECR Secret 생성/갱신
@@ -149,22 +149,22 @@ export KUBECONFIG=$(pwd)/k8s-dev-k3d/kubeconfig/config
 
 ## 환경별 Helm 배포
 
-### 로컬 환경 (k3d)
+### 개발 환경 (k3d)
 
 ```bash
 # 모니터링 스택
 helm upgrade --install monitoring charts/monitoring \
-  -f config/local/monitoring.yaml \
+  -f config/dev/monitoring.yaml \
   -n monitoring --create-namespace
 
 # Istio 설정
 helm upgrade --install istio-config charts/istio \
-  -f config/local/istio.yaml \
+  -f config/dev/istio.yaml \
   -n ecommerce --create-namespace
 
 # Redis
 helm upgrade --install redis charts/statefulset-base/redis \
-  -f config/local/redis.yaml \
+  -f config/dev/redis.yaml \
   -n msa-quality --create-namespace
 ```
 
@@ -189,7 +189,7 @@ kubectl apply -f environments/prod/secrets/
 
 ### GitOps (ArgoCD ApplicationSet)
 
-Matrix Generator를 사용하여 환경(local/prod)과 컴포넌트를 조합:
+Matrix Generator를 사용하여 환경(dev/prod)과 컴포넌트를 조합:
 
 ```yaml
 # argocd/applicationsets/infrastructure.yaml
@@ -198,7 +198,7 @@ generators:
       generators:
         - list:
             elements:
-              - env: local
+              - env: dev
               - env: prod
         - list:
             elements:
@@ -206,19 +206,19 @@ generators:
               - name: istio
 ```
 
-결과: `monitoring-local`, `monitoring-prod`, `istio-local`, `istio-prod` 자동 생성
+결과: `monitoring-dev`, `monitoring-prod`, `istio-dev`, `istio-prod` 자동 생성
 
 ### 환경별 설정 분리
 
 - **charts/**: 환경 중립적인 Helm 차트 (기본값)
-- **config/local/**: k3d 최적화 설정 (리소스 최소화, 단일 replica)
+- **config/dev/**: k3d 개발 환경 설정 (리소스 최소화, 단일 replica)
 - **config/prod/**: EKS 운영 설정 (HA, 모니터링, 알림 활성화)
 
 ### 시크릿 관리
 
 | 환경 | 방식 | 경로 |
 |-----|------|-----|
-| 로컬 (k3d) | SOPS + Age | `config/local/*.secrets.enc.yaml` |
+| 개발 (k3d) | SOPS + Age | `config/dev/*.secrets.enc.yaml` |
 | 운영 (EKS) | AWS Secrets Manager + External Secrets | `environments/prod/secrets/` |
 
 ## Makefile 명령어
@@ -226,11 +226,11 @@ generators:
 ```bash
 make help                 # 모든 명령어 보기
 
-# 로컬 환경
-make local-up             # 환경 시작
-make local-down           # 환경 중지
-make local-status         # 상태 확인
-make local-clean          # 환경 삭제
+# 개발 환경
+make dev-up               # 환경 시작
+make dev-down             # 환경 중지
+make dev-status           # 상태 확인
+make dev-clean            # 환경 삭제
 
 # ArgoCD
 make argocd-install       # ArgoCD 설치
@@ -252,12 +252,12 @@ make version              # 도구 버전 확인
 
 | 디렉토리 | 설명 |
 |---------|------|
-| `scripts/bootstrap/` | 환경 부트스트랩 (서비스 개발자용 - local.sh, prod.sh) |
+| `scripts/bootstrap/` | 환경 부트스트랩 (서비스 개발자용 - dev.sh, prod.sh) |
 | `scripts/platform/` | 플랫폼 관리 (인프라 담당자용 - ArgoCD, Istio, Kafka, 모니터링, ECR) |
 | `charts/` | 환경 중립적 Helm 차트 |
-| `config/local/` | k3d 환경 Values 오버라이드 |
-| `config/prod/` | EKS 환경 Values 오버라이드 |
-| `environments/local/` | k3d 환경 리소스 (kubeconfig 등) |
+| `config/dev/` | k3d 개발 환경 Values 오버라이드 |
+| `config/prod/` | EKS 운영 환경 Values 오버라이드 |
+| `environments/dev/` | k3d 개발 환경 리소스 (kubeconfig 등) |
 | `environments/prod/` | 운영 환경 리소스 (External Secrets 등) |
 | `argocd/` | ArgoCD Projects 및 ApplicationSets |
 | `bootstrap/` | ArgoCD App of Apps 부트스트랩 |
@@ -265,6 +265,6 @@ make version              # 도구 버전 확인
 ## 참고 문서
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - 상세 아키텍처 설명
-- [environments/local/docs/](./environments/local/docs/) - k3d 로컬 환경 가이드
+- [environments/dev/docs/](./environments/dev/docs/) - k3d 개발 환경 가이드
 - [bootstrap/README.md](./bootstrap/README.md) - ArgoCD 부트스트랩 가이드
 - [docs/](./docs/) - 추가 문서

@@ -1,4 +1,4 @@
-# 로컬 개발 환경 설정 - 남은 작업
+# k3d 개발 환경 설정 - 남은 작업
 
 ## 현재 상태
 
@@ -12,11 +12,11 @@
 
 ### 자동 설정 (권장)
 
-`local.sh` 스크립트가 클러스터 초기화 시 ECR Secret을 자동으로 생성합니다.
+`dev.sh` 스크립트가 클러스터 초기화 시 ECR Secret을 자동으로 생성합니다.
 
 ```bash
 # 전체 환경 초기화 (ECR Secret 포함)
-./scripts/bootstrap/local.sh
+./scripts/bootstrap/dev.sh
 ```
 
 **사전 요구사항:**
@@ -48,7 +48,7 @@ ECR Secret을 수동으로 관리하려면 전용 스크립트를 사용합니�
 
 ### Helm Chart 설정
 
-imagePullSecrets를 values에 추가하려면 `config/local/customer-service.yaml`에 다음 추가:
+imagePullSecrets를 values에 추가하려면 `config/dev/customer-service.yaml`에 다음 추가:
 
 ```yaml
 imagePullSecrets:
@@ -66,7 +66,7 @@ kubectl patch serviceaccount default -n ecommerce \
 
 ### 1. ArgoCD 동기화 확인
 
-ECR Secret 생성 후 ArgoCD에서 customer-service-local 동기화:
+ECR Secret 생성 후 ArgoCD에서 customer-service-dev 동기화:
 
 ```bash
 # Hard refresh 실행
@@ -75,7 +75,7 @@ kubectl patch application root-application -n argocd \
   -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"hard"}}}'
 
 # 또는 ArgoCD CLI 사용
-argocd app sync customer-service-local
+argocd app sync customer-service-dev
 
 # Pod 상태 확인
 kubectl get pods -n ecommerce -l app.kubernetes.io/name=customer-service
