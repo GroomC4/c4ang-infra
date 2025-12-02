@@ -1,0 +1,30 @@
+# ArgoCD Application - Namespaces
+# 네임스페이스를 Istio injection 레이블과 함께 관리
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: namespaces
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"  # 가장 먼저 실행
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/GroomC4/c4ang-infra.git
+    targetRevision: feature/analysis
+    path: argocd/manifest
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false  # 이미 네임스페이스를 생성하므로 false
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

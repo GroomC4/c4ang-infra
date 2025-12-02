@@ -16,13 +16,24 @@ spec:
       failureLimit: 3
       provider:
         prometheus:
-          address: {{ .Values.analysis.prometheusUrl | default "http://prometheus-server.monitoring.svc.cluster.local:9090" }}
+          address: {{ .Values.analysis.prometheusUrl | default "http://prometheus.monitoring.svc.cluster.local:9090" }}
           query: |
-            sum(rate(istio_requests_total{destination_workload="{{.Release.Name}}", response_code=~"5.."}[2m])) 
+            (
+              sum(rate(istio_requests_total{
+                destination_service_name=~"{{.Release.Name}}.*",
+                destination_service_namespace="{{.Release.Namespace}}",
+                response_code=~"5.."
+              }[2m])) or vector(0)
+            ) 
             / 
-            sum(rate(istio_requests_total{destination_workload="{{.Release.Name}}"}[2m]))
+            (
+              sum(rate(istio_requests_total{
+                destination_service_name=~"{{.Release.Name}}.*",
+                destination_service_namespace="{{.Release.Namespace}}"
+              }[2m])) > 0 or vector(1)
+            )
 
-    # 2. 응답 시간 (p99 latency)
+    # 2. 응답 시간 (p99 latency) - 밀리초 단위
     - name: latency-p99
       count: 5
       interval: 30s
@@ -30,9 +41,14 @@ spec:
       failureLimit: 3
       provider:
         prometheus:
-          address: {{ .Values.analysis.prometheusUrl | default "http://prometheus-server.monitoring.svc.cluster.local:9090" }}
+          address: {{ .Values.analysis.prometheusUrl | default "http://prometheus.monitoring.svc.cluster.local:9090" }}
           query: |
-            histogram_quantile(0.99,sum(rate(istio_request_duration_milliseconds_bucket{destination_workload="{{.Release.Name}}"}[2m])) by (le))
+            histogram_quantile(0.99,
+              sum(rate(istio_request_duration_seconds_bucket{
+                destination_service_name=~"{{.Release.Name}}.*",
+                destination_service_namespace="{{.Release.Namespace}}"
+              }[2m])) by (le)
+            ) * 1000
 
     # 3. 성공률 체크
     - name: success-rate
@@ -42,11 +58,22 @@ spec:
       failureLimit: 3
       provider:
         prometheus:
-          address: {{ .Values.analysis.prometheusUrl | default "http://prometheus-server.monitoring.svc.cluster.local:9090" }}
+          address: {{ .Values.analysis.prometheusUrl | default "http://prometheus.monitoring.svc.cluster.local:9090" }}
           query: |
-            sum(rate(istio_requests_total{destination_workload="{{.Release.Name}}", response_code!~"5.."}[2m])) 
+            (
+              sum(rate(istio_requests_total{
+                destination_service_name=~"{{.Release.Name}}.*",
+                destination_service_namespace="{{.Release.Namespace}}",
+                response_code!~"5.."
+              }[2m])) or vector(0)
+            ) 
             / 
-            sum(rate(istio_requests_total{destination_workload="{{.Release.Name}}"}[2m]))
+            (
+              sum(rate(istio_requests_total{
+                destination_service_name=~"{{.Release.Name}}.*",
+                destination_service_namespace="{{.Release.Namespace}}"
+              }[2m])) > 0 or vector(1)
+            )
 
     # 4. Pod 재시작 체크
     - name: pod-restart-check
@@ -56,6 +83,9 @@ spec:
       failureLimit: 2
       provider:
         prometheus:
-          address: {{ .Values.analysis.prometheusUrl | default "http://prometheus-server.monitoring.svc.cluster.local:9090" }}
+          address: {{ .Values.analysis.prometheusUrl | default "http://prometheus.monitoring.svc.cluster.local:9090" }}
           query: |
-            sum(increase( kube_pod_container_status_restarts_total{namespace="{{.Release.Namespace}}",pod=~"{{.Release.Name}}-.*"}[5m]))
+            sum(increase(kube_pod_container_status_restarts_total{
+              namespace="{{.Release.Namespace}}",
+              pod=~"{{.Release.Name}}-.*"
+            }[5m])) or vector(0)
