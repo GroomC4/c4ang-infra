@@ -8,7 +8,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "0"  # 가장 먼저 실행
 spec:
-  project: default
+  project: platform
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
     targetRevision: feature/analysis
