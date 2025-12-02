@@ -6,6 +6,7 @@ metadata:
   labels:
     {{- include "istio.labels" . | nindent 4 }}
     {{- if eq .Values.namespace.istioInjection "enabled" }}
+    istio-injection: enabled
     istio.io/rev: default
     {{- end }}
 {{- end }}
