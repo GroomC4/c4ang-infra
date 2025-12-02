@@ -179,7 +179,7 @@ spec:
   
   source:
     repoURL: https://github.com/GroomC4/c4ang-infra.git
-    targetRevision: main
+    targetRevision: feature/analysis
     path: helm/management-base/monitoring
     helm:
       valueFiles:
