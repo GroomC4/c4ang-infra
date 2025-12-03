@@ -15,6 +15,7 @@ spec:
     # 초기 지연 60초 (JVM 웜업 및 사이드카 초기화 시간 보장)
     - name: traffic-drop
       interval: 1m
+      count: 5
       successCondition: result >= 0.5
       failureLimit: 1
       initialDelay: 60s
@@ -40,6 +41,7 @@ spec:
     # 표본 부족(10 RPM 미만) 시 0 리턴(오탐 방지 - 분석 보류/통과), 에러율 임계치(5%) 초과 시 즉시 롤백
     - name: error-rate-safe
       interval: 30s
+      count: 10
       successCondition: result < 0.05
       failureLimit: 1
       initialDelay: 60s
@@ -74,6 +76,7 @@ spec:
     # 시스템은 정상이지만 로직 오류로 인한 장애 감지 (Netflix 사례)
     - name: business-success-check
       interval: 1m
+      count: 5
       successCondition: result >= 0.7
       failureLimit: 1
       initialDelay: 60s
