@@ -36,11 +36,11 @@ spec:
 
   template:
     metadata:
-      name: '{{.name}}-{{.env}}'
+      name: '{{ "{{" }}.name{{ "}}" }}-{{ "{{" }}.env{{ "}}" }}'
       namespace: argocd
       labels:
-        app.kubernetes.io/component: '{{.name}}'
-        app.kubernetes.io/env: '{{.env}}'
+        app.kubernetes.io/component: '{{ "{{" }}.name{{ "}}" }}'
+        app.kubernetes.io/env: '{{ "{{" }}.env{{ "}}" }}'
         app.kubernetes.io/type: service
       annotations:
         argocd.argoproj.io/sync-wave: "30"
@@ -50,18 +50,18 @@ spec:
       sources:
         # Source 1: 환경별 설정 파일 (ref로 참조용)
         - repoURL: https://github.com/GroomC4/c4ang-infra.git
-          targetRevision: demo
+          targetRevision: '{{ "{{" }} if eq .env "prod" {{ "}}" }}{{ .Values.env.prod.revision }}{{ "{{" }} else {{ "}}" }}{{ .Values.env.dev.revision }}{{ "{{" }} end {{ "}}" }}'
           ref: values
         # Source 2: Helm 차트 + values 파일 참조
         - repoURL: https://github.com/GroomC4/c4ang-infra.git
-          targetRevision: demo
-          path: 'charts/services/{{.name}}'
+          targetRevision: '{{ "{{" }} if eq .env "prod" {{ "}}" }}{{ .Values.env.prod.revision }}{{ "{{" }} else {{ "}}" }}{{ .Values.env.dev.revision }}{{ "{{" }} end {{ "}}" }}'
+          path: 'charts/services/{{ "{{" }}.name{{ "}}" }}'
           helm:
             valueFiles:
               - values.yaml
-              - '$values/config/{{.env}}/{{.name}}.yaml'
+              - '$values/config/{{ "{{" }}.env{{ "}}" }}/{{ "{{" }}.name{{ "}}" }}.yaml'
       destination:
-        server: '{{.cluster}}'
+        server: '{{ "{{" }}.cluster{{ "}}" }}'
         namespace: ecommerce
       syncPolicy:
         automated:

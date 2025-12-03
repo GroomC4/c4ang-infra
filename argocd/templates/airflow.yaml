@@ -24,26 +24,26 @@ spec:
 
   template:
     metadata:
-      name: 'airflow-{{.env}}'
+      name: 'airflow-{{ "{{" }}.env{{ "}}" }}'
       namespace: argocd
       labels:
         app.kubernetes.io/component: airflow
-        app.kubernetes.io/env: '{{.env}}'
+        app.kubernetes.io/env: '{{ "{{" }}.env{{ "}}" }}'
       annotations:
         argocd.argoproj.io/sync-wave: "20"
     spec:
       project: infrastructure
       source:
         repoURL: https://github.com/GroomC4/c4ang-infra.git
-        targetRevision: demo
+        targetRevision: '{{ "{{" }} if eq .env "prod" {{ "}}" }}{{ .Values.env.prod.revision }}{{ "{{" }} else {{ "}}" }}{{ .Values.env.dev.revision }}{{ "{{" }} end {{ "}}" }}'
         path: charts/airflow
         helm:
           valueFiles:
             - values.yaml
-            - ../../config/{{.env}}/airflow.yaml
+            - ../../config/{{ "{{" }}.env{{ "}}" }}/airflow.yaml
       destination:
-        server: '{{.cluster}}'
-        namespace: '{{.namespace}}'
+        server: '{{ "{{" }}.cluster{{ "}}" }}'
+        namespace: '{{ "{{" }}.namespace{{ "}}" }}'
       syncPolicy:
         automated:
           prune: true

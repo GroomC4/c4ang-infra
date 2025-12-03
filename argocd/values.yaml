@@ -1,0 +1,12 @@
+# Global settings
+global:
+  # 기본 타겟 브랜치 (모든 앱의 기본값)
+  targetRevision: demo
+
+# 환경별 오버라이드 설정 (필요 시 사용)
+# 각 ApplicationSet 템플릿에서 이 값을 참조하도록 수정해야 함
+env:
+  dev:
+    revision: demo
+  prod:
+    revision: demo

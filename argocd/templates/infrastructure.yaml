@@ -47,28 +47,28 @@ spec:
 
   template:
     metadata:
-      name: '{{.name}}-{{.env}}'
+      name: '{{ "{{" }}.name{{ "}}" }}-{{ "{{" }}.env{{ "}}" }}'
       namespace: argocd
       labels:
-        app.kubernetes.io/component: '{{.name}}'
-        app.kubernetes.io/env: '{{.env}}'
+        app.kubernetes.io/component: '{{ "{{" }}.name{{ "}}" }}'
+        app.kubernetes.io/env: '{{ "{{" }}.env{{ "}}" }}'
         app.kubernetes.io/managed-by: argocd-applicationset
       annotations:
-        argocd.argoproj.io/sync-wave: '{{.syncWave}}'
+        argocd.argoproj.io/sync-wave: '{{ "{{" }}.syncWave{{ "}}" }}'
     spec:
       project: infrastructure
       source:
         repoURL: https://github.com/GroomC4/c4ang-infra.git
-        targetRevision: demo
-        path: '{{.chart}}'
+        targetRevision: '{{ "{{" }} if eq .env "prod" {{ "}}" }}{{ .Values.env.prod.revision }}{{ "{{" }} else {{ "}}" }}{{ .Values.env.dev.revision }}{{ "{{" }} end {{ "}}" }}'
+        path: '{{ "{{" }}.chart{{ "}}" }}'
         helm:
           valueFiles:
             # 차트 기본값 + 환경별 오버라이드
             - values.yaml
-            - ../../config/{{.env}}/{{.name}}.yaml
+            - ../../config/{{ "{{" }}.env{{ "}}" }}/{{ "{{" }}.name{{ "}}" }}.yaml
       destination:
-        server: '{{.cluster}}'
-        namespace: '{{.namespace}}'
+        server: '{{ "{{" }}.cluster{{ "}}" }}'
+        namespace: '{{ "{{" }}.namespace{{ "}}" }}'
       syncPolicy:
         automated:
           prune: true

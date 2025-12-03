@@ -1,0 +1,6 @@
+apiVersion: v2
+name: argocd-apps
+description: ArgoCD ApplicationSets for C4ANG Infrastructure
+type: application
+version: 1.0.0
+appVersion: 1.0.0
