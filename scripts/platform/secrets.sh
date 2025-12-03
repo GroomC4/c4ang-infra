@@ -113,8 +113,8 @@ update_sops_config() {
         log_warn ".sops.yaml 파일이 없습니다. 생성합니다."
         cat > "$SOPS_CONFIG" << EOF
 creation_rules:
-  # 로컬 환경 시크릿
-  - path_regex: config/local/.*\.secrets\.yaml$
+  # 개발 환경 시크릿 (k3d)
+  - path_regex: config/dev/.*\.secrets\.yaml$
     age: '$public_key'
 
   # 테스트 환경 시크릿
@@ -228,10 +228,10 @@ initialize() {
     echo ""
     log_info "다음 단계:"
     echo "1. 시크릿 파일 생성:"
-    echo "   예: config/local/postgresql.secrets.yaml"
+    echo "   예: config/dev/postgresql.secrets.yaml"
     echo ""
     echo "2. 시크릿 파일 암호화:"
-    echo "   ./secrets.sh --encrypt config/local/postgresql.secrets.yaml"
+    echo "   ./secrets.sh --encrypt config/dev/postgresql.secrets.yaml"
     echo ""
     echo "3. 원본 파일 삭제 또는 .gitignore에 추가"
     echo ""
@@ -251,8 +251,8 @@ usage() {
 
 예시:
   $0                                           # 초기화
-  $0 --encrypt config/local/secrets.yaml       # 암호화
-  $0 --decrypt config/local/secrets.enc.yaml   # 복호화
+  $0 --encrypt config/dev/secrets.yaml         # 암호화
+  $0 --decrypt config/dev/secrets.enc.yaml     # 복호화
   $0 --status                                  # 상태 확인
 
 시크릿 파일 명명 규칙:

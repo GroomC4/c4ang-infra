@@ -93,7 +93,7 @@ setup_kubeconfig() {
         echo ""
         echo "k3d 클러스터가 실행 중인지 확인하세요:"
         echo "  k3d cluster list"
-        echo "  ./scripts/bootstrap/local.sh --up"
+        echo "  ./scripts/bootstrap/dev.sh --up"
         exit 1
     fi
 }

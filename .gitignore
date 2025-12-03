@@ -27,11 +27,11 @@ helm/services/customer-service/apiVersion: v1.yaml
 *.secrets.yaml
 **/values.secrets.yaml
 **/*.secrets.yaml
-config/local/*.secrets.yaml
+config/dev/*.secrets.yaml
 config/prod/*.secrets.yaml
 
-# Istio 바이너리 (로컬에만 존재)
-environments/local/istio/
+# Istio 바이너리 (개발 환경에만 존재)
+environments/dev/istio/
 
 # EKS 관련 파일 (프로덕션 환경 설정) - 레거시
 # k8s-eks/  # config/prod/로 이동됨

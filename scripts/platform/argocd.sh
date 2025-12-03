@@ -45,11 +45,11 @@ check_prerequisites() {
 # 환경 감지
 detect_environment() {
     if kubectl config current-context 2>/dev/null | grep -q "k3d"; then
-        echo "local"
+        echo "dev"
     elif kubectl config current-context 2>/dev/null | grep -q "eks"; then
         echo "prod"
     else
-        echo "local"
+        echo "dev"
     fi
 }
 
@@ -130,7 +130,7 @@ apply_projects() {
 
 # Root Application 적용
 apply_root_application() {
-    local env=${1:-local}
+    local env=${1:-dev}
     log_info "Root Application 적용 중 (App of Apps 패턴)..."
 
     local root_app="${PROJECT_ROOT}/bootstrap/root-application.yaml"

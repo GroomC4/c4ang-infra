@@ -1,5 +1,5 @@
-# Redis for k3d local environment
-# helm/statefulset-base/redis 차트를 사용하며, k3d 로컬 환경에 최적화된 설정
+# Redis for k3d dev environment
+# helm/statefulset-base/redis 차트를 사용하며, k3d 개발 환경에 최적화된 설정
 
 # Global settings
 global:
@@ -7,7 +7,7 @@ global:
   appName: redis
   partOf: msa-quality-suite
 
-# Master configuration (k3d 로컬 환경 최적화)
+# Master configuration (k3d 개발 환경 최적화)
 master:
   enabled: true
   replicas: 1
@@ -35,7 +35,7 @@ master:
   podAntiAffinity:
     enabled: false
 
-# Slave configuration (k3d 로컬 환경 최적화)
+# Slave configuration (k3d 개발 환경 최적화)
 slave:
   enabled: true
   replicas: 1  # k3d에서는 1개만

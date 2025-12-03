@@ -1,4 +1,4 @@
-# Airflow for k3d local environment
+# Airflow for k3d dev environment
 # helm/management-base/airflow 차트를 사용
 
 airflow:

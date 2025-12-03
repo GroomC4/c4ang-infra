@@ -25,33 +25,33 @@ c4ang-infra/
 
 ## 🚀 빠른 시작 (Makefile 사용)
 
-### Makefile로 간편하게 로컬 환경 구축
+### Makefile로 간편하게 개발 환경 구축
 
 ```bash
 # 1. 모든 명령어 확인
 make help
 
-# 2. 로컬 k3d 환경 한 번에 시작 (도구 설치 + 클러스터 생성 + Helm 배포)
-make local-up
+# 2. k3d 개발 환경 한 번에 시작 (도구 설치 + 클러스터 생성 + Helm 배포)
+make dev-up
 
 # 3. KUBECONFIG 설정
-export KUBECONFIG=$(pwd)/k8s-dev-k3d/kubeconfig/config
+export KUBECONFIG=$(pwd)/environments/dev/kubeconfig/config
 
 # 4. 상태 확인
-make local-status
+make dev-status
 
 # 5. 환경 중지
-make local-down
+make dev-down
 
 # 6. 환경 완전 제거
-make local-clean
+make dev-clean
 ```
 
 **주요 Makefile 명령어:**
-- `make local-up` - 로컬 환경 완전 시작
-- `make local-status` - 현재 상태 확인
-- `make local-down` - 환경 중지
-- `make local-clean` - 환경 완전 제거
+- `make dev-up` - 개발 환경 완전 시작
+- `make dev-status` - 현재 상태 확인
+- `make dev-down` - 환경 중지
+- `make dev-clean` - 환경 완전 제거
 - `make istio-install` - Istio 설치
 - `make version` - 설치된 도구 버전 확인
 - `make help` - 모든 명령어 보기

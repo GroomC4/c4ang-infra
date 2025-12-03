@@ -1,5 +1,5 @@
-# PostgreSQL for k3d local environment
-# bitnami/postgresql 차트를 사용하며, k3d 환경에 최적화된 설정
+# PostgreSQL for k3d dev environment
+# bitnami/postgresql 차트를 사용하며, k3d 개발 환경에 최적화된 설정
 
 # Global settings
 global:
