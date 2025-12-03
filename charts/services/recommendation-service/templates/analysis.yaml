@@ -24,13 +24,13 @@ spec:
           query: |
             (
               sum(rate(istio_requests_total{
-                destination_service=~"{{args.service-name}}.*",
+                destination_service=~"{{ "{{" }}args.service-name{{ "}}" }}.*",
                 reporter="source"
               }[1m]))
               /
               (
                 sum(rate(istio_requests_total{
-                  destination_service=~"{{args.service-name}}.*",
+                  destination_service=~"{{ "{{" }}args.service-name{{ "}}" }}.*",
                   reporter="source"
                 }[1m] offset 10m)) > 0
               )
@@ -50,20 +50,20 @@ spec:
             (
               (
                 sum(rate(istio_requests_total{
-                  destination_service=~"{{args.service-name}}.*",
+                  destination_service=~"{{ "{{" }}args.service-name{{ "}}" }}.*",
                   reporter="source",
                   response_code=~"5.."
                 }[1m]))
                 /
                 sum(rate(istio_requests_total{
-                  destination_service=~"{{args.service-name}}.*",
+                  destination_service=~"{{ "{{" }}args.service-name{{ "}}" }}.*",
                   reporter="source"
                 }[1m]))
               )
               and
               (
                 sum(rate(istio_requests_total{
-                  destination_service=~"{{args.service-name}}.*",
+                  destination_service=~"{{ "{{" }}args.service-name{{ "}}" }}.*",
                   reporter="source"
                 }[1m])) * 60 >= 10
               )
@@ -83,12 +83,12 @@ spec:
           query: |
             (
               sum(rate(business_success_total{
-                service="{{args.service-name}}"
+                service="{{ "{{" }}args.service-name{{ "}}" }}"
               }[1m]))
               /
               (
                 sum(rate(business_success_total{
-                  service="{{args.service-name}}"
+                  service="{{ "{{" }}args.service-name{{ "}}" }}"
                 }[1m] offset 10m)) > 0
               )
             ) OR vector(1)
