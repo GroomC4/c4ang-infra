@@ -17,6 +17,8 @@ spec:
     - match:
         - uri:
             prefix: {{ .Values.istio.pathPrefix | default "/api/v1/customers" }}
+        - uri:
+            prefix: /api/v1/auth/customers
       route:
         - destination:
             host: {{ include "customer-service.fullname" . }}
