@@ -130,18 +130,29 @@ cd k8s-dev-k3d/scripts
 - k3d 환경에 최적화된 설정 자동 적용
 - 배포 상태 확인 및 접속 정보 출력
 
-접속 방법:
-```bash
-# Grafana (대시보드)
-kubectl port-forward -n monitoring svc/grafana 3000:3000
-# http://localhost:3000 (admin/admin)
+### 6. 포트포워딩 (자동)
 
-# Prometheus (메트릭)
-kubectl port-forward -n monitoring svc/prometheus 9090:9090
-# http://localhost:9090
+환경 시작 시 포트포워딩이 자동으로 실행됩니다. 수동으로 관리하려면:
+
+```bash
+# 모든 서비스 포트포워딩 시작
+./scripts/platform/port-forward.sh
+
+# 상태 확인
+./scripts/platform/port-forward.sh --status
+
+# 포트포워딩 중지
+./scripts/platform/port-forward.sh --stop
+
+# 특정 서비스만 포트포워딩
+./scripts/platform/port-forward.sh --argocd
+./scripts/platform/port-forward.sh --grafana
+./scripts/platform/port-forward.sh --kafka-ui
 ```
 
-### 6. 개발 환경 중지
+포트포워딩 후 접속 정보는 상단 [개발 환경 계정 정보](#-개발-환경-계정-정보)를 참조하세요.
+
+### 7. 개발 환경 중지
 
 ```bash
 cd k8s-dev-k3d/scripts

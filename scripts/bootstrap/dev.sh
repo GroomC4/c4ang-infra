@@ -408,7 +408,7 @@ show_status() {
 # =============================================================================
 
 full_init() {
-    log_header "로컬 개발 환경 전체 초기화"
+    log_header "k3d 개발 환경 전체 초기화"
 
     # Prerequisites check
     check_prerequisites
@@ -428,28 +428,57 @@ full_init() {
     # Phase 5: ArgoCD Bootstrap
     bootstrap_argocd
 
+    # Phase 6: Port Forwarding
+    start_port_forwarding
+
     log_header "초기화 완료"
     show_status
 }
 
+# 포트포워딩 시작
+start_port_forwarding() {
+    log_info "포트포워딩 시작 중..."
+
+    local port_forward_script="${PROJECT_ROOT}/scripts/platform/port-forward.sh"
+
+    if [ -f "$port_forward_script" ]; then
+        "$port_forward_script" --start
+    else
+        log_warn "포트포워딩 스크립트를 찾을 수 없습니다: $port_forward_script"
+    fi
+}
+
 start_all() {
-    log_header "로컬 환경 시작"
+    log_header "개발 환경 시작"
     check_prerequisites
     start_external_services
     start_cluster
+    start_port_forwarding
     log_success "환경 시작 완료"
     show_status
 }
 
 stop_all() {
-    log_header "로컬 환경 중지"
+    log_header "개발 환경 중지"
+    stop_port_forwarding
     stop_cluster
     stop_external_services
     log_success "환경 중지 완료"
 }
 
+# 포트포워딩 중지
+stop_port_forwarding() {
+    log_info "포트포워딩 중지 중..."
+
+    local port_forward_script="${PROJECT_ROOT}/scripts/platform/port-forward.sh"
+
+    if [ -f "$port_forward_script" ]; then
+        "$port_forward_script" --stop
+    fi
+}
+
 destroy_all() {
-    log_header "로컬 환경 완전 삭제"
+    log_header "개발 환경 완전 삭제"
 
     read -p "모든 데이터가 삭제됩니다. 계속하시겠습니까? (y/N): " -n 1 -r
     echo
