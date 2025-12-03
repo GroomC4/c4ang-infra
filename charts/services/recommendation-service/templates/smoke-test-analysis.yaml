@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: smoke-test-analysis
+  labels:
+    {{- include "recommendation-service.labels" . | nindent 4 }}
+spec:
+  args:
+    - name: service-name
+    - name: namespace
+      value: "ecommerce"
+    - name: port
+      value: "80"
+  metrics:
+    - name: health-check
+      provider:
+        job:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: smoke-test
+                    image: curlimages/curl:latest
+                    command:
+                      - sh
+                      - -c
+                      - |
+                        echo "Checking health of {{args.service-name}}-preview.{{args.namespace}}..."
+                        curl -f --connect-timeout 5 --max-time 10 --retry 3 --retry-delay 2 --retry-connrefused \
+                        http://{{args.service-name}}-preview.{{args.namespace}}.svc.cluster.local:{{args.port}}/actuator/health
+                restartPolicy: Never
+          backoffLimit: 2

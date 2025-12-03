@@ -3,7 +3,7 @@ kind: AnalysisTemplate
 metadata:
   name: post-promotion-analysis
   labels:
-    {{- include "customer-service.labels" . | nindent 4 }}
+    {{- include "payment-service.labels" . | nindent 4 }}
 spec:
   args:
     - name: service-name
