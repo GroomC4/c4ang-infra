@@ -79,6 +79,20 @@ create_namespace() {
     log_info "네임스페이스 '$ARGOCD_NAMESPACE' 준비됨"
 }
 
+# ArgoCD 고정 비밀번호 설정
+apply_admin_secret() {
+    log_step "ArgoCD 관리자 비밀번호 설정 중..."
+
+    local secret_file="${PROJECT_ROOT}/bootstrap/argocd-secret.yaml"
+
+    if [ -f "$secret_file" ]; then
+        kubectl apply -f "$secret_file"
+        log_info "고정 비밀번호가 설정되었습니다. (admin / admin123)"
+    else
+        log_warn "argocd-secret.yaml 파일이 없습니다. 자동 생성된 비밀번호를 사용합니다."
+    fi
+}
+
 # ArgoCD 설치
 install_argocd() {
     log_step "ArgoCD ${ARGOCD_VERSION} 설치 중..."
@@ -93,6 +107,9 @@ install_argocd() {
             return 0
         fi
     fi
+
+    # 고정 비밀번호 Secret 먼저 적용 (ArgoCD 설치 전)
+    apply_admin_secret
 
     # ArgoCD 매니페스트 적용
     kubectl apply -n "$ARGOCD_NAMESPACE" \
@@ -109,19 +126,27 @@ install_argocd() {
     log_success "ArgoCD가 준비되었습니다."
 }
 
-# ArgoCD 초기 비밀번호 가져오기
+# ArgoCD 관리자 비밀번호 확인
 get_admin_password() {
-    log_step "ArgoCD 관리자 비밀번호 가져오기..."
+    log_step "ArgoCD 관리자 비밀번호 확인..."
 
-    local password
-    password=$(kubectl -n "$ARGOCD_NAMESPACE" get secret argocd-initial-admin-secret \
-        -o jsonpath="{.data.password}" 2>/dev/null | base64 -d)
-
-    if [ -n "$password" ]; then
-        log_info "ArgoCD 관리자 비밀번호: $password"
-        log_warn "보안을 위해 로그인 후 비밀번호를 변경하세요!"
+    # argocd-secret이 있으면 고정 비밀번호 사용 중
+    if kubectl get secret argocd-secret -n "$ARGOCD_NAMESPACE" &>/dev/null; then
+        log_info "고정 비밀번호가 설정되어 있습니다."
+        log_info "Username: admin"
+        log_info "Password: admin123"
     else
-        log_warn "초기 비밀번호를 찾을 수 없습니다. 이미 변경되었을 수 있습니다."
+        # 자동 생성된 초기 비밀번호 확인
+        local password
+        password=$(kubectl -n "$ARGOCD_NAMESPACE" get secret argocd-initial-admin-secret \
+            -o jsonpath="{.data.password}" 2>/dev/null | base64 -d)
+
+        if [ -n "$password" ]; then
+            log_info "ArgoCD 관리자 비밀번호: $password"
+            log_warn "보안을 위해 로그인 후 비밀번호를 변경하세요!"
+        else
+            log_warn "초기 비밀번호를 찾을 수 없습니다. 이미 변경되었을 수 있습니다."
+        fi
     fi
 }
 

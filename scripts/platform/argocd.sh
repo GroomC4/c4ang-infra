@@ -82,6 +82,13 @@ install_argocd() {
         fi
     fi
 
+    # 고정 비밀번호 Secret 먼저 적용 (ArgoCD 설치 전)
+    local secret_file="${PROJECT_ROOT}/bootstrap/argocd-secret.yaml"
+    if [ -f "$secret_file" ]; then
+        log_info "고정 비밀번호 설정 중..."
+        kubectl apply -f "$secret_file"
+    fi
+
     # ArgoCD 매니페스트 적용
     log_info "ArgoCD ${ARGOCD_VERSION} 설치 중..."
     kubectl apply -n "$ARGOCD_NS" \
@@ -149,16 +156,24 @@ apply_root_application() {
 show_password() {
     log_info "ArgoCD 관리자 비밀번호 확인 중..."
 
-    local password
-    password=$(kubectl -n "$ARGOCD_NS" get secret argocd-initial-admin-secret \
-        -o jsonpath="{.data.password}" 2>/dev/null | base64 -d) || true
-
-    if [ -n "$password" ]; then
+    # argocd-secret이 있으면 고정 비밀번호 사용 중
+    if kubectl get secret argocd-secret -n "$ARGOCD_NS" &>/dev/null; then
         echo ""
-        log_info "관리자 비밀번호: $password"
-        log_warn "보안을 위해 로그인 후 비밀번호를 변경하세요!"
+        log_info "고정 비밀번호가 설정되어 있습니다."
+        log_info "Username: admin"
+        log_info "Password: admin123"
     else
-        log_warn "초기 비밀번호를 찾을 수 없습니다. 이미 변경되었을 수 있습니다."
+        local password
+        password=$(kubectl -n "$ARGOCD_NS" get secret argocd-initial-admin-secret \
+            -o jsonpath="{.data.password}" 2>/dev/null | base64 -d) || true
+
+        if [ -n "$password" ]; then
+            echo ""
+            log_info "관리자 비밀번호: $password"
+            log_warn "보안을 위해 로그인 후 비밀번호를 변경하세요!"
+        else
+            log_warn "초기 비밀번호를 찾을 수 없습니다. 이미 변경되었을 수 있습니다."
+        fi
     fi
 }
 
