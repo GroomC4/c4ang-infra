@@ -50,11 +50,11 @@ spec:
       sources:
         # Source 1: 환경별 설정 파일 (ref로 참조용)
         - repoURL: https://github.com/GroomC4/c4ang-infra.git
-          targetRevision: demo
+          targetRevision: HEAD
           ref: values
         # Source 2: Helm 차트 + values 파일 참조
         - repoURL: https://github.com/GroomC4/c4ang-infra.git
-          targetRevision: demo
+          targetRevision: HEAD
           path: 'charts/services/{{.name}}'
           helm:
             valueFiles:
