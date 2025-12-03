@@ -14,7 +14,31 @@ spec:
     blueGreen:
       activeService: {{ include "store-service.fullname" . }}
       previewService: {{ include "store-service.fullname" . }}-preview
-      autoPromotionEnabled: false
+      autoPromotionEnabled: true
+      autoPromotionSeconds: 300
+      scaleDownDelaySeconds: 300
+      prePromotionAnalysis:
+        templates:
+          - templateName: smoke-test-analysis
+        args:
+          - name: service-name
+            value: {{ include "store-service.fullname" . }}
+          - name: namespace
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: port
+            value: "{{ .Values.service.port }}"
+      postPromotionAnalysis:
+        templates:
+          - templateName: post-promotion-analysis
+        args:
+          - name: service-name
+            value: {{ include "store-service.fullname" . }}
+          - name: namespace
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
 
   selector:
     matchLabels:
@@ -23,7 +47,11 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if .Values.istio.enabled }}
+        sidecar.istio.io/inject: "true"
+        {{- else }}
         sidecar.istio.io/inject: "false"
+        {{- end }}
       labels:
         {{- include "store-service.selectorLabels" . | nindent 8 }}
         {{- if .Values.istio.enabled }}

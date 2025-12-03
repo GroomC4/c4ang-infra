@@ -14,7 +14,31 @@ spec:
     blueGreen:
       activeService: {{ include "recommendation-service.fullname" . }}
       previewService: {{ include "recommendation-service.fullname" . }}-preview
-      autoPromotionEnabled: false
+      autoPromotionEnabled: true
+      autoPromotionSeconds: 300
+      scaleDownDelaySeconds: 300
+      prePromotionAnalysis:
+        templates:
+          - templateName: smoke-test-analysis
+        args:
+          - name: service-name
+            value: {{ include "recommendation-service.fullname" . }}
+          - name: namespace
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: port
+            value: "{{ .Values.service.port }}"
+      postPromotionAnalysis:
+        templates:
+          - templateName: post-promotion-analysis
+        args:
+          - name: service-name
+            value: {{ include "recommendation-service.fullname" . }}
+          - name: namespace
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
 
   selector:
     matchLabels:

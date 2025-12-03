@@ -19,29 +19,29 @@ spec:
     blueGreen:
       activeService: {{ include "customer-service.fullname" . }}
       previewService: {{ include "customer-service.fullname" . }}-preview
-      autoPromotionEnabled: false # 처음엔 false로 시작
+      autoPromotionEnabled: true # 처음엔 false로 시작
       autoPromotionSeconds: 300    # 5분 후 자동 승격
       scaleDownDelaySeconds: 300   # 이전 버전 5분 후 삭제
 
       # 자동 검증 단계
       prePromotionAnalysis:
         templates:
-            - templateName: blue-green-analysis
+          - templateName: smoke-test-analysis
         args:
           - name: service-name
-            value: my-app
+            value: {{ include "customer-service.fullname" . }}
           - name: namespace
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
-
-      # 승격 후 검증 (선택사항)
+          - name: port
+            value: "{{ .Values.service.port }}"
       postPromotionAnalysis:
         templates:
-          - templateName: blue-green-analysis
+          - templateName: post-promotion-analysis
         args:
           - name: service-name
-            value: my-app
+            value: {{ include "customer-service.fullname" . }}
           - name: namespace
             valueFrom:
               fieldRef:
@@ -55,7 +55,11 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if .Values.istio.enabled }}
+        sidecar.istio.io/inject: "true"
+        {{- else }}
         sidecar.istio.io/inject: "false"
+        {{- end }}
       labels:
         {{- include "customer-service.selectorLabels" . | nindent 8 }}
         {{ if .Values.istio.enabled }}

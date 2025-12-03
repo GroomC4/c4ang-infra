@@ -12,14 +12,33 @@ spec:
   # 1. 'BlueGreen' 전략 정의
   strategy:
     blueGreen:
-      # Active Service: 현재 프로덕션(Blue) 트래픽을 처리하는 Service
       activeService: {{ include "payment-service.fullname" . }}
-
-      # Preview Service: 새로 배포된(Green) Pod를 가리키는 Service
       previewService: {{ include "payment-service.fullname" . }}-preview
-
-      # 자동 승격 비활성화: 수동 승인(Promote) 대기
-      autoPromotionEnabled: false
+      autoPromotionEnabled: true
+      autoPromotionSeconds: 300
+      scaleDownDelaySeconds: 300
+      prePromotionAnalysis:
+        templates:
+          - templateName: smoke-test-analysis
+        args:
+          - name: service-name
+            value: {{ include "payment-service.fullname" . }}
+          - name: namespace
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: port
+            value: "{{ .Values.service.port }}"
+      postPromotionAnalysis:
+        templates:
+          - templateName: post-promotion-analysis
+        args:
+          - name: service-name
+            value: {{ include "payment-service.fullname" . }}
+          - name: namespace
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
 
   selector:
     matchLabels:

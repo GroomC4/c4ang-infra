@@ -1,0 +1,18 @@
+# Namespaces with Istio Injection
+# ArgoCD가 자동으로 적용하는 네임스페이스 정의
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ecommerce
+  labels:
+    istio-injection: enabled
+    app.kubernetes.io/managed-by: argocd
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    app.kubernetes.io/managed-by: argocd

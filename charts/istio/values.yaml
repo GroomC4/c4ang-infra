@@ -13,7 +13,7 @@ crds:
 namespace:
   name: ecommerce
   create: true
-  istioInjection: enabled  # Sidecar 자동 주입 활성화
+  istioInjection: enabled  # Sidecar 자동 주입 활성화 (istio-injection=enabled 라벨)
 
 # Gateway 설정
 gateway:

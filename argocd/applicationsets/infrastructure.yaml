@@ -28,19 +28,19 @@ spec:
                 - name: external-services
                   namespace: ecommerce
                   chart: charts/external-services
-                  syncWave: "0"  # 가장 먼저 배포 (외부 데이터 서비스 연결)
+                  syncWave: "1"  # 네임스페이스(-1) 이후 배포
                 - name: monitoring
                   namespace: monitoring
                   chart: charts/monitoring
-                  syncWave: "1"
+                  syncWave: "2"
                 - name: istio
                   namespace: ecommerce
                   chart: charts/istio
-                  syncWave: "2"
+                  syncWave: "3"  # Istio는 external-services 이후
                 - name: argo-rollouts
                   namespace: argo-rollouts
                   chart: charts/argo-rollouts
-                  syncWave: "3"
+                  syncWave: "4"
 
   syncPolicy:
     applicationsSync: create-only  # 생성만 하고 이후 수동 변경 유지
@@ -59,7 +59,7 @@ spec:
       project: infrastructure
       source:
         repoURL: https://github.com/GroomC4/c4ang-infra.git
-        targetRevision: feature/argoRollout
+        targetRevision: demo
         path: '{{.chart}}'
         helm:
           valueFiles:
