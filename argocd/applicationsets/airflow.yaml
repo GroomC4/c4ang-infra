@@ -35,7 +35,7 @@ spec:
       project: infrastructure
       source:
         repoURL: https://github.com/GroomC4/c4ang-infra.git
-        targetRevision: feature/analysis
+        targetRevision: demo
         path: charts/airflow
         helm:
           valueFiles:
