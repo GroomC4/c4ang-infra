@@ -25,14 +25,11 @@ spec:
   kafka:
     version: 4.0.0
     listeners:
+      # [리스너 1] 외부 접속(포트 포워딩)용
       - name: plain
         port: 9092
         type: internal
         tls: false
-        # advertised.listeners 설정
-        # Producer/Consumer(포트 포워딩)용: localhost 사용
-        # 각 브로커를 다른 포트로 설정하여 포트 포워딩과 매칭
-        # Kafka Exporter는 내부 서비스 이름을 직접 사용하므로 문제없음
         configuration:
           brokers:
             - broker: 0
@@ -44,6 +41,13 @@ spec:
             - broker: 2
               advertisedHost: localhost
               advertisedPort: 9094
+      
+      # [리스너 2] 내부 클러스터(Kafka Exporter)용
+      # configuration 항목을 비워두면 Strimzi가 자동으로 내부 DNS 주소를 사용합니다.
+      - name: backplane
+        port: 9095
+        type: internal
+        tls: false
     config:
       offsets.topic.replication.factor: 3
       transaction.state.log.replication.factor: 3

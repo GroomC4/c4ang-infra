@@ -73,11 +73,13 @@ spec:
         - name: GODEBUG
           value: "netdns=go"
         args:
-        # 내부 서비스 이름을 직접 사용 (브로커 advertised.listeners가 localhost여도 내부에서는 서비스 이름으로 접근)
-        # 여러 서버는 공백으로 구분하여 여러 인자로 전달
-        - --kafka.server=c4-kafka-dual-role-0.c4-kafka-kafka-brokers.kafka.svc.cluster.local:9092
-        - --kafka.server=c4-kafka-dual-role-1.c4-kafka-kafka-brokers.kafka.svc.cluster.local:9092
-        - --kafka.server=c4-kafka-dual-role-2.c4-kafka-kafka-brokers.kafka.svc.cluster.local:9092
+        # 내부 서비스 이름 + 포트 9095 사용 (backplane 리스너)
+        # Kafka Exporter는 여러 서버를 각각 별도의 --kafka.server 인자로 받아야 함
+        # 이제 Exporter는 내부 DNS 주소 + 9095 포트를 사용하므로
+        # 브로커가 반환하는 내부 메타데이터와 일치하게 됩니다.
+        - --kafka.server=c4-kafka-dual-role-0.c4-kafka-kafka-brokers.kafka.svc.cluster.local:9095
+        - --kafka.server=c4-kafka-dual-role-1.c4-kafka-kafka-brokers.kafka.svc.cluster.local:9095
+        - --kafka.server=c4-kafka-dual-role-2.c4-kafka-kafka-brokers.kafka.svc.cluster.local:9095
         - --log.level=info
         - --web.listen-address=:9308
         - --topic.filter=.*

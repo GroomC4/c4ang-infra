@@ -621,8 +621,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Kafka Broker Failure Test",
-  "uid": "kafka-broker-failure-test-v3",
+  "title": "Kafka Broker Failure Test (Clean)",
+  "uid": "kafka-broker-failure-test-clean",
   "version": 0,
   "id": null,
   "weekStart": ""
