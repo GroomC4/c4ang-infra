@@ -79,17 +79,23 @@ create_namespace() {
     log_info "네임스페이스 '$ARGOCD_NAMESPACE' 준비됨"
 }
 
-# ArgoCD 고정 비밀번호 설정
+# ArgoCD 고정 비밀번호 설정 (개발 환경 전용)
 apply_admin_secret() {
-    log_step "ArgoCD 관리자 비밀번호 설정 중..."
+    # 개발 환경에서만 고정 비밀번호 적용
+    if [ "$ENV" != "dev" ]; then
+        log_info "프로덕션 환경에서는 자동 생성된 비밀번호를 사용합니다."
+        return 0
+    fi
 
-    local secret_file="${PROJECT_ROOT}/bootstrap/argocd-secret.yaml"
+    log_step "ArgoCD 관리자 비밀번호 설정 중 (개발 환경)..."
+
+    local secret_file="${PROJECT_ROOT}/config/dev/argocd-secret.yaml"
 
     if [ -f "$secret_file" ]; then
         kubectl apply -f "$secret_file"
         log_info "고정 비밀번호가 설정되었습니다. (admin / admin123)"
     else
-        log_warn "argocd-secret.yaml 파일이 없습니다. 자동 생성된 비밀번호를 사용합니다."
+        log_warn "config/dev/argocd-secret.yaml 파일이 없습니다. 자동 생성된 비밀번호를 사용합니다."
     fi
 }
 

@@ -82,11 +82,13 @@ install_argocd() {
         fi
     fi
 
-    # 고정 비밀번호 Secret 먼저 적용 (ArgoCD 설치 전)
-    local secret_file="${PROJECT_ROOT}/bootstrap/argocd-secret.yaml"
-    if [ -f "$secret_file" ]; then
-        log_info "고정 비밀번호 설정 중..."
-        kubectl apply -f "$secret_file"
+    # 개발 환경에서만 고정 비밀번호 Secret 적용 (ArgoCD 설치 전)
+    if [ "$env" = "dev" ]; then
+        local secret_file="${PROJECT_ROOT}/config/dev/argocd-secret.yaml"
+        if [ -f "$secret_file" ]; then
+            log_info "개발 환경 고정 비밀번호 설정 중..."
+            kubectl apply -f "$secret_file"
+        fi
     fi
 
     # ArgoCD 매니페스트 적용
