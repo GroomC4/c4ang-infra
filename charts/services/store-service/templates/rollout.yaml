@@ -98,17 +98,17 @@ spec:
               mountPath: /app/logs
           livenessProbe:
             httpGet:
-              path: /actuator/health/liveness
+              path: /actuator/health
               port: http
-            initialDelaySeconds: 180
+            initialDelaySeconds: 100
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 5
           readinessProbe:
             httpGet:
-              path: /actuator/health/readiness
+              path: /actuator/health
               port: http
-            initialDelaySeconds: 180
+            initialDelaySeconds: 100
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 5

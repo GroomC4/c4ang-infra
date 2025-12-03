@@ -108,7 +108,7 @@ spec:
             httpGet:
               path: /actuator/health
               port: http
-            initialDelaySeconds: 180
+            initialDelaySeconds: 100
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 5
@@ -116,7 +116,7 @@ spec:
             httpGet:
               path: /actuator/health
               port: http
-            initialDelaySeconds: 180
+            initialDelaySeconds: 100
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 5
