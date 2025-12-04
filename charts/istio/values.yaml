@@ -191,3 +191,10 @@ gatewayAPI:
   enabled: true
   version: "v1.0.0"
 
+# Telemetry 설정 (Prometheus 메트릭)
+telemetry:
+  enabled: true
+  # 메트릭 샘플링 비율 (0.0 ~ 1.0)
+  # 1.0 = 모든 요청 메트릭 수집
+  samplingRate: 1.0
+

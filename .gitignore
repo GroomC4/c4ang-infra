@@ -53,3 +53,4 @@ TEST*.md
 
 # 포트포워딩 PID 파일
 .port-forward/
+scripts/platform/kubeconfig.yaml

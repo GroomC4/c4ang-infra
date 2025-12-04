@@ -96,6 +96,8 @@ spec:
               mountPath: /var/lib/grafana/dashboards/k8s-cluster
             - name: dashboard-k8s-pods
               mountPath: /var/lib/grafana/dashboards/k8s-pods
+            - name: dashboard-istio-service
+              mountPath: /var/lib/grafana/dashboards/istio-service
             {{- end }}
 
       volumes:
@@ -118,6 +120,9 @@ spec:
         - name: dashboard-k8s-pods
           configMap:
             name: grafana-dashboard-k8s-pods
+        - name: dashboard-istio-service
+          configMap:
+            name: grafana-dashboard-istio-service
         {{- end }}
       
       {{- with .Values.nodeSelector }}

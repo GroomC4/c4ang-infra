@@ -129,3 +129,8 @@ httpRoute:
       path: /api/v1/analytics
       serviceName: analytics-service
       servicePort: 8080
+
+# Telemetry 설정 (운영 환경)
+telemetry:
+  enabled: true
+  samplingRate: 1.0  # 운영 환경에서도 전체 메트릭 수집 (필요시 조정)

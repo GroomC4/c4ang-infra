@@ -48,6 +48,10 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         sidecar.istio.io/inject: "true"
+        # Prometheus 메트릭 수집 설정
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.service.targetPort }}"
+        prometheus.io/path: "/actuator/prometheus"
       labels:
         {{- include "payment-service.selectorLabels" . | nindent 8 }}
         {{- if .Values.istio.enabled }}

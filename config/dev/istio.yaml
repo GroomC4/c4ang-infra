@@ -122,3 +122,8 @@ httpRoute:
       serviceName: analytics-service
       servicePort: 8080
 
+# Telemetry 설정 (k3d 환경)
+telemetry:
+  enabled: true
+  samplingRate: 1.0  # 개발 환경이므로 모든 메트릭 수집
+

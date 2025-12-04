@@ -60,6 +60,10 @@ spec:
         {{- else }}
         sidecar.istio.io/inject: "false"
         {{- end }}
+        # Prometheus 메트릭 수집 설정
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.service.targetPort }}"
+        prometheus.io/path: "/actuator/prometheus"
       labels:
         {{- include "customer-service.selectorLabels" . | nindent 8 }}
         {{ if .Values.istio.enabled }}

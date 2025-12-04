@@ -337,6 +337,51 @@ alerting:
       summary: "Rollout replica count mismatch"
       description: "Rollout {{ $labels.namespace }}/{{ $labels.rollout }} has {{ $value }} available replicas but desired count is different"
 
+    # Istio - High 5xx Error Rate
+    - name: IstioHighErrorRate
+      enabled: true
+      expr: 'sum(rate(istio_requests_total{response_code=~"5.."}[5m])) by (destination_service_name) / sum(rate(istio_requests_total[5m])) by (destination_service_name) > 0.05'
+      duration: 5m
+      severity: critical
+      summary: "High 5xx error rate in Istio service"
+      description: "Service {{ $labels.destination_service_name }} has 5xx error rate above 5%"
+
+    # Istio - High Request Latency
+    - name: IstioHighLatency
+      enabled: true
+      expr: 'histogram_quantile(0.99, sum(rate(istio_request_duration_milliseconds_bucket[5m])) by (destination_service_name, le)) > 1000'
+      duration: 10m
+      severity: warning
+      summary: "High request latency in Istio service"
+      description: "Service {{ $labels.destination_service_name }} P99 latency is above 1000ms"
+
+    # Istio - Circuit Breaker Triggered
+    - name: IstioCircuitBreakerOpen
+      enabled: true
+      expr: 'sum(rate(istio_requests_total{response_flags=~".*UO.*"}[5m])) by (destination_service_name) > 0'
+      duration: 5m
+      severity: warning
+      summary: "Istio circuit breaker triggered"
+      description: "Circuit breaker opened for service {{ $labels.destination_service_name }}"
+
+    # Istio - Connection Pool Overflow
+    - name: IstioConnectionPoolOverflow
+      enabled: true
+      expr: 'sum(rate(istio_requests_total{response_flags=~".*UF.*"}[5m])) by (destination_service_name) > 0'
+      duration: 5m
+      severity: warning
+      summary: "Istio connection pool overflow"
+      description: "Connection pool overflow for service {{ $labels.destination_service_name }}"
+
+    # Envoy - High Memory Usage
+    - name: EnvoyHighMemoryUsage
+      enabled: true
+      expr: 'envoy_server_memory_allocated_bytes / envoy_server_memory_heap_size_bytes > 0.9'
+      duration: 10m
+      severity: warning
+      summary: "Envoy proxy high memory usage"
+      description: "Envoy proxy in pod {{ $labels.pod_name }} is using more than 90% of heap memory"
+
 # ServiceMonitor 설정 (Prometheus Operator 사용 시)
 serviceMonitor:
   enabled: false

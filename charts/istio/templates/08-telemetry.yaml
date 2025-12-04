@@ -1,0 +1,88 @@
+{{- if .Values.telemetry.enabled }}
+---
+# Istio Telemetry - Prometheus 메트릭 활성화
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: mesh-default
+  namespace: {{ .Values.namespace.name }}
+spec:
+  # 메트릭 수집 설정
+  metrics:
+    - providers:
+        - name: prometheus
+      overrides:
+        # HTTP 메트릭
+        - match:
+            metric: REQUEST_COUNT
+          tagOverrides:
+            destination_service_name:
+              value: "destination.service.name"
+            destination_workload:
+              value: "destination.workload.name"
+            destination_workload_namespace:
+              value: "destination.workload.namespace"
+            source_workload:
+              value: "source.workload.name"
+            source_workload_namespace:
+              value: "source.workload.namespace"
+        
+        - match:
+            metric: REQUEST_DURATION
+          tagOverrides:
+            destination_service_name:
+              value: "destination.service.name"
+            destination_workload:
+              value: "destination.workload.name"
+            source_workload:
+              value: "source.workload.name"
+        
+        - match:
+            metric: REQUEST_SIZE
+          tagOverrides:
+            destination_service_name:
+              value: "destination.service.name"
+        
+        - match:
+            metric: RESPONSE_SIZE
+          tagOverrides:
+            destination_service_name:
+              value: "destination.service.name"
+        
+        # TCP 메트릭
+        - match:
+            metric: TCP_OPENED_CONNECTIONS
+          tagOverrides:
+            destination_service_name:
+              value: "destination.service.name"
+        
+        - match:
+            metric: TCP_CLOSED_CONNECTIONS
+          tagOverrides:
+            destination_service_name:
+              value: "destination.service.name"
+        
+        - match:
+            metric: TCP_SENT_BYTES
+          tagOverrides:
+            destination_service_name:
+              value: "destination.service.name"
+        
+        - match:
+            metric: TCP_RECEIVED_BYTES
+          tagOverrides:
+            destination_service_name:
+              value: "destination.service.name"
+
+---
+# Istio Control Plane Telemetry (istiod 메트릭)
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: istiod-telemetry
+  namespace: istio-system
+spec:
+  metrics:
+    - providers:
+        - name: prometheus
+{{- end }}
