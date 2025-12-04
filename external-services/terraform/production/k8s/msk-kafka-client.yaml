@@ -1,0 +1,85 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kafka
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kafka-client
+  namespace: kafka
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-client
+  namespace: kafka
+  labels:
+    app: kafka-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-client
+  template:
+    metadata:
+      labels:
+        app: kafka-client
+    spec:
+      serviceAccountName: kafka-client
+      containers:
+      - name: kafka-client
+        image: apache/kafka:3.6.0
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Kafka Client Pod 시작됨"
+          echo "MSK Bootstrap Brokers: $MSK_BOOTSTRAP_BROKERS"
+          echo ""
+          echo "사용 가능한 명령어:"
+          echo "  # 토픽 목록 확인"
+          echo "  kafka-topics.sh --bootstrap-server \$MSK_BOOTSTRAP_BROKERS --list"
+          echo ""
+          echo "  # 토픽 상세 정보"
+          echo "  kafka-topics.sh --bootstrap-server \$MSK_BOOTSTRAP_BROKERS --describe --topic <TOPIC_NAME>"
+          echo ""
+          echo "  # Consumer Group 목록"
+          echo "  kafka-consumer-groups.sh --bootstrap-server \$MSK_BOOTSTRAP_BROKERS --list"
+          echo ""
+          echo "  # Consumer Group 상세 정보"
+          echo "  kafka-consumer-groups.sh --bootstrap-server \$MSK_BOOTSTRAP_BROKERS --describe --group <GROUP_NAME>"
+          echo ""
+          echo "  # 메시지 전송 (Producer)"
+          echo "  kafka-console-producer.sh --bootstrap-server \$MSK_BOOTSTRAP_BROKERS --topic <TOPIC_NAME>"
+          echo ""
+          echo "  # 메시지 수신 (Consumer)"
+          echo "  kafka-console-consumer.sh --bootstrap-server \$MSK_BOOTSTRAP_BROKERS --topic <TOPIC_NAME> --from-beginning"
+          echo ""
+          echo "대기 중... (Ctrl+C로 종료)"
+          sleep infinity
+        env:
+        - name: MSK_BOOTSTRAP_BROKERS
+          valueFrom:
+            secretKeyRef:
+              name: msk-bootstrap-brokers
+              key: bootstrap-brokers
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: msk-bootstrap-brokers
+  namespace: kafka
+type: Opaque
+stringData:
+  bootstrap-brokers: "REPLACE_WITH_MSK_BOOTSTRAP_BROKERS"
+  # 예시: "b-1.c4-dev-kafka.xxxxx.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-2.c4-dev-kafka.xxxxx.c2.kafka.ap-northeast-2.amazonaws.com:9092"
+

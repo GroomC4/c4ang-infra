@@ -22,9 +22,9 @@ module "eks" {
       most_recent = true
     }
     vpc-cni = {
-      most_recent             = true
-      before_compute          = true
-      resolve_conflicts       = "OVERWRITE"
+      most_recent              = true
+      before_compute           = true
+      resolve_conflicts        = "OVERWRITE"
       service_account_role_arn = aws_iam_role.cni_role[0].arn
     }
     eks-pod-identity-agent = {
@@ -33,10 +33,10 @@ module "eks" {
   }
 
   # VPC 설정
-  vpc_id     = module.vpc_app.vpc_id
-  subnet_ids = module.vpc_app.private_subnets  # Private Subnet 사용
-  endpoint_public_access                   = true
-  endpoint_private_access                  = true
+  vpc_id                  = module.vpc_app.vpc_id
+  subnet_ids              = module.vpc_app.private_subnets # Private Subnet 사용
+  endpoint_public_access  = true
+  endpoint_private_access = true
 
 
   # EKS Managed Node Groups (최소 사양 구성이며, Karpenter와 병행 사용 가능)
@@ -139,7 +139,7 @@ module "eks" {
       principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/sunho-kim"
       policy_associations = {
         admin = {
-          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
           access_scope = { type = "cluster" }
         }
       }
@@ -149,7 +149,7 @@ module "eks" {
       principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/eunju-lee"
       policy_associations = {
         admin = {
-          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
           access_scope = { type = "cluster" }
         }
       }
@@ -159,7 +159,7 @@ module "eks" {
       principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/sanga-kim"
       policy_associations = {
         admin = {
-          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
           access_scope = { type = "cluster" }
         }
       }
@@ -169,7 +169,7 @@ module "eks" {
       principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/ingyu-han"
       policy_associations = {
         admin = {
-          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
           access_scope = { type = "cluster" }
         }
       }
@@ -179,7 +179,7 @@ module "eks" {
       principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/yujin-jung"
       policy_associations = {
         admin = {
-          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
           access_scope = { type = "cluster" }
         }
       }
@@ -204,23 +204,23 @@ data "aws_caller_identity" "current" {}
 # EBS CSI Driver Helm 차트 설치
 resource "helm_release" "ebs_csi_driver" {
   count = var.create_eks_cluster && var.create_k8s_resources ? 1 : 0
-  
+
   name       = "aws-ebs-csi-driver"
   repository = "https://kubernetes-sigs.github.io/aws-ebs-csi-driver"
   chart      = "aws-ebs-csi-driver"
   namespace  = "kube-system"
-  version    = "2.20.0"  # 안정적인 버전 사용
-  
+  version    = "2.20.0" # 안정적인 버전 사용
+
   set {
     name  = "controller.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
     value = aws_iam_role.ebs_csi_driver[0].arn
   }
-  
+
   set {
     name  = "controller.serviceAccount.name"
     value = "ebs-csi-controller-sa"
   }
-  
+
   depends_on = [
     module.eks,
     aws_iam_role.ebs_csi_driver
