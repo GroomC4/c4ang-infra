@@ -50,9 +50,9 @@ spec:
         sidecar.istio.io/inject: "true" # Istio 주입
       labels:
         {{- include "product-service.selectorLabels" . | nindent 8 }}
-          {{- if .Values.istio.enabled }}
-          version: {{ .Values.image.tag | default .Chart.AppVersion }}
-          {{- end }}
+        {{- if .Values.istio.enabled }}
+        version: {{ .Values.image.tag | default .Chart.AppVersion }}
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
