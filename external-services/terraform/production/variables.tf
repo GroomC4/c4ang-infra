@@ -425,7 +425,7 @@ variable "create_msk" {
 variable "msk_instance_type" {
   description = "MSK broker instance type"
   type        = string
-  default     = "kafka.t3.small" # 테스트용, 프로덕션은 kafka.m5.large 권장
+  default     = "kafka.m5.large" # 최소 지원 인스턴스 타입 (kafka.t3.small은 지원 안됨)
 }
 
 # MSK Kafka 버전

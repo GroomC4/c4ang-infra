@@ -36,7 +36,7 @@ compression.type=snappy
 # 로그 리텐션 (7일)
 log.retention.hours=168
 log.segment.bytes=1073741824
-log.retention.check.interval.ms=300000
+# log.retention.check.interval.ms는 MSK에서 지원되지 않음 (자동으로 관리됨)
 
 # KRaft 모드 설정 (Kafka 3.7+)
 ${var.msk_use_kraft ? <<-EOT

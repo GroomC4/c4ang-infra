@@ -12,6 +12,7 @@ locals {
   airflow_logs_bucket_name = var.airflow_logs_bucket_name != "" ? var.airflow_logs_bucket_name : "${var.project_name}-airflow-logs-${var.environment}${var.environment_suffix}-${local.account_id_suffix}"
 
   # Tracking log 버킷 이름 (기본값: c4-tracking-log)
+  # 기존 버킷이 있으면 import하거나 다른 이름 사용
   tracking_log_bucket_name = var.tracking_log_bucket_name != "" ? var.tracking_log_bucket_name : "c4-tracking-log"
 }
 
