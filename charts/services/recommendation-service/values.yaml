@@ -84,3 +84,6 @@ istio:
     gatewayNamespace: ecommerce
     hostnames:
       - api.c4ang.com
+
+analysis:
+  prometheusUrl: "http://prometheus.monitoring.svc.cluster.local:9090"
