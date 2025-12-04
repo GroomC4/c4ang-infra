@@ -1,0 +1,95 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-consumer
+  namespace: kafka
+  labels:
+    app: kafka-consumer
+spec:
+  replicas: 1  # 초기 1개, HPA가 자동으로 스케일링
+  selector:
+    matchLabels:
+      app: kafka-consumer
+  template:
+    metadata:
+      labels:
+        app: kafka-consumer
+    spec:
+      serviceAccountName: kafka-client
+      containers:
+      - name: consumer
+        image: confluentinc/cp-kafka:7.5.0
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Kafka Consumer 시작..."
+          echo "Consumer Group: $CONSUMER_GROUP"
+          echo "Topic: $KAFKA_TOPIC"
+          echo "MSK Brokers: $MSK_BOOTSTRAP_BROKERS"
+          echo ""
+          echo "메시지 소비 중..."
+          # CPU 부하를 생성하기 위해 메시지 처리 시 약간의 지연 추가
+          kafka-console-consumer \
+            --bootstrap-server $MSK_BOOTSTRAP_BROKERS \
+            --topic $KAFKA_TOPIC \
+            --group $CONSUMER_GROUP \
+            --from-beginning \
+            --max-messages 1000000 \
+            --timeout-ms 1000 || true
+        env:
+        - name: MSK_BOOTSTRAP_BROKERS
+          valueFrom:
+            secretKeyRef:
+              name: msk-bootstrap-brokers
+              key: bootstrap-brokers
+        - name: KAFKA_TOPIC
+          value: "test-topic"
+        - name: CONSUMER_GROUP
+          value: "hpa-test-consumer-group"
+        resources:
+          requests:
+            cpu: 100m      # HPA가 CPU 사용률을 모니터링
+            memory: 256Mi
+          limits:
+            cpu: 2000m     # 최대 CPU 제한
+            memory: 512Mi
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: kafka-consumer-hpa
+  namespace: kafka
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: kafka-consumer
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70  # CPU 사용률 70% 이상이면 스케일 아웃
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 60  # 스케일 다운 안정화 시간
+      policies:
+      - type: Percent
+        value: 50  # 최대 50% 감소
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0  # 즉시 스케일 업
+      policies:
+      - type: Percent
+        value: 100  # 최대 100% 증가
+        periodSeconds: 30
+      - type: Pods
+        value: 2  # 최대 2개 Pod씩 증가
+        periodSeconds: 30
+      selectPolicy: Max  # 두 정책 중 더 빠른 것 선택
+
