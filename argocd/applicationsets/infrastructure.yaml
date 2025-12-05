@@ -15,10 +15,11 @@ spec:
           # 환경 정의
           - list:
               elements:
-                - env: dev
-                  cluster: https://kubernetes.default.svc
-                  clusterName: k3d-msa-quality-cluster
-                  namespaceSuffix: ""
+                # dev 환경은 k3d 클러스터에서만 사용 (EKS에서는 비활성화)
+                # - env: dev
+                #   cluster: https://kubernetes.default.svc
+                #   clusterName: k3d-msa-quality-cluster
+                #   namespaceSuffix: ""
                 - env: prod
                   cluster: https://kubernetes.default.svc
                   clusterName: eks-prod
