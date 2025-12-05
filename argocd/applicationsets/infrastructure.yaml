@@ -42,8 +42,9 @@ spec:
                   chart: charts/argo-rollouts
                   syncWave: "4"
 
-  syncPolicy:
-    applicationsSync: create-only  # 생성만 하고 이후 수동 변경 유지
+  syncPolicy: {}
+#  syncPolicy:
+#    applicationsSync: create-only  # 생성만 하고 이후 수동 변경 유지
 
   template:
     metadata:
@@ -69,21 +70,22 @@ spec:
       destination:
         server: '{{.cluster}}'
         namespace: '{{.namespace}}'
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-          allowEmpty: false
-        syncOptions:
-          - CreateNamespace=true
-          - PrunePropagationPolicy=foreground
-          - PruneLast=true
-        retry:
-          limit: 5
-          backoff:
-            duration: 5s
-            factor: 2
-            maxDuration: 3m
+      syncPolicy: {}
+#      syncPolicy:
+#        automated:
+#          prune: true
+#          selfHeal: true
+#          allowEmpty: false
+#        syncOptions:
+#          - CreateNamespace=true
+#          - PrunePropagationPolicy=foreground
+#          - PruneLast=true
+#        retry:
+#          limit: 5
+#          backoff:
+#            duration: 5s
+#            factor: 2
+#            maxDuration: 3m
       # 헬스 체크 무시 (선택적)
       ignoreDifferences:
         - group: ""
