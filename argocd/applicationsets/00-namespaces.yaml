@@ -19,15 +19,16 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=false  # 이미 네임스페이스를 생성하므로 false
-    retry:
-      limit: 5
-      backoff:
-        duration: 5s
-        factor: 2
-        maxDuration: 3m
+  syncPolicy: {}
+#  syncPolicy:
+#    automated:
+#      prune: true
+#      selfHeal: true
+#    syncOptions:
+#      - CreateNamespace=false  # 이미 네임스페이스를 생성하므로 false
+#    retry:
+#      limit: 5
+#      backoff:
+#        duration: 5s
+#        factor: 2
+#        maxDuration: 3m

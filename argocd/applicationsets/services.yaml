@@ -30,9 +30,9 @@ spec:
                 - name: recommendation-service
                 - name: saga-tracker
                 - name: store-service
-
-  syncPolicy:
-    applicationsSync: create-update  # ApplicationSet 변경 시 Application도 업데이트
+  syncPolicy: {}
+#  syncPolicy:
+#    applicationsSync: create-update  # ApplicationSet 변경 시 Application도 업데이트
 
   template:
     metadata:
@@ -63,15 +63,16 @@ spec:
       destination:
         server: '{{.cluster}}'
         namespace: ecommerce
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        syncOptions:
-          - CreateNamespace=true
-        retry:
-          limit: 5
-          backoff:
-            duration: 10s
-            factor: 2
-            maxDuration: 5m
+      syncPolicy: {}
+#      syncPolicy:
+#        automated:
+#          prune: true
+#          selfHeal: true
+#        syncOptions:
+#          - CreateNamespace=true
+#        retry:
+#          limit: 5
+#          backoff:
+#            duration: 10s
+#            factor: 2
+#            maxDuration: 5m

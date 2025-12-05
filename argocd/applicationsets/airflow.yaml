@@ -18,9 +18,9 @@ spec:
           - env: prod
             cluster: https://A87E747216497C01943D948C840F9EC4.gr7.ap-northeast-2.eks.amazonaws.com
             namespace: airflow
-
-  syncPolicy:
-    applicationsSync: create-only  # 생성만 하고 이후 수동 변경 유지
+  syncPolicy: {}
+#  syncPolicy:
+#    applicationsSync: create-only  # 생성만 하고 이후 수동 변경 유지
 
   template:
     metadata:
@@ -44,16 +44,17 @@ spec:
       destination:
         server: '{{.cluster}}'
         namespace: '{{.namespace}}'
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        syncOptions:
-          - CreateNamespace=true
-          - ServerSideApply=true  # CRD가 큰 경우 필요
-        retry:
-          limit: 5
-          backoff:
-            duration: 10s
-            factor: 2
-            maxDuration: 5m
+      syncPolicy: {}
+#      syncPolicy:
+#        automated:
+#          prune: true
+#          selfHeal: true
+#        syncOptions:
+#          - CreateNamespace=true
+#          - ServerSideApply=true  # CRD가 큰 경우 필요
+#        retry:
+#          limit: 5
+#          backoff:
+#            duration: 10s
+#            factor: 2
+#            maxDuration: 5m
