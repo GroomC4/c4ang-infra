@@ -55,7 +55,7 @@ airflow:
     gitSync:
       enabled: true
       repo: ""  # Git repo URL
-      branch: main
+      branch: feature/refactoring-argocd
       subPath: dags
 
   logs:
