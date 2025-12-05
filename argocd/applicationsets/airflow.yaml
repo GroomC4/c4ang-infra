@@ -18,9 +18,8 @@ spec:
           - env: prod
             cluster: https://kubernetes.default.svc
             namespace: airflow-prod
-  syncPolicy: {}
-#  syncPolicy:
-#    applicationsSync: create-only  # 생성만 하고 이후 수동 변경 유지
+  syncPolicy:
+    applicationsSync: create-update  # ApplicationSet 변경 시 Application도 업데이트
 
   template:
     metadata:
@@ -44,17 +43,16 @@ spec:
       destination:
         server: '{{.cluster}}'
         namespace: '{{.namespace}}'
-      syncPolicy: {}
-#      syncPolicy:
-#        automated:
-#          prune: true
-#          selfHeal: true
-#        syncOptions:
-#          - CreateNamespace=true
-#          - ServerSideApply=true  # CRD가 큰 경우 필요
-#        retry:
-#          limit: 5
-#          backoff:
-#            duration: 10s
-#            factor: 2
-#            maxDuration: 5m
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true  # CRD가 큰 경우 필요
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 5m
