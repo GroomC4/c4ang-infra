@@ -1,6 +1,6 @@
 # EKS 프로덕션 환경 Argo Rollouts 설정
 
-namespace: argo-rollouts
+namespace: argo-rollouts-prod
 
 argo-rollouts:
   controller:

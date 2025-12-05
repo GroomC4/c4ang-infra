@@ -18,9 +18,11 @@ spec:
                 - env: dev
                   cluster: https://kubernetes.default.svc
                   clusterName: k3d-msa-quality-cluster
+                  namespaceSuffix: ""
                 - env: prod
-                  cluster: https://A87E747216497C01943D948C840F9EC4.gr7.ap-northeast-2.eks.amazonaws.com
+                  cluster: https://kubernetes.default.svc
                   clusterName: eks-prod
+                  namespaceSuffix: "-prod"
 
           # 인프라 컴포넌트 정의
           - list:
@@ -69,7 +71,7 @@ spec:
             - ../../config/{{.env}}/{{.name}}.yaml
       destination:
         server: '{{.cluster}}'
-        namespace: '{{.namespace}}'
+        namespace: '{{.namespace}}{{.namespaceSuffix}}'
       syncPolicy: {}
 #      syncPolicy:
 #        automated:

@@ -17,8 +17,10 @@ spec:
               elements:
                 - env: dev
                   cluster: https://kubernetes.default.svc
+                  namespace: ecommerce
                 - env: prod
-                  cluster: https://A87E747216497C01943D948C840F9EC4.gr7.ap-northeast-2.eks.amazonaws.com
+                  cluster: https://kubernetes.default.svc
+                  namespace: ecommerce-prod
 
           # 서비스 목록
           - list:
@@ -62,7 +64,7 @@ spec:
               - '$values/config/{{.env}}/{{.name}}.yaml'
       destination:
         server: '{{.cluster}}'
-        namespace: ecommerce
+        namespace: '{{.namespace}}'
       syncPolicy: {}
 #      syncPolicy:
 #        automated:
