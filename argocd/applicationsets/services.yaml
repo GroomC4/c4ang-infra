@@ -15,10 +15,13 @@ spec:
           # 환경 정의
           - list:
               elements:
-                - env: dev
-                  cluster: https://kubernetes.default.svc
+                # dev 환경은 k3d 클러스터에서만 사용 (EKS에서는 비활성화)
+                # - env: dev
+                #   cluster: https://kubernetes.default.svc
+                #   namespace: ecommerce
                 - env: prod
-                  cluster: https://A87E747216497C01943D948C840F9EC4.gr7.ap-northeast-2.eks.amazonaws.com
+                  cluster: https://kubernetes.default.svc
+                  namespace: ecommerce-prod
 
           # 서비스 목록
           - list:
@@ -30,7 +33,6 @@ spec:
                 - name: recommendation-service
                 - name: saga-tracker
                 - name: store-service
-
   syncPolicy:
     applicationsSync: create-update  # ApplicationSet 변경 시 Application도 업데이트
 
@@ -62,7 +64,7 @@ spec:
               - '$values/config/{{.env}}/{{.name}}.yaml'
       destination:
         server: '{{.cluster}}'
-        namespace: ecommerce
+        namespace: '{{.namespace}}'
       syncPolicy:
         automated:
           prune: true

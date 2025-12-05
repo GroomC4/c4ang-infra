@@ -16,11 +16,10 @@ spec:
           #   cluster: https://kubernetes.default.svc
           #   namespace: airflow
           - env: prod
-            cluster: https://A87E747216497C01943D948C840F9EC4.gr7.ap-northeast-2.eks.amazonaws.com
-            namespace: airflow
-
+            cluster: https://kubernetes.default.svc
+            namespace: airflow-prod
   syncPolicy:
-    applicationsSync: create-only  # 생성만 하고 이후 수동 변경 유지
+    applicationsSync: create-update  # ApplicationSet 변경 시 Application도 업데이트
 
   template:
     metadata:

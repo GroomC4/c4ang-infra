@@ -1,7 +1,7 @@
 # EKS 운영 환경 Monitoring 설정
 # ArgoCD ApplicationSet에서 사용
 
-namespace: monitoring
+namespace: monitoring-prod
 
 # Image Pull Secrets
 imagePullSecrets: []
@@ -23,7 +23,7 @@ prometheus:
   # EKS GP3 스토리지 사용
   storage:
     size: 50Gi
-    storageClassName: "gp3"
+    storageClassName: "gp2"
 
   # 운영 환경 보존 기간
   retention:
@@ -55,7 +55,7 @@ loki:
 
   storage:
     size: 20Gi
-    storageClassName: "gp3"
+    storageClassName: "gp2"
 
   retention:
     enabled: true
@@ -90,7 +90,7 @@ tempo:
 
   storage:
     size: 20Gi
-    storageClassName: "gp3"
+    storageClassName: "gp2"
 
   retention:
     period: 720h  # 30일
@@ -122,16 +122,16 @@ grafana:
 
   replicas: 1
 
-  # 운영 환경은 Secret 사용
+  # 운영 환경 관리자 계정 (TODO: 실제 운영에서는 External Secrets 사용)
   admin:
     user: admin
-    password: ""
-    existingSecret: "grafana-admin-credentials"
+    password: "admin123"  # 임시 비밀번호
+    existingSecret: ""
     secretKey: "admin-password"
 
   storage:
     size: 5Gi
-    storageClassName: "gp3"
+    storageClassName: "gp2"
 
   resources:
     limits:
@@ -185,16 +185,11 @@ ingress:
     alb.ingress.kubernetes.io/scheme: internal
     alb.ingress.kubernetes.io/target-type: ip
 
-# Node Selector
-nodeSelector:
-  role: monitoring
+# Node Selector - 비활성화 (모든 노드에 배포 가능)
+nodeSelector: {}
 
-# Tolerations
-tolerations:
-  - key: "dedicated"
-    operator: "Equal"
-    value: "monitoring"
-    effect: "NoSchedule"
+# Tolerations - 비활성화
+tolerations: []
 
 # Affinity
 affinity: {}

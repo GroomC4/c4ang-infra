@@ -3,7 +3,7 @@
 
 # Namespace 설정
 namespace:
-  name: ecommerce
+  name: ecommerce-prod
   create: false
 
 # Gateway 설정

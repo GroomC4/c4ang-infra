@@ -4,7 +4,7 @@
 # Terraform 출력값을 사용하여 실제 엔드포인트로 교체
 # terraform output -json | jq '.external_services_config.value'
 
-namespace: ecommerce
+namespace: ecommerce-prod
 
 # -----------------------------------------------------------------------------
 # PostgreSQL Databases (AWS RDS)
