@@ -40,7 +40,7 @@ prometheus:
       memory: "1Gi"
 
   service:
-    type: ClusterIP
+    type: LoadBalancer
     port: 9090
 
 # Loki 설정 (로그 저장소)
@@ -142,7 +142,7 @@ grafana:
       memory: "256Mi"
 
   service:
-    type: ClusterIP
+    type: LoadBalancer
     port: 3000
 
   dashboards:
@@ -185,15 +185,15 @@ ingress:
     alb.ingress.kubernetes.io/scheme: internal
     alb.ingress.kubernetes.io/target-type: ip
 
-# Node Selector
+# Node Selector - stateful-storage 노드 그룹 사용 (monitoring 전용)
 nodeSelector:
-  role: monitoring
+  workload: stateful
 
-# Tolerations
+# Tolerations - stateful-storage 노드 그룹의 taint 허용
 tolerations:
-  - key: "dedicated"
+  - key: "workload"
     operator: "Equal"
-    value: "monitoring"
+    value: "stateful"
     effect: "NoSchedule"
 
 # Affinity

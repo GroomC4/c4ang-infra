@@ -6,10 +6,17 @@ metadata:
   namespace: {{ include "monitoring.namespace" . }}
   labels:
     {{- include "monitoring.prometheus.labels" . | nindent 4 }}
-  {{- if .Values.serviceMonitor.enabled }}
+  {{- if or .Values.serviceMonitor.enabled (eq .Values.prometheus.service.type "LoadBalancer") }}
   annotations:
+    {{- if .Values.serviceMonitor.enabled }}
     prometheus.io/scrape: "true"
     prometheus.io/port: "{{ .Values.prometheus.service.port }}"
+    {{- end }}
+    {{- if eq .Values.prometheus.service.type "LoadBalancer" }}
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    {{- end }}
   {{- end }}
 spec:
   type: {{ .Values.prometheus.service.type }}
