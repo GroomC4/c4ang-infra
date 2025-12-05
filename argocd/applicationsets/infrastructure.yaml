@@ -19,7 +19,7 @@ spec:
                   cluster: https://kubernetes.default.svc
                   clusterName: k3d-msa-quality-cluster
                 - env: prod
-                  cluster: https://eks-cluster.region.eks.amazonaws.com
+                  cluster: https://A87E747216497C01943D948C840F9EC4.gr7.ap-northeast-2.eks.amazonaws.com
                   clusterName: eks-prod
 
           # 인프라 컴포넌트 정의

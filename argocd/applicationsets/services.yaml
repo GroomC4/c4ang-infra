@@ -18,7 +18,7 @@ spec:
                 - env: dev
                   cluster: https://kubernetes.default.svc
                 - env: prod
-                  cluster: https://eks-cluster.region.eks.amazonaws.com
+                  cluster: https://A87E747216497C01943D948C840F9EC4.gr7.ap-northeast-2.eks.amazonaws.com
 
           # 서비스 목록
           - list:
