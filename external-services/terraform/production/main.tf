@@ -18,7 +18,7 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
-  
+
   default_tags {
     tags = {
       Name        = var.project_name
@@ -37,7 +37,7 @@ provider "aws" {
 locals {
   # EKS 클러스터 이름 (변수가 비어있으면 동적 생성)
   eks_cluster_name = var.eks_cluster_name != "" ? var.eks_cluster_name : "${var.resource_prefix}-eks-cluster${var.environment_suffix}"
-  
+
   # 공통 태그
   common_tags = {
     Environment = var.environment
@@ -50,7 +50,7 @@ locals {
 # 현재 로컬 IP 가져오기
 data "http" "current_ip" {
   url = "https://ipv4.icanhazip.com"
-  
+
   request_headers = {
     Accept = "text/plain"
   }
@@ -60,7 +60,7 @@ data "http" "current_ip" {
 provider "kubernetes" {
   host                   = var.create_eks_cluster ? module.eks[0].cluster_endpoint : null
   cluster_ca_certificate = var.create_eks_cluster ? base64decode(module.eks[0].cluster_certificate_authority_data) : null
-  
+
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
     command     = "aws"
@@ -73,7 +73,7 @@ provider "helm" {
   kubernetes {
     host                   = var.create_eks_cluster ? module.eks[0].cluster_endpoint : null
     cluster_ca_certificate = var.create_eks_cluster ? base64decode(module.eks[0].cluster_certificate_authority_data) : null
-    
+
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
       command     = "aws"
@@ -93,7 +93,7 @@ module "vpc_app" {
 
   name = "${var.resource_prefix}-vpc-app${var.environment_suffix}"
   cidr = var.vpc_app_cidr
-  
+
   azs             = var.availability_zones
   public_subnets  = var.vpc_app_public_subnets
   private_subnets = var.vpc_app_private_subnets
@@ -107,15 +107,15 @@ module "vpc_app" {
   public_subnet_tags = {
     "karpenter.sh/discovery/${local.eks_cluster_name}" = "*"
   }
-  
+
   private_subnet_tags = {
     "karpenter.sh/discovery/${local.eks_cluster_name}" = "*"
   }
 
   tags = {
-    Owner       = var.owner
-    CostCenter  = var.cost_center
-    Purpose     = "Application-Test"
+    Owner      = var.owner
+    CostCenter = var.cost_center
+    Purpose    = "Application-Test"
   }
 }
 
@@ -123,24 +123,24 @@ module "vpc_app" {
 module "vpc_db" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 6.0"
-  
+
   name = "${var.resource_prefix}-vpc-db${var.environment_suffix}"
   cidr = var.vpc_db_cidr
-  
+
   azs             = var.availability_zones
   private_subnets = var.vpc_db_private_subnets
-  
+
   enable_dns_hostnames = true
   enable_dns_support   = true
-  
+
   # VPC-DB는 IGW와 NAT Gateway 모두 비활성화 (완전 격리)
-  create_igw          = false
-  enable_nat_gateway  = false
-  
+  create_igw         = false
+  enable_nat_gateway = false
+
   tags = {
-    Owner       = var.owner
-    CostCenter  = var.cost_center
-    Purpose     = "Database-Test"
+    Owner      = var.owner
+    CostCenter = var.cost_center
+    Purpose    = "Database-Test"
   }
 }
 
@@ -151,9 +151,9 @@ module "vpc_db" {
 resource "aws_vpc_peering_connection" "app_to_db" {
   vpc_id      = module.vpc_app.vpc_id
   peer_vpc_id = module.vpc_db.vpc_id
-  
+
   auto_accept = true
-  
+
   tags = {
     Name        = "${var.resource_prefix}-vpc-peering-app-to-db${var.environment_suffix}"
     Environment = var.environment

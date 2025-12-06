@@ -228,13 +228,13 @@ output "rds_username" {
 output "rds_connection_info" {
   description = "RDS connection information"
   value = var.create_rds ? {
-    host = aws_db_instance.airflow_db[0].endpoint
-    port = aws_db_instance.airflow_db[0].port
-    database = aws_db_instance.airflow_db[0].db_name
-    username = aws_db_instance.airflow_db[0].username
-    password = "Check terraform.tfvars for rds_master_password"
+    host              = aws_db_instance.airflow_db[0].endpoint
+    port              = aws_db_instance.airflow_db[0].port
+    database          = aws_db_instance.airflow_db[0].db_name
+    username          = aws_db_instance.airflow_db[0].username
+    password          = "Check terraform.tfvars for rds_master_password"
     connection_string = "postgresql://${aws_db_instance.airflow_db[0].username}:<password>@${aws_db_instance.airflow_db[0].endpoint}:${aws_db_instance.airflow_db[0].port}/${aws_db_instance.airflow_db[0].db_name}"
-    note = "Update application configuration with this connection string"
+    note              = "Update application configuration with this connection string"
   } : null
 }
 
@@ -246,6 +246,56 @@ output "rds_security_group_id" {
 output "rds_subnet_group_name" {
   description = "RDS subnet group name"
   value       = var.create_rds ? aws_db_subnet_group.rds_subnet_group[0].name : null
+}
+
+# =============================================================================
+# MSK Kafka 클러스터 정보
+# =============================================================================
+
+output "msk_cluster_arn" {
+  description = "MSK cluster ARN"
+  value       = var.create_msk ? aws_msk_cluster.msk_cluster[0].arn : null
+}
+
+output "msk_cluster_name" {
+  description = "MSK cluster name"
+  value       = var.create_msk ? aws_msk_cluster.msk_cluster[0].cluster_name : null
+}
+
+output "msk_bootstrap_brokers" {
+  description = "MSK bootstrap brokers (PLAINTEXT)"
+  value       = var.create_msk ? aws_msk_cluster.msk_cluster[0].bootstrap_brokers : null
+}
+
+output "msk_bootstrap_brokers_tls" {
+  description = "MSK bootstrap brokers (TLS)"
+  value       = var.create_msk ? aws_msk_cluster.msk_cluster[0].bootstrap_brokers_tls : null
+}
+
+output "msk_zookeeper_connect_string" {
+  description = "MSK Zookeeper connect string"
+  value       = var.create_msk ? aws_msk_cluster.msk_cluster[0].zookeeper_connect_string : null
+  sensitive   = true
+}
+
+output "msk_security_group_id" {
+  description = "MSK security group ID"
+  value       = var.create_msk ? aws_security_group.msk_sg[0].id : null
+}
+
+output "msk_connection_info" {
+  description = "MSK connection information"
+  value = var.create_msk ? {
+    cluster_arn           = aws_msk_cluster.msk_cluster[0].arn
+    cluster_name          = aws_msk_cluster.msk_cluster[0].cluster_name
+    bootstrap_brokers     = aws_msk_cluster.msk_cluster[0].bootstrap_brokers
+    bootstrap_brokers_tls = aws_msk_cluster.msk_cluster[0].bootstrap_brokers_tls
+    security_group_id     = aws_security_group.msk_sg[0].id
+    vpc_id                = local.msk_target_vpc_id
+    kafka_version         = var.msk_kafka_version
+    kraft_mode            = var.msk_use_kraft
+    note                  = "Update application configuration with bootstrap_brokers"
+  } : null
 }
 
 # =============================================================================
@@ -262,14 +312,30 @@ output "airflow_logs_bucket_arn" {
   value       = var.create_s3_buckets ? aws_s3_bucket.airflow_logs[0].arn : null
 }
 
+output "tracking_log_bucket_name" {
+  description = "Tracking log S3 bucket name"
+  value       = var.create_s3_buckets ? aws_s3_bucket.tracking_log[0].bucket : null
+}
+
+output "tracking_log_bucket_arn" {
+  description = "Tracking log S3 bucket ARN"
+  value       = var.create_s3_buckets ? aws_s3_bucket.tracking_log[0].arn : null
+}
+
 output "s3_buckets_info" {
   description = "S3 buckets information for Airflow workloads"
   value = var.create_s3_buckets ? {
     airflow_logs = {
       bucket_name = aws_s3_bucket.airflow_logs[0].bucket
-      bucket_arn = aws_s3_bucket.airflow_logs[0].arn
-      s3_url = "s3://${aws_s3_bucket.airflow_logs[0].bucket}/log"
-      purpose = "Airflow logs storage"
+      bucket_arn  = aws_s3_bucket.airflow_logs[0].arn
+      s3_url      = "s3://${aws_s3_bucket.airflow_logs[0].bucket}/log"
+      purpose     = "Airflow logs storage"
+    }
+    tracking_log = {
+      bucket_name = aws_s3_bucket.tracking_log[0].bucket
+      bucket_arn  = aws_s3_bucket.tracking_log[0].arn
+      s3_url      = "s3://${aws_s3_bucket.tracking_log[0].bucket}/log"
+      purpose     = "Tracking log storage"
     }
   } : null
 }
@@ -287,11 +353,11 @@ output "irsa_service_accounts_info" {
   description = "IRSA service accounts information"
   value = var.create_s3_buckets && var.create_k8s_resources ? {
     airflow_irsa = {
-      role_arn = aws_iam_role.airflow_irsa[0].arn
+      role_arn             = aws_iam_role.airflow_irsa[0].arn
       service_account_name = "airflow-irsa"
-      namespace = "airflow"
-      purpose = "Airflow S3 access for logs"
-      permissions = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
+      namespace            = "airflow"
+      purpose              = "Airflow S3 access for logs"
+      permissions          = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
       k8s_resource_created = var.create_k8s_resources
     }
   } : null
@@ -304,25 +370,25 @@ output "irsa_service_accounts_info" {
 output "cost_optimization_info" {
   description = "Cost Optimization Information"
   value = {
-    vpc_count = 2
+    vpc_count         = 2
     nat_gateway_count = 1
-    eks_cluster = var.create_eks_cluster ? "Enabled" : "Disabled"
+    eks_cluster       = var.create_eks_cluster ? "Enabled" : "Disabled"
     eks_node_groups = var.create_eks_cluster ? {
-      core_on = "t3.large (2-4 nodes, on-demand)"
-      high_traffic = "t3.large (2-4 nodes, on-demand)"
-      low_traffic = "t3.medium (2-4 nodes, on-demand)"
+      core_on          = "t3.large (2-4 nodes, on-demand)"
+      high_traffic     = "t3.large (2-4 nodes, on-demand)"
+      low_traffic      = "t3.medium (2-4 nodes, on-demand)"
       stateful_storage = "m5.large (2-4 nodes, on-demand, taint=workload=stateful)"
-      kafka_storage = "m5.large (3-5 nodes, on-demand, taint=workload=kafka)"
+      kafka_storage    = "m5.large (3-5 nodes, on-demand, taint=workload=kafka)"
     } : null
-    rds_database = var.create_rds ? "Enabled" : "Disabled"
-    rds_instance_type = var.create_rds ? var.rds_instance_class : null
-    rds_storage = var.create_rds ? "${var.rds_allocated_storage}GB (max ${var.rds_max_allocated_storage}GB)" : null
-    rds_multi_az = var.create_rds ? var.rds_multi_az : null
-    s3_buckets = var.create_s3_buckets ? "Enabled" : "Disabled"
-    s3_bucket_count = var.create_s3_buckets ? 2 : 0
-    s3_purpose = var.create_s3_buckets ? "Airflow logs + Spark checkpoints" : null
+    rds_database          = var.create_rds ? "Enabled" : "Disabled"
+    rds_instance_type     = var.create_rds ? var.rds_instance_class : null
+    rds_storage           = var.create_rds ? "${var.rds_allocated_storage}GB (max ${var.rds_max_allocated_storage}GB)" : null
+    rds_multi_az          = var.create_rds ? var.rds_multi_az : null
+    s3_buckets            = var.create_s3_buckets ? "Enabled" : "Disabled"
+    s3_bucket_count       = var.create_s3_buckets ? 2 : 0
+    s3_purpose            = var.create_s3_buckets ? "Airflow logs + Spark checkpoints" : null
     irsa_service_accounts = var.create_s3_buckets ? 2 : 0
-    vpn_server = "Not configured"
-    note = "Multi-workload EKS cluster with minimal on-demand node groups. Additional scale handled via Karpenter."
+    vpn_server            = "Not configured"
+    note                  = "Multi-workload EKS cluster with minimal on-demand node groups. Additional scale handled via Karpenter."
   }
 }

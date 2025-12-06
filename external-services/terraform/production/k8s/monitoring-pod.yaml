@@ -1,0 +1,67 @@
+---
+# 모니터링용 Pod (대시보드 대신 간단한 모니터링)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitoring-dashboard
+  namespace: kafka
+  labels:
+    app: monitoring-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: monitoring-dashboard
+  template:
+    metadata:
+      labels:
+        app: monitoring-dashboard
+    spec:
+      containers:
+      - name: monitor
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          apk add --no-cache curl jq
+          while true; do
+            clear
+            echo "╔════════════════════════════════════════════════════════════╗"
+            echo "║     Kafka Consumer HPA Monitoring Dashboard              ║"
+            echo "╚════════════════════════════════════════════════════════════╝"
+            echo ""
+            echo "📊 HPA Status:"
+            kubectl get hpa -n kafka kafka-consumer-hpa -o wide 2>/dev/null || echo "HPA not found"
+            echo ""
+            echo "📦 Pod Status:"
+            kubectl get pods -n kafka -l app=kafka-consumer -o wide
+            echo ""
+            echo "💻 Resource Usage:"
+            kubectl top pods -n kafka -l app=kafka-consumer 2>/dev/null || echo "Metrics Server not available"
+            echo ""
+            echo "📈 Consumer Group Status:"
+            POD_NAME=$(kubectl get pods -n kafka -l app=kafka-client --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+            if [ -n "$POD_NAME" ]; then
+              MSK_BROKERS=$(kubectl get secret -n kafka msk-bootstrap-brokers -o jsonpath='{.data.bootstrap-brokers}' | base64 -d)
+              kubectl exec -n kafka $POD_NAME -- kafka-consumer-groups \
+                --bootstrap-server $MSK_BROKERS \
+                --describe \
+                --group hpa-test-consumer-group 2>/dev/null | head -10 || echo "Consumer Group not found or no messages"
+            else
+              echo "kafka-client pod not found"
+            fi
+            echo ""
+            echo "⏰ Updated: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo ""
+            echo "Press Ctrl+C to exit"
+            sleep 5
+          done
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+
