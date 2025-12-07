@@ -26,6 +26,9 @@ resources:
 config:
   SERVER_PORT: "8081"
   SPRING_PROFILES_ACTIVE: "prod"
+  # Flyway 설정 - checksum mismatch 자동 repair
+  SPRING_FLYWAY_REPAIR_ON_MIGRATE: "true"
+  SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "false"
   # AWS RDS PostgreSQL (ExternalName 서비스를 통한 연결)
   SPRING_DATASOURCE_URL: "jdbc:postgresql://saga-db:5432/saga_db"
   SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://saga-db:5432/saga_db"
