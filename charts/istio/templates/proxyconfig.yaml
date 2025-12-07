@@ -1,0 +1,12 @@
+{{- if .Values.telemetry.enabled }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ProxyConfig
+metadata:
+  name: global-tracing
+  namespace: {{ .Values.namespace.name }}
+spec:
+  selector:
+    matchLabels: {}
+  concurrency: 2
+{{- end }}
