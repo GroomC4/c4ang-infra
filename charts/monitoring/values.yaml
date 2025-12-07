@@ -382,6 +382,78 @@ alerting:
       summary: "Envoy proxy high memory usage"
       description: "Envoy proxy in pod {{ $labels.pod_name }} is using more than 90% of heap memory"
 
+    # Saga Tracker - Failure Spike
+    - name: SagaFailureSpike
+      enabled: true
+      expr: 'increase(saga_failed_total[5m]) > 10'
+      duration: 2m
+      severity: warning
+      summary: "Saga failure spike detected"
+      description: "{{ $value }} sagas failed in the last 5 minutes"
+
+    # Saga Tracker - Consumer Lag
+    - name: SagaTrackerConsumerLag
+      enabled: true
+      expr: 'saga_tracker_consumer_lag > 1000'
+      duration: 10m
+      severity: warning
+      summary: "High consumer lag detected"
+      description: "Consumer lag is {{ $value }} messages"
+
+    # Saga Tracker - Service Down
+    - name: SagaTrackerDown
+      enabled: true
+      expr: 'up{job="saga-tracker-api"} == 0'
+      duration: 1m
+      severity: critical
+      summary: "Saga Tracker service is down"
+      description: "saga-tracker-api has been down for more than 1 minute"
+
+    # Saga Tracker - High API Latency
+    - name: SagaTrackerHighLatency
+      enabled: true
+      expr: 'histogram_quantile(0.99, rate(http_server_requests_seconds_bucket{job="saga-tracker-api"}[5m])) > 2'
+      duration: 5m
+      severity: warning
+      summary: "High API latency detected"
+      description: "P99 latency is {{ $value }}s"
+
+    # Saga Tracker - Compensation Delay
+    - name: SagaCompensationDelay
+      enabled: true
+      expr: '(saga_active_total{status="FAILED"} > 0) and (increase(saga_compensated_total[5m]) == 0)'
+      duration: 5m
+      severity: warning
+      summary: "Saga compensation delayed"
+      description: "There are failed sagas that haven't been compensated for more than 5 minutes"
+
+    # Saga Tracker - High Failure Rate
+    - name: SagaHighFailureRate
+      enabled: true
+      expr: '(rate(saga_failed_total[15m]) / rate(saga_events_processed_total[15m])) > 0.1'
+      duration: 5m
+      severity: warning
+      summary: "High saga failure rate"
+      description: "Saga failure rate is {{ $value | humanizePercentage }} over the last 15 minutes"
+
+    # Saga Tracker - Slow Compensation
+    - name: SagaCompensationSlow
+      enabled: true
+      expr: 'histogram_quantile(0.95, rate(saga_compensation_duration_seconds_bucket[15m])) > 30'
+      duration: 10m
+      severity: warning
+      summary: "Slow saga compensation detected"
+      description: "P95 compensation duration is {{ $value }}s (threshold: 30s)"
+
+    # Saga Tracker - Event Processing Stalled
+    - name: SagaEventProcessingStalled
+      enabled: true
+      expr: 'rate(saga_events_processed_total[5m]) == 0'
+      duration: 10m
+      severity: critical
+      summary: "Saga event processing stalled"
+      description: "No saga events have been processed in the last 10 minutes"
+
 # ServiceMonitor 설정 (Prometheus Operator 사용 시)
 serviceMonitor:
   enabled: false

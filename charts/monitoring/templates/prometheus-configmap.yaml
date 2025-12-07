@@ -257,6 +257,28 @@ data:
             action: replace
             target_label: kubernetes_pod_name
 
+      # Saga Tracker API 메트릭
+      - job_name: 'saga-tracker-api'
+        metrics_path: /actuator/prometheus
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - ecommerce
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+            action: keep
+            regex: saga-tracker
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+          - source_labels: [__meta_kubernetes_pod_label_version]
+            action: replace
+            target_label: version
+
   {{- if .Values.alerting.enabled }}
   alerts.yml: |
     groups:

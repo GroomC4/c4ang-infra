@@ -95,4 +95,16 @@ metadata:
 data:
   kafka-broker-failure-test-clean.json: |-
 {{ .Files.Get "dashboards/kafka-broker-failure-test-clean.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-saga-tracker
+  namespace: {{ include "monitoring.namespace" . }}
+  labels:
+    {{- include "monitoring.grafana.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  saga-tracker-dashboard.json: |-
+{{ .Files.Get "dashboards/saga-tracker-dashboard.json" | indent 4 }}
 {{- end }}
