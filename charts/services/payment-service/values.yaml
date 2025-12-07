@@ -1,57 +1,46 @@
+# Payment Service Helm Chart - 기본값
+# 환경별 설정은 config/{env}/payment-service.yaml에서 관리
+# 참고: docs/GITOPS-HELM-ARGOCD-GUIDE.md
+
 fullnameOverride: payment-api
 
-replicaCount: 3
+replicaCount: 2
 
 image:
-  repository: ""  # Set in environment config (config/dev/*.yaml or config/prod/*.yaml)
+  repository: ""
   pullPolicy: IfNotPresent
-  tag: ""         # Set in environment config
+  tag: ""
 
 imagePullSecrets: []
 
 service:
   type: ClusterIP
-  port: 80  # Standard HTTP port for internal service discovery
-  targetPort: 8081  # Application runs on 8081
+  port: 80
+  targetPort: 8081
 
 resources:
   requests:
+    memory: 512Mi
+    cpu: 250m
+  limits:
     memory: 1Gi
     cpu: 500m
-  limits:
-    memory: 2Gi
-    cpu: 1000m
 
 autoscaling:
   enabled: false
-  minReplicas: 3
+  minReplicas: 2
   maxReplicas: 10
   targetCPUUtilizationPercentage: 70
   targetMemoryUtilizationPercentage: 80
 
-# Application configuration (injected via ConfigMap)
-config:
-  SERVER_PORT: "8081"
-  SPRING_PROFILES_ACTIVE: "prod"
-  SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/payment_db"
-  SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/payment_db"
-  SPRING_DATA_REDIS_HOST: "redis-master"
-  SPRING_DATA_REDIS_PORT: "6379"
+# 환경변수 - config/{env}/payment-service.yaml에서 정의
+config: {}
 
-# Sensitive data (injected via Secret)
-secrets:
-  SPRING_DATASOURCE_MASTER_USERNAME: ""
-  SPRING_DATASOURCE_MASTER_PASSWORD: ""
-  SPRING_DATASOURCE_REPLICA_USERNAME: ""
-  SPRING_DATASOURCE_REPLICA_PASSWORD: ""
-  SPRING_REDIS_PASSWORD: ""
-  SPRING_REDISSON_PASSWORD: ""
+# 시크릿 - config/{env}/payment-service.yaml에서 정의
+secrets: {}
 
-# Extra environment variables (optional, injected directly as env)
 extraEnv: []
 
-# Redis dependency - disabled by default for EKS (use ElastiCache)
-# Set to true for local/dev environments
 redis:
   enabled: false
 

@@ -30,8 +30,9 @@ config:
   DB_MASTER_URL: "jdbc:postgresql://order-db:5432/order_db"
   DB_REPLICA_URL: "jdbc:postgresql://order-db:5432/order_db"
   # AWS ElastiCache Redis (ExternalName 서비스를 통한 연결)
-  REDIS_HOST: "cache-redis"
-  REDIS_PORT: "6379"
+  # Spring Boot 환경변수 형식: spring.data.redis.host → SPRING_DATA_REDIS_HOST
+  SPRING_DATA_REDIS_HOST: "cache-redis"
+  SPRING_DATA_REDIS_PORT: "6379"
   # AWS MSK Kafka
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "b-1.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-2.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-3.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092"
   # Service URLs for Feign clients
