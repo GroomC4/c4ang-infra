@@ -33,10 +33,10 @@ spec:
       project: applications
       sources:
         - repoURL: https://github.com/GroomC4/c4ang-infra.git
-          targetRevision: HEAD
+          targetRevision: feature/tunning-production-enviroment
           ref: values
         - repoURL: https://github.com/GroomC4/c4ang-infra.git
-          targetRevision: HEAD
+          targetRevision: feature/tunning-production-enviroment
           path: 'charts/services/{{.name}}'
           helm:
             valueFiles:
