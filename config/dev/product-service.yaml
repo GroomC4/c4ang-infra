@@ -23,8 +23,8 @@ config:
   SERVER_PORT: "8081"
   SPRING_PROFILES_ACTIVE: "dev"
   # PostgreSQL (ExternalName 서비스 사용)
-  SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://product-db:5432/product_db"
-  SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://product-db:5432/product_db"
+  SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://product-db:5433/product_db"
+  SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://product-db:5433/product_db"
   # Redis (ExternalName 서비스 사용)
   SPRING_DATA_REDIS_HOST: "cache-redis"
   SPRING_DATA_REDIS_PORT: "6379"
