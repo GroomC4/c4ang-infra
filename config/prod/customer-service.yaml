@@ -27,22 +27,17 @@ config:
   SERVER_PORT: "8081"
   SPRING_PROFILES_ACTIVE: "prod"
   # AWS RDS PostgreSQL
-  SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/customer_db"
-  SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/customer_db"
+  DB_MASTER_URL: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/customer_db"
+  DB_REPLICA_URL: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/customer_db"
   # AWS ElastiCache Redis
-  SPRING_DATA_REDIS_HOST: "redis-master"
-  SPRING_DATA_REDIS_PORT: "6379"
-  SPRING_REDISSON_ADDRESS: "redis://redis-master:6379"
+  REDIS_HOST: "redis-master"
+  REDIS_PORT: "6379"
   # AWS MSK Kafka
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
-  SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: "kafka:9092"
-  SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: "kafka:9092"
-# Sensitive data (injected via Secret) - 실제 값은 External Secrets 또는 AWS Secrets Manager에서 주입
+# Sensitive data (injected via Secret) - 임시로 plaintext 사용 (차후 AWS Secrets Manager로 이관 예정)
 secrets:
-  SPRING_DATASOURCE_MASTER_USERNAME: ""
-  SPRING_DATASOURCE_MASTER_PASSWORD: ""
-  SPRING_DATASOURCE_REPLICA_USERNAME: ""
-  SPRING_DATASOURCE_REPLICA_PASSWORD: ""
-  SPRING_REDIS_PASSWORD: ""
-  SPRING_REDISSON_PASSWORD: ""
+  DB_USERNAME: "appuser"
+  DB_PASSWORD: "airflow123!"
+  REDIS_PASSWORD: ""
+  JWT_SECRET: "c4ang-ecommerce-jwt-secret-key-prod-2025-very-secure"
 # Istio 설정 (기본값 사용)
