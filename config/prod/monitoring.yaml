@@ -122,12 +122,13 @@ grafana:
 
   replicas: 1
 
-  # 운영 환경은 Secret 사용
+  # 운영 환경 admin 계정
+  # TODO: 고도화 시 AWS Secrets Manager 또는 External Secrets로 이관
   admin:
     user: admin
-    password: ""
-    existingSecret: "grafana-admin-credentials"
-    secretKey: "admin-password"
+    password: "Grafana2025!"
+    existingSecret: ""
+    secretKey: ""
 
   storage:
     size: 5Gi
@@ -186,15 +187,19 @@ ingress:
     alb.ingress.kubernetes.io/target-type: ip
 
 # Node Selector
-nodeSelector:
-  role: monitoring
+# TODO: 고도화 시 monitoring 전용 노드 그룹 생성 후 활성화
+# nodeSelector:
+#   role: monitoring
+nodeSelector: {}
 
 # Tolerations
-tolerations:
-  - key: "dedicated"
-    operator: "Equal"
-    value: "monitoring"
-    effect: "NoSchedule"
+# TODO: 고도화 시 monitoring 전용 노드에 taint 설정 후 활성화
+# tolerations:
+#   - key: "dedicated"
+#     operator: "Equal"
+#     value: "monitoring"
+#     effect: "NoSchedule"
+tolerations: []
 
 # Affinity
 affinity: {}
