@@ -15,7 +15,6 @@ spec:
           - name: order-service
           - name: payment-service
           - name: product-service
-          - name: recommendation-service
           - name: saga-tracker
           - name: store-service
 
