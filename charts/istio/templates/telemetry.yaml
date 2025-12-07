@@ -1,0 +1,13 @@
+{{- if .Values.telemetry.tracing.enabled }}
+---
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: mesh-default
+  namespace: {{ .Values.namespace.name }}
+spec:
+  tracing:
+  - providers:
+    - name: {{ .Values.telemetry.tracing.provider }}
+    randomSamplingPercentage: {{ .Values.telemetry.tracing.samplingRate }}
+{{- end }}

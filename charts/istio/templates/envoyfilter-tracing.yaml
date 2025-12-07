@@ -1,0 +1,69 @@
+{{- if .Values.telemetry.tracing.enabled }}
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: tracing-config
+  namespace: istio-system
+spec:
+  # No workloadSelector = applies to all workloads in the mesh
+  configPatches:
+  # Inbound tracing patch (all ports)
+  - applyTo: HTTP_FILTER
+    match:
+      context: SIDECAR_INBOUND
+      listener:
+        filterChain:
+          filter:
+            name: envoy.filters.network.http_connection_manager
+    patch:
+      operation: MERGE
+      value:
+        typed_config:
+          '@type': type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          generate_request_id: true
+          tracing:
+            provider:
+              name: envoy.tracers.opentelemetry
+              typed_config:
+                '@type': type.googleapis.com/envoy.config.trace.v3.OpenTelemetryConfig
+                grpc_service:
+                  envoy_grpc:
+                    cluster_name: outbound|4317||tempo.monitoring.svc.cluster.local
+                  timeout: 1s
+                service_name: istio-mesh
+            random_sampling:
+              value: {{ .Values.telemetry.tracing.samplingRate }}
+            overall_sampling:
+              value: {{ .Values.telemetry.tracing.samplingRate }}
+  # Outbound tracing patch
+  - applyTo: HTTP_FILTER
+    match:
+      context: SIDECAR_OUTBOUND
+      listener:
+        filterChain:
+          filter:
+            name: envoy.filters.network.http_connection_manager
+      proxy:
+        proxyVersion: ^1\.28.*$
+    patch:
+      operation: MERGE
+      value:
+        typed_config:
+          '@type': type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          generate_request_id: true
+          tracing:
+            provider:
+              name: envoy.tracers.opentelemetry
+              typed_config:
+                '@type': type.googleapis.com/envoy.config.trace.v3.OpenTelemetryConfig
+                grpc_service:
+                  envoy_grpc:
+                    cluster_name: outbound|4317||tempo.monitoring.svc.cluster.local
+                  timeout: 1s
+                service_name: istio-mesh
+            random_sampling:
+              value: {{ .Values.telemetry.tracing.samplingRate }}
+            overall_sampling:
+              value: {{ .Values.telemetry.tracing.samplingRate }}
+{{- end }}

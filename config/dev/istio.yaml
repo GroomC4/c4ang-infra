@@ -126,4 +126,9 @@ httpRoute:
 telemetry:
   enabled: true
   samplingRate: 1.0  # 개발 환경이므로 모든 메트릭 수집
+  tracing:
+    enabled: true
+    samplingRate: 100.0  # 100% 샘플링 (개발 환경)
+    provider: tempo
+    serviceName: istio-service
 
