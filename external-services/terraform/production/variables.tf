@@ -411,6 +411,70 @@ variable "rds_allowed_cidr_blocks" {
 }
 
 # =============================================================================
+# 도메인별 RDS 설정 (물리적 분리)
+# =============================================================================
+
+# 도메인별 RDS 생성 여부
+variable "create_domain_rds" {
+  description = "Whether to create domain-specific RDS instances"
+  type        = bool
+  default     = true
+}
+
+# 도메인별 RDS 인스턴스 클래스
+variable "domain_rds_instance_class" {
+  description = "Instance class for domain-specific RDS instances"
+  type        = string
+  default     = "db.t3.micro"  # 토이 프로젝트용 최소 사양
+}
+
+# 도메인별 RDS 스토리지
+variable "domain_rds_allocated_storage" {
+  description = "Allocated storage for domain-specific RDS instances (GB)"
+  type        = number
+  default     = 20
+}
+
+# 도메인별 RDS 최대 스토리지
+variable "domain_rds_max_allocated_storage" {
+  description = "Max allocated storage for domain-specific RDS instances (GB)"
+  type        = number
+  default     = 50
+}
+
+# =============================================================================
+# ElastiCache Redis 설정
+# =============================================================================
+
+# ElastiCache 생성 여부
+variable "create_elasticache" {
+  description = "Whether to create ElastiCache Redis clusters"
+  type        = bool
+  default     = true
+}
+
+# ElastiCache 노드 타입
+variable "elasticache_node_type" {
+  description = "ElastiCache node type"
+  type        = string
+  default     = "cache.t3.micro"  # 토이 프로젝트용 최소 사양
+}
+
+# ElastiCache Redis 엔진 버전
+variable "elasticache_engine_version" {
+  description = "ElastiCache Redis engine version"
+  type        = string
+  default     = "7.1"
+}
+
+# ElastiCache 스냅샷 보존 기간
+variable "elasticache_snapshot_retention" {
+  description = "ElastiCache snapshot retention period (days)"
+  type        = number
+  default     = 1  # 토이 프로젝트용 최소 보존
+}
+
+# =============================================================================
 # S3 버킷 설정
 # =============================================================================
 

@@ -5,7 +5,7 @@ replicaCount: 3
 image:
   repository: 963403601423.dkr.ecr.ap-northeast-2.amazonaws.com/c4ang-order-service
   pullPolicy: IfNotPresent
-  tag: "v1.1.0"
+  tag: "v1.1.1"
 # ECR 이미지 pull을 위한 secret
 imagePullSecrets:
   - name: ecr-secret
@@ -26,14 +26,14 @@ resources:
 config:
   SERVER_PORT: "8081"
   SPRING_PROFILES_ACTIVE: "prod"
-  # AWS RDS PostgreSQL
-  DB_MASTER_URL: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/order_db"
-  DB_REPLICA_URL: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/order_db"
-  # AWS ElastiCache Redis
-  REDIS_HOST: "redis-master"
+  # AWS RDS PostgreSQL (ExternalName 서비스를 통한 연결)
+  DB_MASTER_URL: "jdbc:postgresql://order-db:5432/order_db"
+  DB_REPLICA_URL: "jdbc:postgresql://order-db:5432/order_db"
+  # AWS ElastiCache Redis (ExternalName 서비스를 통한 연결)
+  REDIS_HOST: "cache-redis"
   REDIS_PORT: "6379"
   # AWS MSK Kafka
-  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "b-1.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-2.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-3.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092"
   # Service URLs for Feign clients
   STORE_SERVICE_URL: "http://store-api:8081"
   PRODUCT_SERVICE_URL: "http://product-api:8081"

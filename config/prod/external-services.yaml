@@ -1,45 +1,39 @@
 # =============================================================================
 # External Services - Production Environment (AWS)
 # =============================================================================
-# Terraform 출력값을 사용하여 실제 엔드포인트로 교체
-# terraform output -json | jq '.external_services_config.value'
+# AWS 리소스를 ExternalName 서비스로 노출하여 서비스 팟과 분리
 
 namespace: ecommerce
 
 # -----------------------------------------------------------------------------
-# PostgreSQL Databases (AWS RDS)
+# PostgreSQL Databases (AWS RDS - 도메인별 물리 분리)
 # -----------------------------------------------------------------------------
 postgresql:
   enabled: true
   databases:
     customer:
       enabled: true
-      # terraform output customer_db_endpoint
-      externalName: "c4ang-prod-customer-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com"
+      externalName: "c4-customer-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com"
       port: 5432
     product:
       enabled: true
-      externalName: "c4ang-prod-product-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com"
+      externalName: "c4-product-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com"
       port: 5432
     order:
       enabled: true
-      externalName: "c4ang-prod-order-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com"
+      externalName: "c4-order-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com"
       port: 5432
     store:
       enabled: true
-      externalName: "c4ang-prod-store-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com"
+      externalName: "c4-store-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com"
       port: 5432
     saga:
       enabled: true
-      externalName: "c4ang-prod-saga-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com"
+      externalName: "c4-saga-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com"
       port: 5432
     payment:
       enabled: true
-      externalName: "c4ang-prod-payment-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com"
-      port: 5432
-    recommendation:
-      enabled: true
-      externalName: "c4ang-prod-recommendation-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com"
+      externalName: "c4-payment-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com"
       port: 5432
 
 # -----------------------------------------------------------------------------
@@ -50,29 +44,33 @@ redis:
   instances:
     cache:
       enabled: true
-      # terraform output cache_redis_endpoint
-      externalName: "c4ang-prod-cache-redis.xxxxxxxxxxxx.cache.amazonaws.com"
+      externalName: "c4-cache-redis.97pni3.0001.apn2.cache.amazonaws.com"
       port: 6379
     session:
       enabled: true
-      externalName: "c4ang-prod-session-redis.xxxxxxxxxxxx.cache.amazonaws.com"
+      externalName: "c4-session-redis.97pni3.0001.apn2.cache.amazonaws.com"
       port: 6379
 
 # -----------------------------------------------------------------------------
-# Kafka (K8s 내 Strimzi 사용 - MSK 미사용시)
+# Kafka (AWS MSK)
 # -----------------------------------------------------------------------------
-# MSK 사용시 아래 주석 해제하고 Strimzi 비활성화
 kafka:
-  enabled: false  # K8s 내 Strimzi 사용시 false
-  # enabled: true
-  # externalName: "b-1.c4ang-prod-kafka.xxxx.kafka.ap-northeast-2.amazonaws.com"
-  # port: 9092
+  enabled: true
+  brokers:
+    - name: "kafka-broker-1"
+      externalName: "b-1.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com"
+      port: 9092
+    - name: "kafka-broker-2"
+      externalName: "b-2.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com"
+      port: 9092
+    - name: "kafka-broker-3"
+      externalName: "b-3.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com"
+      port: 9092
 
 # -----------------------------------------------------------------------------
-# Schema Registry (K8s 내 Strimzi와 함께 사용)
+# Schema Registry (EKS 내 배포)
 # -----------------------------------------------------------------------------
 schemaRegistry:
-  enabled: false  # K8s 내 Strimzi 사용시 false
-  # enabled: true
-  # externalName: "schema-registry.kafka.svc.cluster.local"
-  # port: 8081
+  enabled: true
+  externalName: "schema-registry.kafka.svc.cluster.local"
+  port: 8081

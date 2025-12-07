@@ -1,0 +1,64 @@
+# Confluent Schema Registry - EKS Production Values
+# AWS MSK와 연동
+
+replicaCount: 2
+
+image:
+  registry: docker.io
+  repository: bitnami/schema-registry
+  tag: 8.0.0-debian-12-r0
+  pullPolicy: IfNotPresent
+
+# Kafka Configuration - AWS MSK
+kafka:
+  enabled: false  # External Kafka (MSK) 사용
+
+externalKafka:
+  brokers:
+    - b-1.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092
+    - b-2.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092
+    - b-3.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092
+
+# Service Configuration
+service:
+  type: ClusterIP
+  port: 8081
+
+# Resource Limits
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 250m
+  limits:
+    memory: 1Gi
+    cpu: 500m
+
+# Liveness/Readiness Probes
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+
+# Persistence (for _schemas topic)
+persistence:
+  enabled: false
+
+# Extra Environment Variables
+extraEnvVars:
+  - name: SCHEMA_REGISTRY_KAFKASTORE_TOPIC
+    value: "_schemas"
+  - name: SCHEMA_REGISTRY_KAFKASTORE_TOPIC_REPLICATION_FACTOR
+    value: "3"
+  - name: SCHEMA_REGISTRY_AVRO_COMPATIBILITY_LEVEL
+    value: "backward"

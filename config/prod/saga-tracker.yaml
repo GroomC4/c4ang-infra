@@ -31,19 +31,16 @@ resources:
 config:
   SERVER_PORT: "8081"
   SPRING_PROFILES_ACTIVE: "prod"
-  # AWS RDS PostgreSQL
-  DB_MASTER_URL: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/saga_db"
-  DB_REPLICA_URL: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/saga_db"
-  # AWS ElastiCache Redis
-  REDIS_HOST: "redis-master"
-  REDIS_PORT: "6379"
+  # AWS RDS PostgreSQL (ExternalName 서비스를 통한 연결)
+  DB_URL: "jdbc:postgresql://saga-db:5432/saga_db"
   # AWS MSK Kafka
-  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  KAFKA_BOOTSTRAP_SERVERS: "b-1.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-2.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-3.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092"
+  # Schema Registry
+  SCHEMA_REGISTRY_URL: "http://schema-registry.kafka.svc.cluster.local:8081"
 
 # Sensitive data (injected via Secret) - 임시로 plaintext 사용 (차후 AWS Secrets Manager로 이관 예정)
 secrets:
   DB_USERNAME: "appuser"
   DB_PASSWORD: "airflow123!"
-  REDIS_PASSWORD: ""
 
 # Istio 설정 (기본값 사용)
