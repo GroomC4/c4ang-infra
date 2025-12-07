@@ -1,0 +1,28 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: istio-controlplane
+  namespace: istio-system
+spec:
+  meshConfig:
+    enableTracing: true
+    extensionProviders:
+    - name: jaeger
+      zipkin:
+        service: jaeger-collector.monitoring.svc.cluster.local
+        port: 9411
+    defaultConfig:
+      tracing:
+        sampling: 100.0
+        zipkin:
+          address: jaeger-collector.monitoring.svc.cluster.local:9411
+  components:
+    pilot:
+      k8s:
+        env:
+        - name: PILOT_TRACE_SAMPLING
+          value: "100.0"
+        - name: PILOT_ENABLE_PROTOCOL_SNIFFING_FOR_OUTBOUND
+          value: "true"
+        - name: PILOT_ENABLE_PROTOCOL_SNIFFING_FOR_INBOUND
+          value: "true"

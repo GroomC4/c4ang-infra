@@ -1,4 +1,4 @@
-{{- if .Values.telemetry.enabled }}
+{{- if .Values.telemetry.tracing.enabled }}
 ---
 apiVersion: telemetry.istio.io/v1alpha1
 kind: Telemetry
@@ -8,6 +8,6 @@ metadata:
 spec:
   tracing:
   - providers:
-    - name: tempo
+    - name: {{ .Values.telemetry.tracing.provider }}
     randomSamplingPercentage: {{ .Values.telemetry.tracing.samplingRate }}
 {{- end }}
