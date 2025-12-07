@@ -27,6 +27,7 @@ config:
   SERVER_PORT: "8081"
   SPRING_PROFILES_ACTIVE: "prod"
   # AWS RDS PostgreSQL (ExternalName 서비스를 통한 연결)
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://saga-db:5432/saga_db"
   SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://saga-db:5432/saga_db"
   SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://saga-db:5432/saga_db"
   # AWS MSK Kafka
@@ -37,6 +38,8 @@ config:
   SCHEMA_REGISTRY_URL: "http://schema-registry.kafka.svc.cluster.local:8081"
 # Sensitive data (injected via Secret) - 임시로 plaintext 사용 (차후 AWS Secrets Manager로 이관 예정)
 secrets:
+  SPRING_DATASOURCE_USERNAME: "appuser"
+  SPRING_DATASOURCE_PASSWORD: "Airflow2025"
   SPRING_DATASOURCE_MASTER_USERNAME: "appuser"
   SPRING_DATASOURCE_MASTER_PASSWORD: "Airflow2025"
   SPRING_DATASOURCE_REPLICA_USERNAME: "appuser"
