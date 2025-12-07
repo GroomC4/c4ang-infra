@@ -10,8 +10,9 @@ locals {
 }
 
 # RDS 서브넷 그룹 (필요 시 VPC-APP의 퍼블릭 서브넷 사용)
+# create_rds 또는 create_domain_rds가 true이면 생성
 resource "aws_db_subnet_group" "rds_subnet_group" {
-  count = var.create_rds ? 1 : 0
+  count = (var.create_rds || var.create_domain_rds) ? 1 : 0
   
   name       = "${var.project_name}-rds-subnet-group"
   subnet_ids = local.rds_target_subnet_ids
@@ -25,8 +26,9 @@ resource "aws_db_subnet_group" "rds_subnet_group" {
 }
 
 # RDS 보안 그룹 (EKS 클러스터에서만 접근 허용)
+# create_rds 또는 create_domain_rds가 true이면 생성
 resource "aws_security_group" "rds_sg" {
-  count = var.create_rds ? 1 : 0
+  count = (var.create_rds || var.create_domain_rds) ? 1 : 0
   
   name_prefix = "${var.project_name}-rds-sg-"
   vpc_id      = local.rds_target_vpc_id

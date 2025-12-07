@@ -202,6 +202,125 @@
 
 ---
 
+## 부록: 노드 그룹 불필요 판단 근거
+
+### kafka-storage 노드가 불필요한 이유
+
+**현재 아키텍처**: AWS MSK (Managed Streaming for Apache Kafka) 사용
+
+```yaml
+# 서비스 설정에서 MSK 엔드포인트 사용 확인
+KAFKA_BOOTSTRAP_SERVERS: "b-1.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092,..."
+```
+
+| 구분 | 자체 호스팅 Kafka | AWS MSK (현재) |
+|------|------------------|----------------|
+| 브로커 위치 | EKS 클러스터 내부 | AWS 관리형 (클러스터 외부) |
+| 노드 필요 여부 | kafka-storage 노드 필요 | **불필요** |
+| 관리 주체 | 직접 관리 | AWS 완전 관리 |
+
+**실제 노드 상태** (축소 전):
+```
+ip-10-0-63-96 (kafka-storage):   CPU 1%, Memory 7% - 시스템 데몬셋만 실행
+ip-10-0-68-179 (kafka-storage):  CPU 1%, Memory 7% - 시스템 데몬셋만 실행
+ip-10-0-83-134 (kafka-storage):  CPU 1%, Memory 7% - 시스템 데몬셋만 실행
+```
+
+→ 애플리케이션 Pod 없음, 완전한 리소스 낭비
+
+### stateful-storage 노드가 불필요한 이유
+
+**현재 아키텍처**: AWS ElastiCache Redis 사용
+
+```yaml
+# 서비스 설정에서 ElastiCache 연결 확인
+SPRING_DATA_REDIS_HOST: "cache-redis"  # ExternalName → ElastiCache로 라우팅
+```
+
+| 구분 | 자체 호스팅 Redis | AWS ElastiCache (현재) |
+|------|------------------|----------------------|
+| 인스턴스 위치 | EKS 클러스터 내부 | AWS 관리형 (클러스터 외부) |
+| 노드 필요 여부 | stateful-storage 노드 필요 | **불필요** |
+| 관리 주체 | 직접 관리 | AWS 완전 관리 |
+
+**실제 노드 상태** (축소 전):
+```
+ip-10-0-72-135 (stateful-storage): CPU 1%, Memory 7% - 시스템 데몬셋만 실행
+ip-10-0-83-16 (stateful-storage):  CPU 1%, Memory 7% - 시스템 데몬셋만 실행
+```
+
+→ 애플리케이션 Pod 없음, 완전한 리소스 낭비
+
+### 결론
+
+AWS 관리형 서비스(MSK, ElastiCache)를 도입하면서 해당 워크로드용 EKS 노드 그룹을 제거하지 않아 발생한 비용 낭비:
+- **kafka-storage**: $42.48/5일 낭비
+- **stateful-storage**: $28.32/5일 낭비
+- **합계**: **$70.80/5일 불필요 지출**
+
+---
+
+## 부록: Kubernetes Stateful 워크로드란?
+
+### Stateless vs Stateful
+
+| 구분 | Stateless (무상태) | Stateful (상태 유지) |
+|------|-------------------|---------------------|
+| **정의** | 요청 간 상태를 저장하지 않음 | 요청 간 상태(데이터)를 유지함 |
+| **예시** | API 서버, 웹 서버 | 데이터베이스, 캐시, 메시지 큐 |
+| **Pod 교체** | 아무 Pod나 대체 가능 | 특정 Pod가 특정 데이터와 연결됨 |
+| **스토리지** | 임시 (ephemeral) | 영구 (persistent) |
+| **K8s 리소스** | Deployment | StatefulSet |
+
+### Stateful 워크로드의 특징
+
+1. **고유 네트워크 ID**: 각 Pod가 고유한 호스트명 (예: `kafka-0`, `kafka-1`, `kafka-2`)
+2. **영구 스토리지**: PersistentVolumeClaim(PVC)으로 데이터 영속화
+3. **순차적 배포/삭제**: Pod가 순서대로 생성/삭제됨 (데이터 일관성 보장)
+4. **안정적인 스토리지 바인딩**: Pod가 재시작되어도 같은 볼륨에 연결
+
+### 예시: 자체 호스팅 Kafka (StatefulSet)
+
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+spec:
+  serviceName: kafka-headless
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: kafka
+        image: confluentinc/cp-kafka
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/kafka/data
+  volumeClaimTemplates:    # 각 Pod마다 별도 볼륨 생성
+  - metadata:
+      name: data
+    spec:
+      storageClassName: gp3
+      resources:
+        requests:
+          storage: 100Gi
+```
+
+이 경우 kafka-0, kafka-1, kafka-2 각각이 고유한 100Gi 볼륨을 가지며, Pod가 재시작되어도 같은 데이터에 접근합니다.
+
+### 현재 프로젝트에서의 적용
+
+| 워크로드 | 호스팅 방식 | 이유 |
+|----------|-----------|------|
+| Kafka | AWS MSK (관리형) | 운영 부담 감소, 자동 확장/복구 |
+| Redis | AWS ElastiCache (관리형) | 운영 부담 감소, 자동 백업 |
+| PostgreSQL | AWS RDS (관리형) | 운영 부담 감소, Multi-AZ |
+
+→ 모든 Stateful 워크로드를 AWS 관리형 서비스로 위임하여 EKS 내 StatefulSet 불필요
+
+---
+
 ## 비고
 - 문서 작성일: 2025-12-08
 - 작성자: Claude Code
