@@ -1,0 +1,57 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-producer-load
+  namespace: kafka
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: kafka-producer-load
+    spec:
+      serviceAccountName: kafka-client
+      restartPolicy: Never
+      containers:
+      - name: producer
+        image: confluentinc/cp-kafka:7.5.0
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Kafka Producer 부하 생성 시작..."
+          echo "Topic: $KAFKA_TOPIC"
+          echo "MSK Brokers: $MSK_BOOTSTRAP_BROKERS"
+          echo "메시지 수: $MESSAGE_COUNT"
+          echo ""
+          # 빠르게 메시지 전송하여 Consumer에 부하 생성
+          for i in $(seq 1 $MESSAGE_COUNT); do
+            echo "Message $i: $(date +%s) - Load test message" | \
+              kafka-console-producer \
+                --bootstrap-server $MSK_BOOTSTRAP_BROKERS \
+                --topic $KAFKA_TOPIC
+            if [ $((i % 100)) -eq 0 ]; then
+              echo "전송된 메시지: $i"
+            fi
+          done
+          echo "✅ 총 $MESSAGE_COUNT 개 메시지 전송 완료"
+        env:
+        - name: MSK_BOOTSTRAP_BROKERS
+          valueFrom:
+            secretKeyRef:
+              name: msk-bootstrap-brokers
+              key: bootstrap-brokers
+        - name: KAFKA_TOPIC
+          value: "test-topic"
+        - name: MESSAGE_COUNT
+          value: "10000"  # 10,000개 메시지 전송
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+

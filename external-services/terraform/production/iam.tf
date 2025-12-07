@@ -7,9 +7,9 @@
 # EBS CSI Driver 서비스 어카운트용 IAM 역할
 resource "aws_iam_role" "ebs_csi_driver" {
   count = var.create_eks_cluster ? 1 : 0
-  
+
   name = "${var.project_name}-AmazonEKS_EBS_CSI_DriverRole"
-  
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -28,7 +28,7 @@ resource "aws_iam_role" "ebs_csi_driver" {
       }
     ]
   })
-  
+
   tags = {
     Name        = "${var.project_name}-EBS-CSI-Driver-Role"
     Environment = var.environment
@@ -40,7 +40,7 @@ resource "aws_iam_role" "ebs_csi_driver" {
 # EBS CSI Driver 정책 연결
 resource "aws_iam_role_policy_attachment" "ebs_csi_driver_policy" {
   count = var.create_eks_cluster ? 1 : 0
-  
+
   role       = aws_iam_role.ebs_csi_driver[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
 }
@@ -51,7 +51,7 @@ resource "aws_iam_role_policy_attachment" "ebs_csi_driver_policy" {
 
 resource "aws_iam_role" "cni_role" {
   count = var.create_eks_cluster ? 1 : 0
-  
+
   name = "${var.project_name}-AmazonEKS_CNI_Role"
 
   assume_role_policy = jsonencode({
@@ -80,7 +80,7 @@ resource "aws_iam_role" "cni_role" {
 
 resource "aws_iam_role_policy_attachment" "cni_policy_attachment" {
   count = var.create_eks_cluster ? 1 : 0
-  
+
   role       = aws_iam_role.cni_role[0].name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
 }

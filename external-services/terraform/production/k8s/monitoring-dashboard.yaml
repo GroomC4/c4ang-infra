@@ -1,0 +1,93 @@
+---
+# Prometheus Operator 설치 (간단한 버전)
+# 참고: 프로덕션에서는 Helm을 사용하는 것을 권장합니다
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+---
+# 간단한 모니터링을 위한 ServiceMonitor (Prometheus가 있는 경우)
+# 실제로는 Prometheus Operator를 설치해야 합니다
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitoring-config
+  namespace: monitoring
+data:
+  dashboard.json: |
+    {
+      "dashboard": {
+        "title": "Kafka HPA Monitoring",
+        "panels": [
+          {
+            "title": "Pod Count",
+            "targets": [
+              {
+                "expr": "count(kube_pod_info{namespace=\"kafka\", pod=~\"kafka-consumer.*\"})"
+              }
+            ]
+          },
+          {
+            "title": "CPU Usage",
+            "targets": [
+              {
+                "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"kafka\", pod=~\"kafka-consumer.*\"}[5m]))"
+              }
+            ]
+          }
+        ]
+      }
+    }
+---
+# 간단한 모니터링 스크립트용 ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitoring-scripts
+  namespace: kafka
+data:
+  monitor-hpa.sh: |
+    #!/bin/bash
+    while true; do
+      clear
+      echo "=== Kafka Consumer HPA Monitoring ==="
+      echo ""
+      echo "📊 HPA Status:"
+      kubectl get hpa -n kafka kafka-consumer-hpa
+      echo ""
+      echo "📦 Pod Status:"
+      kubectl get pods -n kafka -l app=kafka-consumer -o wide
+      echo ""
+      echo "💻 CPU/Memory Usage:"
+      kubectl top pods -n kafka -l app=kafka-consumer 2>/dev/null || echo "Metrics Server not available"
+      echo ""
+      echo "📈 Consumer Group Lag:"
+      POD_NAME=$(kubectl get pods -n kafka -l app=kafka-client --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+      if [ -n "$POD_NAME" ]; then
+        MSK_BROKERS=$(kubectl get secret -n kafka msk-bootstrap-brokers -o jsonpath='{.data.bootstrap-brokers}' | base64 -d)
+        kubectl exec -n kafka $POD_NAME -- kafka-consumer-groups \
+          --bootstrap-server $MSK_BROKERS \
+          --describe \
+          --group hpa-test-consumer-group 2>/dev/null | grep -E "TOPIC|LAG|CURRENT-OFFSET" || echo "Consumer Group not found"
+      fi
+      echo ""
+      echo "⏰ Updated: $(date '+%Y-%m-%d %H:%M:%S')"
+      sleep 5
+    done
+  monitor-kafka.sh: |
+    #!/bin/bash
+    POD_NAME=$(kubectl get pods -n kafka -l app=kafka-client --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
+    MSK_BROKERS=$(kubectl get secret -n kafka msk-bootstrap-brokers -o jsonpath='{.data.bootstrap-brokers}' | base64 -d)
+    
+    echo "=== Kafka Topic Status ==="
+    kubectl exec -n kafka $POD_NAME -- kafka-topics --bootstrap-server $MSK_BROKERS --list
+    echo ""
+    echo "=== Consumer Groups ==="
+    kubectl exec -n kafka $POD_NAME -- kafka-consumer-groups --bootstrap-server $MSK_BROKERS --list
+    echo ""
+    echo "=== Consumer Group Details ==="
+    kubectl exec -n kafka $POD_NAME -- kafka-consumer-groups \
+      --bootstrap-server $MSK_BROKERS \
+      --describe \
+      --group hpa-test-consumer-group
+

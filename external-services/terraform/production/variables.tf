@@ -234,10 +234,10 @@ variable "vpc_app_cidr" {
 variable "vpc_db_private_subnets" {
   description = "Private subnets for VPC-DB"
   type        = list(string)
-  default     = [
-    "172.21.0.0/20",    # Private-DB AZ-a
-    "172.21.16.0/20",   # Private-DB AZ-b
-    "172.21.32.0/20"   # Private-DB AZ-c
+  default = [
+    "172.21.0.0/20",  # Private-DB AZ-a
+    "172.21.16.0/20", # Private-DB AZ-b
+    "172.21.32.0/20"  # Private-DB AZ-c
   ]
 }
 
@@ -245,10 +245,10 @@ variable "vpc_db_private_subnets" {
 variable "vpc_app_public_subnets" {
   description = "Public subnets for VPC-APP"
   type        = list(string)
-  default     = [
-    "172.20.0.0/20",    # Public AZ-a
-    "172.20.16.0/20",   # Public AZ-b
-    "172.20.32.0/20"   # Public AZ-c
+  default = [
+    "172.20.0.0/20",  # Public AZ-a
+    "172.20.16.0/20", # Public AZ-b
+    "172.20.32.0/20"  # Public AZ-c
   ]
 }
 
@@ -256,10 +256,10 @@ variable "vpc_app_public_subnets" {
 variable "vpc_app_private_subnets" {
   description = "Private subnets for VPC-APP"
   type        = list(string)
-  default     = [
-    "172.20.48.0/20",   # Private AZ-a
-    "172.20.64.0/20",   # Private AZ-b
-    "172.20.80.0/20"   # Private AZ-c
+  default = [
+    "172.20.48.0/20", # Private AZ-a
+    "172.20.64.0/20", # Private AZ-b
+    "172.20.80.0/20"  # Private AZ-c
   ]
 }
 
@@ -301,14 +301,14 @@ variable "rds_engine" {
 variable "rds_engine_version" {
   description = "RDS engine version"
   type        = string
-  default     = "17.6"  # PostgreSQL 15.4 대신 15.3 사용
+  default     = "17.6" # PostgreSQL 15.4 대신 15.3 사용
 }
 
 # RDS 인스턴스 클래스
 variable "rds_instance_class" {
   description = "RDS instance class"
   type        = string
-  default     = "db.t3.micro"  # 테스트 환경용 작은 인스턴스
+  default     = "db.t3.micro" # 테스트 환경용 작은 인스턴스
 }
 
 # RDS 할당 스토리지
@@ -372,7 +372,7 @@ variable "rds_maintenance_window" {
 variable "rds_multi_az" {
   description = "RDS multi-AZ deployment"
   type        = bool
-  default     = false  # 테스트 환경에서는 비용 절약을 위해 false
+  default     = false # 테스트 환경에서는 비용 절약을 위해 false
 }
 
 # RDS 스토리지 암호화
@@ -386,14 +386,14 @@ variable "rds_storage_encrypted" {
 variable "rds_deletion_protection" {
   description = "RDS deletion protection"
   type        = bool
-  default     = false  # 테스트 환경에서는 false
+  default     = false # 테스트 환경에서는 false
 }
 
 # RDS 스킵 최종 스냅샷
 variable "rds_skip_final_snapshot" {
   description = "RDS skip final snapshot"
   type        = bool
-  default     = true  # 테스트 환경에서는 true
+  default     = true # 테스트 환경에서는 true
 }
 
 # RDS 퍼블릭 액세스 (테스트용)
@@ -411,6 +411,45 @@ variable "rds_allowed_cidr_blocks" {
 }
 
 # =============================================================================
+# MSK (Amazon Managed Streaming for Apache Kafka) 설정
+# =============================================================================
+
+# MSK 생성 여부
+variable "create_msk" {
+  description = "Whether to create MSK Kafka cluster"
+  type        = bool
+  default     = false # 기본 비활성화 (비용 주의)
+}
+
+# MSK 인스턴스 타입
+variable "msk_instance_type" {
+  description = "MSK broker instance type"
+  type        = string
+  default     = "kafka.m5.large" # 최소 지원 인스턴스 타입 (kafka.t3.small은 지원 안됨)
+}
+
+# MSK Kafka 버전
+variable "msk_kafka_version" {
+  description = "Kafka version for MSK (3.7+ supports KRaft mode)"
+  type        = string
+  default     = "3.7.0" # KRaft 모드 지원 버전
+}
+
+# MSK KRaft 모드 사용 여부
+variable "msk_use_kraft" {
+  description = "Whether to use KRaft mode (requires Kafka 3.7+, no Zookeeper needed)"
+  type        = bool
+  default     = true # 기본값: KRaft 모드 사용
+}
+
+# MSK EBS 볼륨 크기 (GB)
+variable "msk_ebs_volume_size" {
+  description = "EBS volume size per broker (GB)"
+  type        = number
+  default     = 100
+}
+
+# =============================================================================
 # S3 버킷 설정
 # =============================================================================
 
@@ -423,9 +462,16 @@ variable "create_s3_buckets" {
 
 # Airflow 로그용 S3 버킷 이름
 variable "airflow_logs_bucket_name" {
-  description = "S3 bucket name for Airflow logs"
+  description = "S3 bucket name for Airflow logs (empty string = auto-generate with environment suffix and account ID)"
   type        = string
-  default     = "c4-airflow-logs"
+  default     = "" # 빈 값이면 자동 생성: c4-airflow-logs-{environment}-{account-id-last-6}
+}
+
+# Tracking log용 S3 버킷 이름
+variable "tracking_log_bucket_name" {
+  description = "S3 bucket name for tracking logs (empty string = use default: c4-tracking-log)"
+  type        = string
+  default     = "" # 빈 값이면 기본값 사용: c4-tracking-log
 }
 
 # S3 버킷 버전 관리
@@ -463,7 +509,7 @@ variable "s3_log_retention_days" {
 variable "create_k8s_resources" {
   description = "Whether to create Kubernetes resources (namespaces, service accounts)"
   type        = bool
-  default     = false  # 기본적으로 비활성화 (EKS 클러스터 생성 후 별도 배포)
+  default     = false # 기본적으로 비활성화 (EKS 클러스터 생성 후 별도 배포)
 
 }
 
@@ -482,12 +528,12 @@ variable "eks_public_access_enabled" {
 variable "eks_additional_public_access_cidrs" {
   description = "Additional CIDR blocks for EKS public access (besides current IP)"
   type        = list(string)
-  default     = []  # 현재 IP만 허용 (보안 강화)
+  default     = [] # 현재 IP만 허용 (보안 강화)
 }
 
 # 모든 IP 허용 여부 (보안상 권장하지 않음)
 variable "eks_allow_all_ips" {
   description = "Whether to allow all IPs (0.0.0.0/0) - NOT RECOMMENDED for production"
   type        = bool
-  default     = false  # 보안을 위해 현재 IP만 허용
+  default     = false # 보안을 위해 현재 IP만 허용
 }
