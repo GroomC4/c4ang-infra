@@ -1,7 +1,7 @@
 # product-service EKS 프로덕션 환경 설정
 # AWS RDS, ElastiCache, MSK 사용
 
-replicaCount: 3
+replicaCount: 2
 image:
   repository: 963403601423.dkr.ecr.ap-northeast-2.amazonaws.com/c4ang-product-service
   pullPolicy: IfNotPresent
@@ -11,7 +11,7 @@ imagePullSecrets:
   - name: ecr-secret
 autoscaling:
   enabled: true
-  minReplicas: 3
+  minReplicas: 2
   maxReplicas: 10
   targetCPUUtilizationPercentage: 70
   targetMemoryUtilizationPercentage: 80
