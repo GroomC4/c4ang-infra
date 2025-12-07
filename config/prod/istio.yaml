@@ -175,3 +175,26 @@ rateLimit:
       methods: ["POST"]
       requestsPerSecond: 10
       burst: 30
+
+# Circuit Breaker 설정
+# TODO: 서비스 고도화 단계에서 enabled: true로 변경
+# 현재는 개발/테스트 단계이므로 비활성화
+circuitBreaker:
+  enabled: false  # 고도화 단계에서 true로 변경
+  # Connection Pool 설정
+  connectionPool:
+    maxConnections: 100
+    connectTimeout: 10s
+    http1MaxPendingRequests: 100
+    http2MaxRequests: 1000
+    maxRequestsPerConnection: 10
+    maxRetries: 3
+  # Outlier Detection (Circuit Breaker 트리거)
+  outlierDetection:
+    consecutive5xxErrors: 5      # 연속 5회 5xx 에러 시 서킷 오픈
+    consecutiveGatewayErrors: 5  # 게이트웨이 에러 포함
+    consecutiveLocalOriginFailures: 5
+    interval: 10s                # 에러 검사 간격
+    baseEjectionTime: 30s        # 서킷 오픈 유지 시간
+    maxEjectionPercent: 50       # 최대 50% 인스턴스 제외
+    minHealthPercent: 30         # 최소 30% 정상 유지

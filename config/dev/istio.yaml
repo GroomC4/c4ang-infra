@@ -137,3 +137,9 @@ webhookRoute:
 rateLimit:
   enabled: false
 
+# Circuit Breaker 설정 (개발 환경)
+# 개발 환경에서는 비활성화
+# 고도화 단계에서 prod 환경에서만 활성화
+circuitBreaker:
+  enabled: false
+

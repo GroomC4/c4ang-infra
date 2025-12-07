@@ -1,0 +1,86 @@
+{{- if .Values.circuitBreaker }}
+{{- if .Values.circuitBreaker.enabled }}
+# ====================================
+# Circuit Breaker DestinationRules
+# 서비스별 Circuit Breaker 설정
+# TODO: 서비스 오픈 후 고도화 단계에서 활성화 및 튜닝
+# ====================================
+
+{{- $services := list "customer-api" "store-api" "product-api" "order-api" "payment-api" "recommendation-api" "saga-tracker-api" }}
+{{- range $service := $services }}
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: {{ $service }}-circuit-breaker
+  namespace: {{ include "istio.namespace" $ }}
+  labels:
+    {{- include "istio.labels" $ | nindent 4 }}
+spec:
+  host: {{ $service }}.{{ include "istio.namespace" $ }}.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        # 최대 TCP 연결 수
+        maxConnections: {{ $.Values.circuitBreaker.connectionPool.maxConnections | default 100 }}
+        # 연결 타임아웃
+        connectTimeout: {{ $.Values.circuitBreaker.connectionPool.connectTimeout | default "10s" }}
+      http:
+        # 최대 동시 HTTP 요청 수
+        h2UpgradePolicy: UPGRADE
+        http1MaxPendingRequests: {{ $.Values.circuitBreaker.connectionPool.http1MaxPendingRequests | default 100 }}
+        http2MaxRequests: {{ $.Values.circuitBreaker.connectionPool.http2MaxRequests | default 1000 }}
+        # 요청당 최대 재시도 횟수
+        maxRequestsPerConnection: {{ $.Values.circuitBreaker.connectionPool.maxRequestsPerConnection | default 10 }}
+        # 최대 대기 요청 수
+        maxRetries: {{ $.Values.circuitBreaker.connectionPool.maxRetries | default 3 }}
+    outlierDetection:
+      # Circuit Breaker 트리거 조건
+      # 연속 5xx 에러 횟수
+      consecutive5xxErrors: {{ $.Values.circuitBreaker.outlierDetection.consecutive5xxErrors | default 5 }}
+      # 에러 검사 간격
+      interval: {{ $.Values.circuitBreaker.outlierDetection.interval | default "10s" }}
+      # 서킷 오픈 시 기본 제외 시간
+      baseEjectionTime: {{ $.Values.circuitBreaker.outlierDetection.baseEjectionTime | default "30s" }}
+      # 최대 제외 비율 (%)
+      maxEjectionPercent: {{ $.Values.circuitBreaker.outlierDetection.maxEjectionPercent | default 50 }}
+      # 최소 정상 인스턴스 비율 (%)
+      minHealthPercent: {{ $.Values.circuitBreaker.outlierDetection.minHealthPercent | default 30 }}
+      # 게이트웨이 에러도 5xx로 간주
+      consecutiveGatewayErrors: {{ $.Values.circuitBreaker.outlierDetection.consecutiveGatewayErrors | default 5 }}
+      # 로컬 origin 에러도 포함
+      consecutiveLocalOriginFailures: {{ $.Values.circuitBreaker.outlierDetection.consecutiveLocalOriginFailures | default 5 }}
+      # split external local origin errors
+      splitExternalLocalOriginErrors: true
+{{- end }}
+
+{{- end }}
+{{- else }}
+# ====================================
+# Circuit Breaker 설정이 비활성화됨
+#
+# 서비스 고도화 단계에서 config/prod/istio.yaml에서
+# circuitBreaker.enabled: true 로 변경하여 활성화
+#
+# 권장 설정값 (서비스 특성에 따라 튜닝 필요):
+#
+# Connection Pool:
+# - maxConnections: 100 (TCP 최대 연결)
+# - http1MaxPendingRequests: 100 (대기 요청)
+# - http2MaxRequests: 1000 (동시 요청)
+# - maxRequestsPerConnection: 10
+# - maxRetries: 3
+#
+# Outlier Detection (Circuit Breaker):
+# - consecutive5xxErrors: 5 (연속 5회 에러 시 서킷 오픈)
+# - interval: 10s (에러 검사 간격)
+# - baseEjectionTime: 30s (서킷 오픈 유지 시간)
+# - maxEjectionPercent: 50 (최대 50% 인스턴스 제외)
+# - minHealthPercent: 30 (최소 30% 정상 유지)
+#
+# 서비스별 튜닝 가이드:
+# - payment-api: 더 보수적 설정 (consecutive5xxErrors: 3)
+# - product-api: 읽기 위주이므로 관대하게 (consecutive5xxErrors: 10)
+# - order-api: 핵심 서비스이므로 빠른 복구 (baseEjectionTime: 15s)
+# ====================================
+{{- end }}
