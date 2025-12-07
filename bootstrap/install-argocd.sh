@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # ArgoCD 설치 스크립트
-# 이 스크립트는 ArgoCD를 클러스터에 설치하고 App of Apps 패턴을 부트스트랩합니다.
+# ArgoCD를 클러스터에 설치하고 ApplicationSet 기반 배포를 설정합니다.
+# App of Apps 패턴 제거 - ApplicationSet 직접 적용 방식
 
 set -euo pipefail
 
@@ -175,21 +176,36 @@ apply_projects() {
     fi
 }
 
-# Root Application 적용 (App of Apps)
-apply_root_application() {
-    log_step "Root Application 적용 중 (App of Apps 패턴)..."
+# Namespaces 적용
+apply_namespaces() {
+    log_step "Namespaces 적용 중..."
 
-    local root_app="${PROJECT_ROOT}/bootstrap/root-application.yaml"
+    local namespaces_file="${PROJECT_ROOT}/argocd/manifests/namespaces.yaml"
 
-    if [ -f "$root_app" ]; then
-        # 환경에 따라 적절한 Application 적용
-        log_info "환경: $ENV"
-        kubectl apply -f "$root_app" -n "$ARGOCD_NAMESPACE"
-        log_success "Root Application 적용 완료"
+    if [ -f "$namespaces_file" ]; then
+        kubectl apply -f "$namespaces_file"
+        log_success "Namespaces 적용 완료"
     else
-        log_warn "Root Application 파일을 찾을 수 없습니다: $root_app"
-        log_info "수동으로 ApplicationSet을 적용하세요:"
-        log_info "  kubectl apply -f ${PROJECT_ROOT}/argocd/applicationsets/ -n $ARGOCD_NAMESPACE"
+        log_warn "Namespaces 파일을 찾을 수 없습니다: $namespaces_file"
+    fi
+}
+
+# ApplicationSets 적용
+apply_applicationsets() {
+    log_step "ApplicationSets 적용 중..."
+
+    local appsets_dir="${PROJECT_ROOT}/argocd/applicationsets"
+
+    if [ -d "$appsets_dir" ]; then
+        for file in "$appsets_dir"/*.yaml; do
+            if [ -f "$file" ]; then
+                log_info "적용 중: $(basename "$file")"
+                kubectl apply -f "$file" -n "$ARGOCD_NAMESPACE"
+            fi
+        done
+        log_success "ApplicationSets 적용 완료"
+    else
+        log_warn "ApplicationSets 디렉토리를 찾을 수 없습니다: $appsets_dir"
     fi
 }
 
@@ -227,7 +243,8 @@ main() {
     install_argocd
     get_admin_password
     apply_projects
-    apply_root_application
+    apply_namespaces
+    apply_applicationsets
     show_access_info
 
     log_step "=== ArgoCD Bootstrap 완료 ==="
