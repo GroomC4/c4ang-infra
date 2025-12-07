@@ -27,13 +27,18 @@ config:
   SERVER_PORT: "8081"
   SPRING_PROFILES_ACTIVE: "prod"
   # AWS RDS PostgreSQL (ExternalName 서비스를 통한 연결)
-  DB_URL: "jdbc:postgresql://saga-db:5432/saga_db"
+  SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://saga-db:5432/saga_db"
+  SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://saga-db:5432/saga_db"
   # AWS MSK Kafka
-  KAFKA_BOOTSTRAP_SERVERS: "b-1.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-2.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-3.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092"
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "b-1.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-2.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-3.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092"
+  SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: "b-1.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-2.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-3.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092"
+  SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: "b-1.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-2.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-3.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092"
   # Schema Registry
   SCHEMA_REGISTRY_URL: "http://schema-registry.kafka.svc.cluster.local:8081"
 # Sensitive data (injected via Secret) - 임시로 plaintext 사용 (차후 AWS Secrets Manager로 이관 예정)
 secrets:
-  DB_USERNAME: "appuser"
-  DB_PASSWORD: "Airflow2025"
+  SPRING_DATASOURCE_MASTER_USERNAME: "appuser"
+  SPRING_DATASOURCE_MASTER_PASSWORD: "Airflow2025"
+  SPRING_DATASOURCE_REPLICA_USERNAME: "appuser"
+  SPRING_DATASOURCE_REPLICA_PASSWORD: "Airflow2025"
 # Istio 설정 (기본값 사용)
