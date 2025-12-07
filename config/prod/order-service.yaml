@@ -42,6 +42,6 @@ config:
 # Sensitive data (injected via Secret) - 임시로 plaintext 사용 (차후 AWS Secrets Manager로 이관 예정)
 secrets:
   DB_USERNAME: "appuser"
-  DB_PASSWORD: "airflow123!"
+  DB_PASSWORD: "Airflow2025"
   REDIS_PASSWORD: ""
 # Istio 설정 (기본값 사용)
