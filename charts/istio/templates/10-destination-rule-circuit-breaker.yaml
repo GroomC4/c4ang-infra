@@ -6,7 +6,7 @@
 # TODO: 서비스 오픈 후 고도화 단계에서 활성화 및 튜닝
 # ====================================
 
-{{- $services := list "customer-api" "store-api" "product-api" "order-api" "payment-api" "recommendation-api" "saga-tracker-api" }}
+{{- $services := list "customer-api" "store-api" "product-api" "order-api" "payment-api" "saga-tracker-api" }}
 {{- range $service := $services }}
 ---
 apiVersion: networking.istio.io/v1

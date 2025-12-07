@@ -127,11 +127,6 @@ httpRoute:
       path: /api/v1/stores
       serviceName: store-api
       servicePort: 80
-    recommendation:
-      enabled: true
-      path: /api/v1/recommendations
-      serviceName: recommendation-api
-      servicePort: 80
     sagaTracker:
       enabled: true
       path: /api/v1/sagas
