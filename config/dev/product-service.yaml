@@ -23,8 +23,8 @@ config:
   SERVER_PORT: "8081"
   SPRING_PROFILES_ACTIVE: "dev"
   # PostgreSQL (ExternalName 서비스 사용)
-  SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://product-db:5432/product_db"
-  SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://product-db:5432/product_db"
+  SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://product-db:5433/product_db"
+  SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://product-db:5433/product_db"
   # Redis (ExternalName 서비스 사용)
   SPRING_DATA_REDIS_HOST: "cache-redis"
   SPRING_DATA_REDIS_PORT: "6379"
@@ -33,6 +33,10 @@ config:
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
   SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: "kafka:9092"
   SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: "kafka:9092"
+  # AWS S3 설정
+  AWS_S3_ENABLED: "true"
+  AWS_S3_BUCKET: "c4ang-product-images-dev"
+  AWS_REGION: "ap-northeast-2"
 # Sensitive data (injected via Secret)
 secrets:
   SPRING_DATASOURCE_MASTER_USERNAME: "postgres"
@@ -41,4 +45,7 @@ secrets:
   SPRING_DATASOURCE_REPLICA_PASSWORD: "postgres"
   SPRING_REDIS_PASSWORD: ""
   SPRING_REDISSON_PASSWORD: ""
+  # AWS 자격증명 (실제 값은 별도 관리)
+  AWS_ACCESS_KEY_ID: ""
+  AWS_SECRET_ACCESS_KEY: ""
 # Istio 설정 (기본값 사용)
