@@ -1,5 +1,29 @@
 {{- if .Values.security.jwt.enabled }}
 # ====================================
+# Block Internal API Endpoints
+# /internal/* 경로는 외부에서 접근 불가 (서비스 간 통신만 허용)
+# ====================================
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: block-internal-endpoints
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  action: DENY
+  rules:
+    - to:
+        - operation:
+            paths:
+              - "/internal/*"
+              - "/internal/v1/*"
+
+---
+# ====================================
 # Global Public Endpoints Policy
 # 모든 서비스에 공통으로 적용되는 인가 정책
 # ====================================

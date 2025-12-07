@@ -101,52 +101,47 @@ httpRoute:
   enabled: true
   services:
     # 각 서비스별 라우팅 설정
-    # 배포 시 자동으로 활성화
+    # 실제 K8s 서비스명과 포트에 맞춤 (xxx-api:80)
     order:
       enabled: true
       path: /api/v1/orders
-      serviceName: order-service
-      servicePort: 8080
+      serviceName: order-api
+      servicePort: 80
     product:
       enabled: true
       path: /api/v1/products
-      serviceName: product-service
-      servicePort: 8080
+      serviceName: product-api
+      servicePort: 80
     payment:
       enabled: true
       path: /api/v1/payments
-      serviceName: payment-service
-      servicePort: 8080
-    user:
+      serviceName: payment-api
+      servicePort: 80
+    customer:
       enabled: true
-      path: /api/v1/users
-      serviceName: user-service
-      servicePort: 8080
+      path: /api/v1/customers
+      serviceName: customer-api
+      servicePort: 80
     auth:
       enabled: true
       path: /api/v1/auth
-      serviceName: auth-service
-      servicePort: 8080
+      serviceName: customer-api
+      servicePort: 80
     store:
       enabled: true
       path: /api/v1/stores
-      serviceName: store-service
-      servicePort: 8080
-    review:
-      enabled: true
-      path: /api/v1/reviews
-      serviceName: review-service
-      servicePort: 8080
+      serviceName: store-api
+      servicePort: 80
     recommendation:
       enabled: true
       path: /api/v1/recommendations
-      serviceName: recommendation-service
-      servicePort: 8080
-    analytics:
+      serviceName: recommendation-api
+      servicePort: 80
+    sagaTracker:
       enabled: true
-      path: /api/v1/analytics
-      serviceName: analytics-service
-      servicePort: 8080
+      path: /api/v1/sagas
+      serviceName: saga-tracker-api
+      servicePort: 80
 
 # Traffic Management 설정
 trafficManagement:
