@@ -96,7 +96,7 @@ security:
     - /actuator/health
     - /actuator/prometheus
 
-# HTTPRoute 설정
+# HTTPRoute 설정 (Main Gateway)
 httpRoute:
   enabled: true
   services:
@@ -116,11 +116,6 @@ httpRoute:
       enabled: true
       path: /api/v1/payments
       serviceName: payment-api
-      servicePort: 80
-    customer:
-      enabled: true
-      path: /api/v1/customers
-      serviceName: customer-api
       servicePort: 80
     auth:
       enabled: true
@@ -192,4 +187,27 @@ telemetry:
   # 메트릭 샘플링 비율 (0.0 ~ 1.0)
   # 1.0 = 모든 요청 메트릭 수집
   samplingRate: 1.0
+
+# Webhook HTTPRoute 설정 (Webhook Gateway)
+# 외부 시스템(PG사, 파트너사 등) 콜백용
+# JWT 인증 없이 IP 화이트리스트 기반 접근 제어
+webhookRoute:
+  enabled: true
+  routes:
+    # PG사 결제 콜백
+    pgCallback:
+      enabled: true
+      path: /webhooks/pg/callback
+      serviceName: payment-api
+      servicePort: 80
+      methods:
+        - POST
+    # 파트너사 콜백 (확장용)
+    # partnerCallback:
+    #   enabled: false
+    #   path: /webhooks/partner
+    #   serviceName: partner-api
+    #   servicePort: 80
+    #   methods:
+    #     - POST
 

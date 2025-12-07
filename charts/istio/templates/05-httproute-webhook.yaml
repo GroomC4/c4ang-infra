@@ -1,0 +1,38 @@
+{{- if and .Values.gateway.webhook.enabled .Values.webhookRoute.enabled }}
+{{- range $routeName, $routeConfig := .Values.webhookRoute.routes }}
+{{- if $routeConfig.enabled }}
+---
+# Webhook HTTPRoute for {{ $routeName }}
+# 외부 시스템(PG사, 파트너사 등)의 콜백을 위한 라우팅
+# JWT 인증 없이 IP 화이트리스트 기반 접근 제어
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: webhook-{{ $routeName }}-route
+  namespace: {{ include "istio.namespace" $ }}
+  labels:
+    {{- include "istio.labels" $ | nindent 4 }}
+    route-type: webhook
+    webhook: {{ $routeName }}
+spec:
+  parentRefs:
+    - name: {{ include "istio.gateway.webhook.name" $ }}
+  hostnames:
+    - "{{ $.Values.gateway.webhook.hostname }}"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ $routeConfig.path }}
+        {{- if $routeConfig.methods }}
+        {{- range $routeConfig.methods }}
+        - method: {{ . }}
+        {{- end }}
+        {{- end }}
+      backendRefs:
+        - name: {{ $routeConfig.serviceName }}
+          port: {{ $routeConfig.servicePort }}
+          weight: 100
+{{- end }}
+{{- end }}
+{{- end }}

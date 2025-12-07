@@ -99,11 +99,7 @@ httpRoute:
       path: /api/v1/payments
       serviceName: payment-api
       servicePort: 80
-    customer:
-      enabled: true
-      path: /api/v1/customers
-      serviceName: customer-api
-      servicePort: 80
+    # PG사 콜백은 webhook gateway에서 처리 (webhookRoute 참조)
     auth:
       enabled: true
       path: /api/v1/auth
@@ -129,3 +125,53 @@ httpRoute:
 telemetry:
   enabled: true
   samplingRate: 1.0  # 운영 환경에서도 전체 메트릭 수집 (필요시 조정)
+
+# Webhook HTTPRoute 설정 (운영 환경)
+# PG사 등 외부 콜백용 - IP 화이트리스트 적용 필요
+webhookRoute:
+  enabled: true
+  routes:
+    pgCallback:
+      enabled: true
+      path: /webhooks/pg/callback
+      serviceName: payment-api
+      servicePort: 80
+      methods:
+        - POST
+
+# Rate Limit 설정
+# TODO: 서비스 오픈 시 enabled: true로 변경
+# 현재는 개발/테스트 단계이므로 비활성화
+rateLimit:
+  enabled: false  # 서비스 오픈 시 true로 변경
+  # Global Rate Limit (전체 API)
+  global:
+    requestsPerSecond: 1000
+    burst: 2000
+  # Per-IP Rate Limit
+  perIp:
+    requestsPerSecond: 100
+    burst: 200
+  # Per-User Rate Limit (JWT subject 기반)
+  perUser:
+    requestsPerSecond: 50
+    burst: 100
+  # Endpoint별 Rate Limit
+  endpoints:
+    # 인증 관련 (무차별 대입 공격 방지)
+    auth:
+      path: "/api/v1/auth/*"
+      requestsPerSecond: 10
+      burst: 20
+    # 주문 생성 (과도한 주문 방지)
+    orders:
+      path: "/api/v1/orders"
+      methods: ["POST"]
+      requestsPerSecond: 20
+      burst: 50
+    # 결제 (이중 결제 방지)
+    payments:
+      path: "/api/v1/payments"
+      methods: ["POST"]
+      requestsPerSecond: 10
+      burst: 30
