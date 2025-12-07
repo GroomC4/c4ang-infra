@@ -190,22 +190,24 @@ apply_namespaces() {
     fi
 }
 
-# ApplicationSets 적용
+# ApplicationSets 적용 (환경별)
 apply_applicationsets() {
-    log_step "ApplicationSets 적용 중..."
+    log_step "ApplicationSets 적용 중 (${ENV} 환경)..."
 
-    local appsets_dir="${PROJECT_ROOT}/argocd/applicationsets"
+    local appsets_dir="${PROJECT_ROOT}/argocd/applicationsets/${ENV}"
 
     if [ -d "$appsets_dir" ]; then
         for file in "$appsets_dir"/*.yaml; do
             if [ -f "$file" ]; then
-                log_info "적용 중: $(basename "$file")"
+                log_info "적용 중: ${ENV}/$(basename "$file")"
                 kubectl apply -f "$file" -n "$ARGOCD_NAMESPACE"
             fi
         done
-        log_success "ApplicationSets 적용 완료"
+        log_success "ApplicationSets 적용 완료 (${ENV} 환경)"
     else
-        log_warn "ApplicationSets 디렉토리를 찾을 수 없습니다: $appsets_dir"
+        log_error "ApplicationSets 디렉토리를 찾을 수 없습니다: $appsets_dir"
+        log_info "사용 가능한 환경: dev, prod"
+        exit 1
     fi
 }
 
