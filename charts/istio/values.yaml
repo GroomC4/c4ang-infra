@@ -198,3 +198,11 @@ telemetry:
   # 1.0 = 모든 요청 메트릭 수집
   samplingRate: 1.0
 
+
+# Telemetry 설정
+telemetry:
+  enabled: true
+  tracing:
+    enabled: true
+    samplingRate: 100.0  # 100% 샘플링 (개발 환경), 프로덕션에서는 1-10% 권장
+    provider: tempo
