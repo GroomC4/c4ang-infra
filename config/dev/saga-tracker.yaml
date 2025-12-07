@@ -5,7 +5,7 @@ replicaCount: 1
 image:
   repository: 963403601423.dkr.ecr.ap-northeast-2.amazonaws.com/c4ang-saga-tracker
   pullPolicy: IfNotPresent
-  tag: "v1.0.4"
+  tag: "v1.0.5"
 # ECR 이미지 pull을 위한 secret
 imagePullSecrets:
   - name: ecr-secret
@@ -23,22 +23,13 @@ config:
   SERVER_PORT: "8081"
   SPRING_PROFILES_ACTIVE: "dev"
   # PostgreSQL (ExternalName 서비스 사용)
-  SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://saga-db:5436/saga_db"
-  SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://saga-db:5436/saga_db"
-  # Redis (ExternalName 서비스 사용)
-  SPRING_DATA_REDIS_HOST: "cache-redis"
-  SPRING_DATA_REDIS_PORT: "6379"
-  SPRING_REDISSON_ADDRESS: "redis://cache-redis:6379"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://saga-db:5436/saga_db"
   # Kafka (ExternalName 서비스 사용)
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
   SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: "kafka:9092"
   SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: "kafka:9092"
 # Sensitive data (injected via Secret)
 secrets:
-  SPRING_DATASOURCE_MASTER_USERNAME: "postgres"
-  SPRING_DATASOURCE_MASTER_PASSWORD: "postgres"
-  SPRING_DATASOURCE_REPLICA_USERNAME: "postgres"
-  SPRING_DATASOURCE_REPLICA_PASSWORD: "postgres"
-  SPRING_REDIS_PASSWORD: ""
-  SPRING_REDISSON_PASSWORD: ""
+  SPRING_DATASOURCE_USERNAME: "postgres"
+  SPRING_DATASOURCE_PASSWORD: "postgres"
 # Istio 설정 (기본값 사용)
