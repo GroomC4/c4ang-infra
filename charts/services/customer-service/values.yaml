@@ -1,57 +1,58 @@
+# Customer Service Helm Chart - 기본값
+# 환경별 설정은 config/{env}/customer-service.yaml에서 관리
+# 참고: docs/GITOPS-HELM-ARGOCD-GUIDE.md
+
 fullnameOverride: customer-api
+
+# 환경별로 오버라이드됨
 replicaCount: 2
+
 image:
-  repository: ""  # Set in environment config (config/dev/*.yaml or config/prod/*.yaml)
+  repository: ""  # config/{env}/customer-service.yaml에서 설정
   pullPolicy: IfNotPresent
-  tag: ""         # Set in environment config
+  tag: ""         # config/{env}/customer-service.yaml에서 설정
+
 imagePullSecrets: []
+
+# 서비스 설정 (환경 무관)
 service:
   type: ClusterIP
-  port: 80          # Standard HTTP port for internal service discovery
-  targetPort: 8081  # Application runs on 8081
+  port: 80
+  targetPort: 8081
+
+# 기본 리소스 (환경별로 오버라이드 가능)
 resources:
   requests:
-    memory: 1Gi
+    memory: 512Mi
     cpu: 250m
   limits:
-    memory: 2Gi
+    memory: 1Gi
     cpu: 500m
+
+# 오토스케일링 (환경별로 오버라이드 가능)
 autoscaling:
-  enabled: true
+  enabled: false
   minReplicas: 2
   maxReplicas: 10
   targetCPUUtilizationPercentage: 70
   targetMemoryUtilizationPercentage: 80
-# Application configuration (injected via ConfigMap)
-config:
-  SERVER_PORT: "8081"
-  SPRING_PROFILES_ACTIVE: "prod"
-  # Database
-  SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://infra-database-postgresql-primary.ecommerce.svc.cluster.local:5432/customer_db"
-  SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://infra-database-postgresql-read.ecommerce.svc.cluster.local:5432/customer_db"
-  # Redis
-  SPRING_DATA_REDIS_HOST: "customer-service-redis-service.cache-tier.svc.cluster.local"
-  SPRING_DATA_REDIS_PORT: "6379"
-  SPRING_REDISSON_ADDRESS: "redis://customer-service-redis-service.cache-tier.svc.cluster.local:6379"
 
-# Sensitive data (injected via Secret)
-secrets:
-  SPRING_DATASOURCE_MASTER_USERNAME: "application"
-  SPRING_DATASOURCE_MASTER_PASSWORD: "application"
-  SPRING_DATASOURCE_REPLICA_USERNAME: "application"
-  SPRING_DATASOURCE_REPLICA_PASSWORD: "application"
-  SPRING_REDIS_PASSWORD: ""
-  SPRING_REDISSON_PASSWORD: ""
+# 환경변수 - config/{env}/customer-service.yaml에서 정의
+config: {}
 
-# Extra environment variables (optional, injected directly as env)
+# 시크릿 - config/{env}/customer-service.yaml에서 정의
+secrets: {}
+
+# 추가 환경변수
 extraEnv: []
-# Set to true for local/dev environments
-# Disabled for EKS - using existing redis in cache-tier namespace
+
+# Redis subchart (비활성화 - ExternalName 서비스 사용)
 redis:
   enabled: false
-# Istio configuration
+
+# Istio 설정 (환경 무관한 공통 설정)
 istio:
-  enabled: true # Set to true when deploying to EKS with Istio
+  enabled: true
   pathPrefix: /api/v1/customers
   timeout: 30s
   retries:
@@ -73,10 +74,12 @@ istio:
       maxEjectionPercent: 50
       minHealthPercent: 40
   gatewayAPI:
-    enabled: true # Set to true to use Kubernetes Gateway API
+    enabled: true
     gatewayName: ecommerce-gateway
     gatewayNamespace: ecommerce
     hostnames:
       - api.c4ang.com
+
+# Argo Rollouts 분석
 analysis:
   prometheusUrl: "http://prometheus.monitoring.svc.cluster.local:9090"

@@ -1,16 +1,21 @@
+# Store Service Helm Chart - 기본값
+# 환경별 설정은 config/{env}/store-service.yaml에서 관리
+# 참고: docs/GITOPS-HELM-ARGOCD-GUIDE.md
+
 fullnameOverride: store-api
+
 replicaCount: 2
 
 image:
-  repository: ""  # Set in environment config (config/dev/*.yaml or config/prod/*.yaml)
+  repository: ""
   pullPolicy: IfNotPresent
-  tag: ""         # Set in environment config
+  tag: ""
 
 imagePullSecrets: []
 
 service:
   type: ClusterIP
-  port: 80  # Standard HTTP port for internal service discovery
+  port: 80
   targetPort: 8081
 
 resources:
@@ -23,36 +28,24 @@ resources:
 
 autoscaling:
   enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
 
-# Application configuration (injected via ConfigMap)
-config:
-  SERVER_PORT: "8081"
-  SPRING_PROFILES_ACTIVE: "prod"
-  SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://infra-database-postgresql-primary.ecommerce.svc.cluster.local:5432/store_db"
-  SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://infra-database-postgresql-read.ecommerce.svc.cluster.local:5432/store_db"
-  SPRING_DATA_REDIS_HOST: "store-service-redis-service.cache-tier.svc.cluster.local"
-  SPRING_DATA_REDIS_PORT: "6379"
-  SPRING_REDISSON_ADDRESS: "redis://store-service-redis-service.cache-tier.svc.cluster.local:6379"
+# 환경변수 - config/{env}/store-service.yaml에서 정의
+config: {}
 
-# Sensitive data (injected via Secret)
-secrets:
-  SPRING_DATASOURCE_MASTER_USERNAME: "application"
-  SPRING_DATASOURCE_MASTER_PASSWORD: "application"
-  SPRING_DATASOURCE_REPLICA_USERNAME: "application"
-  SPRING_DATASOURCE_REPLICA_PASSWORD: "application"
-  SPRING_REDIS_PASSWORD: ""
-  SPRING_REDISSON_PASSWORD: ""
+# 시크릿 - config/{env}/store-service.yaml에서 정의
+secrets: {}
 
-# Extra environment variables (optional, injected directly as env)
 extraEnv: []
 
-# Set to true for local/dev environments
-# Disabled for EKS - using existing redis in cache-tier namespace
 redis:
   enabled: false
-# Istio configuration
+
 istio:
-  enabled: true # Set to true when deploying to EKS with Istio
+  enabled: true
   pathPrefix: /api/v1/stores
   timeout: 30s
   retries:
@@ -74,12 +67,11 @@ istio:
       maxEjectionPercent: 50
       minHealthPercent: 40
   gatewayAPI:
-    enabled: true # Set to true to use Kubernetes Gateway API
+    enabled: true
     gatewayName: ecommerce-gateway
     gatewayNamespace: ecommerce
     hostnames:
       - api.c4ang.com
-
 
 analysis:
   prometheusUrl: "http://prometheus.monitoring.svc.cluster.local:9090"

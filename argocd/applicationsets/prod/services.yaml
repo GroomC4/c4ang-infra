@@ -1,0 +1,58 @@
+# ArgoCD ApplicationSet - MSA Services (Prod)
+# EKS 클러스터용
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: services
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - name: customer-service
+          - name: order-service
+          - name: payment-service
+          - name: product-service
+          - name: saga-tracker
+          - name: store-service
+
+  template:
+    metadata:
+      name: '{{.name}}'
+      namespace: argocd
+      labels:
+        app.kubernetes.io/component: '{{.name}}'
+        app.kubernetes.io/env: prod
+        app.kubernetes.io/type: service
+      annotations:
+        argocd.argoproj.io/sync-wave: "30"
+    spec:
+      project: applications
+      sources:
+        - repoURL: https://github.com/GroomC4/c4ang-infra.git
+          targetRevision: main
+          ref: values
+        - repoURL: https://github.com/GroomC4/c4ang-infra.git
+          targetRevision: main
+          path: 'charts/services/{{.name}}'
+          helm:
+            valueFiles:
+              - values.yaml
+              - '$values/config/prod/{{.name}}.yaml'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: ecommerce
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 5m

@@ -1,0 +1,71 @@
+# ArgoCD ApplicationSet - Infrastructure (Prod)
+# EKS 클러스터용
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: infrastructure
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - name: external-services
+            namespace: ecommerce
+            chart: charts/external-services
+            syncWave: "1"
+          - name: monitoring
+            namespace: monitoring
+            chart: charts/monitoring
+            syncWave: "2"
+          # Istio는 istioctl로 별도 설치 관리 (CRD 포함)
+          # ArgoCD로 관리 시 prune이 istio-system을 삭제하는 문제 발생
+          - name: argo-rollouts
+            namespace: argo-rollouts
+            chart: charts/argo-rollouts
+            syncWave: "3"
+
+  template:
+    metadata:
+      name: '{{.name}}'
+      namespace: argocd
+      labels:
+        app.kubernetes.io/component: '{{.name}}'
+        app.kubernetes.io/env: prod
+        app.kubernetes.io/managed-by: argocd-applicationset
+      annotations:
+        argocd.argoproj.io/sync-wave: '{{.syncWave}}'
+    spec:
+      project: infrastructure
+      source:
+        repoURL: https://github.com/GroomC4/c4ang-infra.git
+        targetRevision: main
+        path: '{{.chart}}'
+        helm:
+          valueFiles:
+            - values.yaml
+            - ../../config/prod/{{.name}}.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{.namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+      ignoreDifferences:
+        - group: ""
+          kind: Secret
+          jsonPointers:
+            - /data

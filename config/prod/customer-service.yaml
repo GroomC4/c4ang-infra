@@ -26,23 +26,19 @@ resources:
 config:
   SERVER_PORT: "8081"
   SPRING_PROFILES_ACTIVE: "prod"
-  # AWS RDS PostgreSQL
-  SPRING_DATASOURCE_MASTER_URL: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/customer_db"
-  SPRING_DATASOURCE_REPLICA_URL: "jdbc:postgresql://c4-app-db.cfkm648uqlug.ap-northeast-2.rds.amazonaws.com:5432/customer_db"
-  # AWS ElastiCache Redis
-  SPRING_DATA_REDIS_HOST: "redis-master"
+  # AWS RDS PostgreSQL (ExternalName 서비스를 통한 연결)
+  DB_MASTER_URL: "jdbc:postgresql://customer-db:5432/customer_db"
+  DB_REPLICA_URL: "jdbc:postgresql://customer-db:5432/customer_db"
+  # AWS ElastiCache Redis (ExternalName 서비스를 통한 연결)
+  # Spring Boot 환경변수 형식으로 설정 (Helm values.yaml 기본값 오버라이드)
+  SPRING_DATA_REDIS_HOST: "cache-redis"
   SPRING_DATA_REDIS_PORT: "6379"
-  SPRING_REDISSON_ADDRESS: "redis://redis-master:6379"
-  # AWS MSK Kafka
-  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
-  SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: "kafka:9092"
-  SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: "kafka:9092"
-# Sensitive data (injected via Secret) - 실제 값은 External Secrets 또는 AWS Secrets Manager에서 주입
+  # AWS MSK Kafka (application-prod.yml에서 KAFKA_BOOTSTRAP_SERVERS 사용)
+  KAFKA_BOOTSTRAP_SERVERS: "b-1.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-2.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-3.c4kafka.l9hkqg.c2.kafka.ap-northeast-2.amazonaws.com:9092"
+# Sensitive data (injected via Secret) - 임시로 plaintext 사용 (차후 AWS Secrets Manager로 이관 예정)
 secrets:
-  SPRING_DATASOURCE_MASTER_USERNAME: ""
-  SPRING_DATASOURCE_MASTER_PASSWORD: ""
-  SPRING_DATASOURCE_REPLICA_USERNAME: ""
-  SPRING_DATASOURCE_REPLICA_PASSWORD: ""
-  SPRING_REDIS_PASSWORD: ""
-  SPRING_REDISSON_PASSWORD: ""
+  DB_USERNAME: "appuser"
+  DB_PASSWORD: "Airflow2025"
+  REDIS_PASSWORD: ""
+  JWT_SECRET: "c4ang-ecommerce-jwt-secret-key-prod-2025-very-secure"
 # Istio 설정 (기본값 사용)
