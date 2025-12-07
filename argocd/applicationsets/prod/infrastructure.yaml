@@ -15,16 +15,20 @@ spec:
             namespace: ecommerce
             chart: charts/external-services
             syncWave: "1"
+          # Istio Configuration (Gateway, HTTPRoute, AuthorizationPolicy 등)
+          # Istio Control Plane은 istioctl로 별도 설치, 라우팅 규칙만 ArgoCD로 관리
+          - name: istio
+            namespace: ecommerce
+            chart: charts/istio
+            syncWave: "2"
           - name: monitoring
             namespace: monitoring
             chart: charts/monitoring
-            syncWave: "2"
-          # Istio는 istioctl로 별도 설치 관리 (CRD 포함)
-          # ArgoCD로 관리 시 prune이 istio-system을 삭제하는 문제 발생
+            syncWave: "3"
           - name: argo-rollouts
             namespace: argo-rollouts
             chart: charts/argo-rollouts
-            syncWave: "3"
+            syncWave: "4"
 
   template:
     metadata:
