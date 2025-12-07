@@ -186,20 +186,16 @@ ingress:
     alb.ingress.kubernetes.io/scheme: internal
     alb.ingress.kubernetes.io/target-type: ip
 
-# Node Selector
-# TODO: 고도화 시 monitoring 전용 노드 그룹 생성 후 활성화
-# nodeSelector:
-#   role: monitoring
-nodeSelector: {}
+# Node Selector - EKS monitoring 노드 그룹에 자동 라벨링됨
+nodeSelector:
+  role: monitoring
 
-# Tolerations
-# TODO: 고도화 시 monitoring 전용 노드에 taint 설정 후 활성화
-# tolerations:
-#   - key: "dedicated"
-#     operator: "Equal"
-#     value: "monitoring"
-#     effect: "NoSchedule"
-tolerations: []
+# Tolerations - EKS monitoring 노드 그룹에 자동 taint 설정됨
+tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
 
 # Affinity
 affinity: {}

@@ -163,6 +163,24 @@ variable "kafka_storage_node_group" {
   }
 }
 
+variable "monitoring_node_group" {
+  description = "Node group for monitoring workloads (Prometheus, Grafana, Loki, Tempo)"
+  type = object({
+    instance_types = list(string)
+    min_size       = number
+    desired_size   = number
+    max_size       = number
+    disk_size      = number
+  })
+  default = {
+    instance_types = ["t3.large"]
+    min_size       = 1
+    desired_size   = 1
+    max_size       = 3
+    disk_size      = 50
+  }
+}
+
 # 베스천 호스트 접근용 IP 주소
 variable "my_ip_for_bastion" {
   description = "Your IP address for bastion host access"

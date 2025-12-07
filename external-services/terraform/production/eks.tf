@@ -131,6 +131,31 @@ module "eks" {
         }
       }
     }
+
+    # Monitoring 전용 노드 그룹 (Prometheus, Grafana, Loki, Tempo 등)
+    monitoring = {
+      ami_type       = "AL2023_x86_64_STANDARD"
+      capacity_type  = "ON_DEMAND"
+      instance_types = var.monitoring_node_group.instance_types
+      min_size       = var.monitoring_node_group.min_size
+      desired_size   = var.monitoring_node_group.desired_size
+      max_size       = var.monitoring_node_group.max_size
+      disk_size      = var.monitoring_node_group.disk_size
+
+      labels = {
+        role      = "monitoring"
+        workload  = "monitoring"
+        nodegroup = "monitoring"
+      }
+
+      taints = {
+        dedicated = {
+          key    = "dedicated"
+          value  = "monitoring"
+          effect = "NO_SCHEDULE"
+        }
+      }
+    }
   }
 
   # EKS Access Entries (IAM 접근 제어)
