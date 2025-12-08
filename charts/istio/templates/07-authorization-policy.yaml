@@ -1,12 +1,15 @@
 {{- if and .Values.security.jwt.enabled .Values.security.authorizationPolicy.enabled }}
 # ====================================
-# Deny policy for protected API endpoints without JWT
-# JWT가 없는 보호된 API 요청을 거부 (공개 엔드포인트 제외)
+# Gateway Authorization Policies
+# ALLOW-based pattern for better control
 # ====================================
+
+# 1. Allow public endpoints (no JWT required)
+# 공개 엔드포인트 허용 (회원가입, 로그인, 헬스체크 등)
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
-  name: deny-api-without-jwt
+  name: allow-public-endpoints
   namespace: {{ include "istio.namespace" . }}
   labels:
     {{- include "istio.labels" . | nindent 4 }}
@@ -14,34 +17,59 @@ spec:
   selector:
     matchLabels:
       istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
-  action: DENY
+  action: ALLOW
   rules:
-    # JWT가 없는 요청 중 보호된 API 경로 거부
-    - from:
-        - source:
-            notRequestPrincipals: ["*"]
-      to:
+    # Public API endpoints (authentication)
+    {{- if .Values.security.publicEndpoints }}
+    - to:
         - operation:
             paths:
-              - "/api/*"
-            notPaths:
-              {{- if .Values.security.publicEndpoints }}
               {{- range .Values.security.publicEndpoints }}
               - {{ . | quote }}
               {{- end }}
-              {{- end }}
-              # Health endpoints
+    {{- end }}
+    # Health and monitoring endpoints
+    - to:
+        - operation:
+            paths:
               - "/actuator/health"
               - "/actuator/health/*"
               - "/actuator/prometheus"
               - "/actuator/metrics"
               - "/actuator/info"
               - "/.well-known/*"
-              # API Documentation
+    # API Documentation
+    - to:
+        - operation:
+            paths:
               - "/swagger-ui/*"
               - "/v3/api-docs/*"
               - "/swagger-resources/*"
               - "/webjars/*"
+---
+# 2. Allow protected API endpoints (JWT required)
+# JWT가 있는 요청만 보호된 API 허용
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: require-jwt-for-api
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  action: ALLOW
+  rules:
+    # Protected API endpoints - requires valid JWT
+    - from:
+        - source:
+            requestPrincipals: ["*"]
+      to:
+        - operation:
+            paths:
+              - "/api/*"
 {{- end }}
 
 {{- if .Values.gateway.webhook.enabled }}
