@@ -13,6 +13,9 @@ gateway:
     enabled: true
     name: ecommerce-gateway
     hostname: api.ecommerce.com
+    # k3d/CI 환경에서 localhost 접근을 위한 추가 호스트네임
+    additionalHostnames:
+      - "localhost"
     # k3d 환경에서는 LoadBalancer 타입이 NodePort로 매핑됨
     # AWS NLB 어노테이션은 k3d에서 무시됨
     annotations:
