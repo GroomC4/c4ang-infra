@@ -102,7 +102,7 @@ httpRoute:
       path: /api/v1/stores
       serviceName: store-api
       servicePort: 80
-    sagaTracker:
+    saga-tracker:
       enabled: true
       path: /api/v1/sagas
       serviceName: saga-tracker-api
@@ -118,7 +118,7 @@ telemetry:
 webhookRoute:
   enabled: true
   routes:
-    pgCallback:
+    pg-callback:
       enabled: true
       path: /webhooks/pg/callback
       serviceName: payment-api
