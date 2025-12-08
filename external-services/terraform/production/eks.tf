@@ -86,52 +86,6 @@ module "eks" {
       }
     }
 
-    stateful-storage = {
-      ami_type       = "AL2023_x86_64_STANDARD"
-      capacity_type  = "ON_DEMAND"
-      instance_types = var.stateful_storage_node_group.instance_types
-      min_size       = var.stateful_storage_node_group.min_size
-      desired_size   = var.stateful_storage_node_group.desired_size
-      max_size       = var.stateful_storage_node_group.max_size
-      disk_size      = var.stateful_storage_node_group.disk_size
-
-      labels = {
-        workload  = "stateful"
-        nodegroup = "stateful-storage"
-      }
-
-      taints = {
-        stateful = {
-          key    = "workload"
-          value  = "stateful"
-          effect = "NO_SCHEDULE"
-        }
-      }
-    }
-
-    kafka-storage = {
-      ami_type       = "AL2023_x86_64_STANDARD"
-      capacity_type  = "ON_DEMAND"
-      instance_types = var.kafka_storage_node_group.instance_types
-      min_size       = var.kafka_storage_node_group.min_size
-      desired_size   = var.kafka_storage_node_group.desired_size
-      max_size       = var.kafka_storage_node_group.max_size
-      disk_size      = var.kafka_storage_node_group.disk_size
-
-      labels = {
-        workload  = "kafka"
-        nodegroup = "kafka-storage"
-      }
-
-      taints = {
-        kafka = {
-          key    = "workload"
-          value  = "kafka"
-          effect = "NO_SCHEDULE"
-        }
-      }
-    }
-
     # Monitoring 전용 노드 그룹 (Prometheus, Grafana, Loki, Tempo 등)
     monitoring = {
       ami_type       = "AL2023_x86_64_STANDARD"
