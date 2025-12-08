@@ -49,7 +49,7 @@ spec:
 ---
 # ====================================
 # Protected Endpoints Policy (JWT 필수)
-# 모든 API 요청은 유효한 JWT가 필요
+# 공개 엔드포인트를 제외한 모든 API 요청은 유효한 JWT가 필요
 # ====================================
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -64,7 +64,7 @@ spec:
       istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
   action: ALLOW
   rules:
-    # JWT가 있는 모든 요청 허용
+    # JWT가 있는 요청만 허용 (공개 엔드포인트 제외)
     - from:
         - source:
             requestPrincipals: ["*"]
@@ -72,6 +72,17 @@ spec:
         - operation:
             paths:
               - "/api/*"
+            notPaths:
+              {{- if .Values.security.publicEndpoints }}
+              {{- range .Values.security.publicEndpoints }}
+              - {{ . | quote }}
+              {{- end }}
+              {{- end }}
+              # 인증 관련 엔드포인트는 공개 (회원가입, 로그인 등)
+              - "/api/v1/auth/*"
+              - "/api/v1/users/register"
+              - "/api/v1/users/login"
+              - "/api/v1/users/refresh-token"
 {{- end }}
 
 {{- if .Values.gateway.webhook.enabled }}
