@@ -78,9 +78,11 @@ security:
       - "ecommerce-api"
 
   # AuthorizationPolicy 설정 (jwt.enabled와 별개로 제어)
-  # CI 환경에서는 비활성화 가능 (JWT 검증 + X-User-Id 헤더 주입은 RequestAuthentication에서 처리)
+  # 게이트웨이 레벨 AuthorizationPolicy는 비활성화
+  # JWT 검증은 RequestAuthentication에서 처리하고,
+  # 서비스 레벨 AuthorizationPolicy에서 세부 인가를 처리함
   authorizationPolicy:
-    enabled: true
+    enabled: false
   
   # Webhook IP Whitelist (PG사, 파트너사 IP)
   webhook:
