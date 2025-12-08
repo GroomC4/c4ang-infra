@@ -1,12 +1,12 @@
 {{- if and .Values.security.jwt.enabled .Values.security.authorizationPolicy.enabled }}
 # ====================================
-# Public Endpoints Policy (인증 불필요)
-# 회원가입, 로그인, 로그아웃, 토큰갱신, Health, Swagger 등
+# Deny policy for protected API endpoints without JWT
+# JWT가 없는 보호된 API 요청을 거부 (공개 엔드포인트 제외)
 # ====================================
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
-  name: allow-public-endpoints
+  name: deny-api-without-jwt
   namespace: {{ include "istio.namespace" . }}
   labels:
     {{- include "istio.labels" . | nindent 4 }}
@@ -14,60 +14,12 @@ spec:
   selector:
     matchLabels:
       istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
-  action: ALLOW
+  action: DENY
   rules:
-    # ====== Authentication Endpoints (인증 불필요) ======
-    {{- if .Values.security.publicEndpoints }}
-    - to:
-        - operation:
-            paths:
-              {{- range .Values.security.publicEndpoints }}
-              - {{ . | quote }}
-              {{- end }}
-    {{- end }}
-
-    # ====== Health & Monitoring (모든 서비스 공통) ======
-    - to:
-        - operation:
-            paths:
-              - "/actuator/health"
-              - "/actuator/health/*"
-              - "/actuator/prometheus"
-              - "/actuator/metrics"
-              - "/actuator/info"
-              - "/.well-known/*"
-
-    # ====== API Documentation ======
-    - to:
-        - operation:
-            paths:
-              - "/swagger-ui/*"
-              - "/v3/api-docs/*"
-              - "/swagger-resources/*"
-              - "/webjars/*"
-
----
-# ====================================
-# Protected Endpoints Policy (JWT 필수)
-# 공개 엔드포인트를 제외한 모든 API 요청은 유효한 JWT가 필요
-# ====================================
-apiVersion: security.istio.io/v1
-kind: AuthorizationPolicy
-metadata:
-  name: require-jwt-for-api
-  namespace: {{ include "istio.namespace" . }}
-  labels:
-    {{- include "istio.labels" . | nindent 4 }}
-spec:
-  selector:
-    matchLabels:
-      istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
-  action: ALLOW
-  rules:
-    # JWT가 있는 요청만 허용 (공개 엔드포인트 제외)
+    # JWT가 없는 요청 중 보호된 API 경로 거부
     - from:
         - source:
-            requestPrincipals: ["*"]
+            notRequestPrincipals: ["*"]
       to:
         - operation:
             paths:
@@ -78,11 +30,18 @@ spec:
               - {{ . | quote }}
               {{- end }}
               {{- end }}
-              # 인증 관련 엔드포인트는 공개 (회원가입, 로그인 등)
-              - "/api/v1/auth/*"
-              - "/api/v1/users/register"
-              - "/api/v1/users/login"
-              - "/api/v1/users/refresh-token"
+              # Health endpoints
+              - "/actuator/health"
+              - "/actuator/health/*"
+              - "/actuator/prometheus"
+              - "/actuator/metrics"
+              - "/actuator/info"
+              - "/.well-known/*"
+              # API Documentation
+              - "/swagger-ui/*"
+              - "/v3/api-docs/*"
+              - "/swagger-resources/*"
+              - "/webjars/*"
 {{- end }}
 
 {{- if .Values.gateway.webhook.enabled }}
