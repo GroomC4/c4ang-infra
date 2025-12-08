@@ -1,8 +1,36 @@
 {{- if .Values.security.jwt.enabled }}
+# ====================================
+# Block Internal API Endpoints
+# /internal/* 경로는 외부에서 접근 불가 (서비스 간 통신만 허용)
+# ====================================
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
-  name: require-jwt
+  name: block-internal-endpoints
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  action: DENY
+  rules:
+    - to:
+        - operation:
+            paths:
+              - "/internal/*"
+              - "/internal/v1/*"
+
+---
+# ====================================
+# Public Endpoints Policy (인증 불필요)
+# 회원가입, 로그인, 로그아웃, 토큰갱신, Health, Swagger 등
+# ====================================
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-public-endpoints
   namespace: {{ include "istio.namespace" . }}
   labels:
     {{- include "istio.labels" . | nindent 4 }}
@@ -12,7 +40,7 @@ spec:
       istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
   action: ALLOW
   rules:
-    # Public endpoints (인증 불필요)
+    # ====== Authentication Endpoints (인증 불필요) ======
     {{- if .Values.security.publicEndpoints }}
     - to:
         - operation:
@@ -21,24 +49,65 @@ spec:
               - {{ . | quote }}
               {{- end }}
     {{- end }}
-    
-    # Authenticated endpoints (JWT 필수)
+
+    # ====== Health & Monitoring (모든 서비스 공통) ======
+    - to:
+        - operation:
+            paths:
+              - "/actuator/health"
+              - "/actuator/health/*"
+              - "/actuator/prometheus"
+              - "/actuator/metrics"
+              - "/actuator/info"
+              - "/.well-known/jwks.json"
+
+    # ====== API Documentation ======
+    - to:
+        - operation:
+            paths:
+              - "/swagger-ui/*"
+              - "/v3/api-docs/*"
+              - "/swagger-resources/*"
+              - "/webjars/*"
+
+---
+# ====================================
+# Protected Endpoints Policy (JWT 필수)
+# 모든 API 요청은 유효한 JWT가 필요
+# ====================================
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: require-jwt-for-api
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  action: ALLOW
+  rules:
+    # JWT가 있는 모든 요청 허용
     - from:
         - source:
             requestPrincipals: ["*"]
       to:
         - operation:
             paths:
-              - /api/v1/*
+              - "/api/*"
 {{- end }}
 
-{{- if and .Values.gateway.webhook.enabled .Values.security.webhook.ipWhitelist }}
+{{- if .Values.gateway.webhook.enabled }}
 ---
-# Webhook Gateway IP Whitelist 정책
+# ====================================
+# Webhook Gateway Policy
+# PG사, 파트너사 등 외부 시스템 콜백용
+# ====================================
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
-  name: webhook-ip-whitelist
+  name: webhook-access
   namespace: {{ include "istio.namespace" . }}
   labels:
     {{- include "istio.labels" . | nindent 4 }}
@@ -48,17 +117,24 @@ spec:
       istio.io/gateway-name: {{ include "istio.gateway.webhook.name" . }}
   action: ALLOW
   rules:
+    {{- if .Values.security.webhook.ipWhitelist }}
     {{- range .Values.security.webhook.ipWhitelist }}
     - from:
         - source:
-            ipBlocks:
+            remoteIpBlocks:
               - {{ . | quote }}
       to:
         - operation:
             paths:
-              - /webhooks/*
-            methods:
-              - POST
+              - "/webhooks/*"
+            methods: ["POST"]
+    {{- end }}
+    {{- else }}
+    # IP 화이트리스트가 설정되지 않은 경우 모든 IP 허용 (개발 환경)
+    - to:
+        - operation:
+            paths:
+              - "/webhooks/*"
+            methods: ["POST"]
     {{- end }}
 {{- end }}
-
