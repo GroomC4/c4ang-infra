@@ -68,7 +68,7 @@ security:
   mTLS:
     enabled: true
     mode: STRICT  # STRICT, PERMISSIVE, DISABLE
-  
+
   jwt:
     enabled: true
     # Customer Service가 발급한 JWT와 동일한 설정 (클러스터 내부 접근)
@@ -76,6 +76,11 @@ security:
     jwksUri: "http://customer-api.ecommerce.svc.cluster.local:80/.well-known/jwks.json"
     audiences:
       - "ecommerce-api"
+
+  # AuthorizationPolicy 설정 (jwt.enabled와 별개로 제어)
+  # CI 환경에서는 비활성화 가능 (JWT 검증 + X-User-Id 헤더 주입은 RequestAuthentication에서 처리)
+  authorizationPolicy:
+    enabled: true
   
   # Webhook IP Whitelist (PG사, 파트너사 IP)
   webhook:
