@@ -53,11 +53,13 @@ security:
   mTLS:
     enabled: true
     mode: STRICT
-  
+
   jwt:
     enabled: true
-    issuer: "https://api.ecommerce.com"
-    jwksUri: "https://api.ecommerce.com/.well-known/jwks.json"
+    # CI/k3d 환경에서는 클러스터 내부 customer-api 서비스 사용
+    # customer-api가 JWT를 발급하므로 동일한 서비스에서 JWKS를 가져옴
+    issuer: "ecommerce-service-api"
+    jwksUri: "http://customer-api.ecommerce.svc.cluster.local:80/.well-known/jwks.json"
     audiences:
       - "ecommerce-api"
   
