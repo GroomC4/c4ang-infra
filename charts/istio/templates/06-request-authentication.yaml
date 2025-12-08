@@ -52,7 +52,7 @@ spec:
   jwtRules:
     # Customer Service가 발급한 JWT
     - issuer: "ecommerce-service-api"
-      jwksUri: "http://customer-api.{{ include "istio.namespace" . }}.svc.cluster.local:8080/.well-known/jwks.json"
+      jwksUri: "http://customer-api.{{ include "istio.namespace" . }}.svc.cluster.local:80/.well-known/jwks.json"
       forwardOriginalToken: true
       outputClaimToHeaders:
         - header: "X-User-Id"
