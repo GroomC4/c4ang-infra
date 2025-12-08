@@ -71,8 +71,9 @@ security:
   
   jwt:
     enabled: true
-    issuer: "https://api.ecommerce.com"
-    jwksUri: "https://api.ecommerce.com/.well-known/jwks.json"
+    # Customer Service가 발급한 JWT와 동일한 설정 (클러스터 내부 접근)
+    issuer: "ecommerce-service-api"
+    jwksUri: "http://customer-api.ecommerce.svc.cluster.local:80/.well-known/jwks.json"
     audiences:
       - "ecommerce-api"
   
