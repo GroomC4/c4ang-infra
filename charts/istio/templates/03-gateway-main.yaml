@@ -57,6 +57,18 @@ spec:
               gateway-access: "shared"
       {{- end }}
     {{- end }}
+    {{- /* 추가 호스트네임 리스너 (로컬/CI 테스트용) */}}
+    {{- if .Values.gateway.main.additionalHostnames }}
+    {{- range $idx, $hostname := .Values.gateway.main.additionalHostnames }}
+    - name: http-{{ $hostname | replace "." "-" }}
+      hostname: {{ $hostname | quote }}
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Same
+    {{- end }}
+    {{- end }}
 
 ---
 {{- if .Values.gateway.main.listeners.http.redirectToHttps }}

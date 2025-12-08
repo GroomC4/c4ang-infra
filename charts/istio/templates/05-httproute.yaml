@@ -15,6 +15,11 @@ spec:
     - name: {{ include "istio.gateway.main.name" $ }}
   hostnames:
     - "{{ $.Values.gateway.main.hostname }}"
+    {{- if $.Values.gateway.main.additionalHostnames }}
+    {{- range $.Values.gateway.main.additionalHostnames }}
+    - "{{ . }}"
+    {{- end }}
+    {{- end }}
   rules:
     - matches:
         - path:

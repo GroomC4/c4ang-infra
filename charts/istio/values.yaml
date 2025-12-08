@@ -21,6 +21,9 @@ gateway:
     enabled: true
     name: ecommerce-gateway
     hostname: api.ecommerce.com
+    # 추가 호스트네임 (로컬 개발, CI 테스트용)
+    additionalHostnames:
+      - "localhost"
     # NLB 설정
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-prod
