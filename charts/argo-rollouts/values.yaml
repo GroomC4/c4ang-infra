@@ -39,3 +39,17 @@ prometheus:
   scrape: true
   path: /metrics
   port: 8090
+
+# =============================================================================
+# 알림 설정
+# =============================================================================
+notifications:
+  # Discord 알림 (나중에 활성화)
+  discord:
+    enabled: false  # true로 변경하여 활성화
+    # Discord 서버 > 설정 > 연동 > 웹후크에서 URL 생성
+    # webhookUrl은 Secret에서 관리 (argo-rollouts-notification-secret)
+
+  # Grafana 알림
+  grafana:
+    enabled: true

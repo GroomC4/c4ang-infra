@@ -131,3 +131,8 @@ analysis:
   webhook:
     url: ""  # E2E 테스트 서버 URL (예: http://e2e-test-server.qa.svc.cluster.local/trigger)
     timeout: "5m"
+
+# 알림 설정
+notifications:
+  discord:
+    enabled: false  # true로 변경하여 Discord 알림 활성화

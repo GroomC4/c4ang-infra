@@ -4,11 +4,18 @@ metadata:
   name: argo-rollouts-notification-configmap
   namespace: argo-rollouts
 data:
+  # ==========================================================================
+  # 서비스 설정
+  # ==========================================================================
+
+  {{- if .Values.notifications.grafana.enabled }}
   # Grafana 알림 설정
   service.grafana: |
     address: http://a68126f1f9e17476aa603b145e3adfcb-394715272.ap-northeast-2.elb.amazonaws.com/login
     api-key: $grafana-api-key
+  {{- end }}
 
+  {{- if .Values.notifications.discord.enabled }}
   # Discord Webhook 설정
   # Secret에 discord-webhook-url 키로 Webhook URL 저장 필요
   # Discord 서버 설정 > 연동 > 웹후크에서 생성
@@ -33,13 +40,13 @@ data:
               "title": "⚠️ 배포 분석 실패 - 검토 필요",
               "color": 14495300,
               "fields": [
-                {"name": "서비스", "value": "{{.rollout.metadata.name}}", "inline": true},
-                {"name": "네임스페이스", "value": "{{.rollout.metadata.namespace}}", "inline": true},
-                {"name": "상태", "value": "{{.rollout.status.phase}}", "inline": true},
-                {"name": "메시지", "value": "{{.rollout.status.message}}", "inline": false}
+                {"name": "서비스", "value": "{{`{{.rollout.metadata.name}}`}}", "inline": true},
+                {"name": "네임스페이스", "value": "{{`{{.rollout.metadata.namespace}}`}}", "inline": true},
+                {"name": "상태", "value": "{{`{{.rollout.status.phase}}`}}", "inline": true},
+                {"name": "메시지", "value": "{{`{{.rollout.status.message}}`}}", "inline": false}
               ],
-              "description": "분석 결과에 따라 배포가 일시 중지되었습니다.\n**수동으로 승격 또는 롤백을 결정해주세요.**\n\n[ArgoCD에서 확인](https://argocd.c4ang.com/applications/{{.rollout.metadata.namespace}}/{{.rollout.metadata.name}})",
-              "timestamp": "{{.rollout.status.pauseConditions | first | default dict | dig \"startTime\" time.Now | date \"2006-01-02T15:04:05Z07:00\"}}"
+              "description": "분석 결과에 따라 배포가 일시 중지되었습니다.\n**수동으로 승격 또는 롤백을 결정해주세요.**\n\n[ArgoCD에서 확인](https://argocd.c4ang.com/applications/{{`{{.rollout.metadata.namespace}}`}}/{{`{{.rollout.metadata.name}}`}})",
+              "timestamp": "{{`{{.rollout.status.pauseConditions | first | default dict | dig \"startTime\" time.Now | date \"2006-01-02T15:04:05Z07:00\"}}`}}"
             }]
           }
 
@@ -54,11 +61,11 @@ data:
               "title": "✅ 배포 완료",
               "color": 3066993,
               "fields": [
-                {"name": "서비스", "value": "{{.rollout.metadata.name}}", "inline": true},
-                {"name": "네임스페이스", "value": "{{.rollout.metadata.namespace}}", "inline": true},
-                {"name": "버전", "value": "{{.rollout.status.currentPodHash}}", "inline": true}
+                {"name": "서비스", "value": "{{`{{.rollout.metadata.name}}`}}", "inline": true},
+                {"name": "네임스페이스", "value": "{{`{{.rollout.metadata.namespace}}`}}", "inline": true},
+                {"name": "버전", "value": "{{`{{.rollout.status.currentPodHash}}`}}", "inline": true}
               ],
-              "timestamp": "{{time.Now | date \"2006-01-02T15:04:05Z07:00\"}}"
+              "timestamp": "{{`{{time.Now | date \"2006-01-02T15:04:05Z07:00\"}}`}}"
             }]
           }
 
@@ -73,11 +80,11 @@ data:
               "title": "🔄 배포 롤백 발생",
               "color": 14495300,
               "fields": [
-                {"name": "서비스", "value": "{{.rollout.metadata.name}}", "inline": true},
-                {"name": "네임스페이스", "value": "{{.rollout.metadata.namespace}}", "inline": true},
-                {"name": "사유", "value": "{{.rollout.status.message}}", "inline": false}
+                {"name": "서비스", "value": "{{`{{.rollout.metadata.name}}`}}", "inline": true},
+                {"name": "네임스페이스", "value": "{{`{{.rollout.metadata.namespace}}`}}", "inline": true},
+                {"name": "사유", "value": "{{`{{.rollout.status.message}}`}}", "inline": false}
               ],
-              "timestamp": "{{time.Now | date \"2006-01-02T15:04:05Z07:00\"}}"
+              "timestamp": "{{`{{time.Now | date \"2006-01-02T15:04:05Z07:00\"}}`}}"
             }]
           }
 
@@ -92,11 +99,11 @@ data:
               "title": "🔍 배포 분석 시작",
               "color": 3447003,
               "fields": [
-                {"name": "서비스", "value": "{{.rollout.metadata.name}}", "inline": true},
-                {"name": "네임스페이스", "value": "{{.rollout.metadata.namespace}}", "inline": true}
+                {"name": "서비스", "value": "{{`{{.rollout.metadata.name}}`}}", "inline": true},
+                {"name": "네임스페이스", "value": "{{`{{.rollout.metadata.namespace}}`}}", "inline": true}
               ],
               "description": "Pre/Post Promotion 분석이 시작되었습니다.",
-              "timestamp": "{{time.Now | date \"2006-01-02T15:04:05Z07:00\"}}"
+              "timestamp": "{{`{{time.Now | date \"2006-01-02T15:04:05Z07:00\"}}`}}"
             }]
           }
 
@@ -135,3 +142,4 @@ data:
         - on-rollout-completed
         - on-rollout-aborted
         - on-analysis-run-running
+  {{- end }}

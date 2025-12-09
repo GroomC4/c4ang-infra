@@ -8,11 +8,13 @@ metadata:
     # Grafana 알림
     notifications.argoproj.io/subscribe.on-rollout-completed.grafana: ""
     notifications.argoproj.io/subscribe.on-rollout-step-completed.grafana: ""
+    {{- if .Values.notifications.discord.enabled }}
     # Discord 알림 - 분석 실패 시 수동 결정을 위한 알림
     notifications.argoproj.io/subscribe.on-analysis-run-failed.webhook: discord
     notifications.argoproj.io/subscribe.on-analysis-run-running.webhook: discord
     notifications.argoproj.io/subscribe.on-rollout-completed.webhook: discord
     notifications.argoproj.io/subscribe.on-rollout-aborted.webhook: discord
+    {{- end }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
