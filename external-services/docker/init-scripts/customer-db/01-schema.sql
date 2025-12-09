@@ -44,9 +44,9 @@ CREATE TABLE IF NOT EXISTS p_user_refresh_token (
     UNIQUE (user_id)
 );
 
-CREATE INDEX idx_refresh_token_user_id ON p_user_refresh_token(user_id);
-CREATE INDEX idx_refresh_token_token ON p_user_refresh_token(token);
-CREATE INDEX idx_refresh_token_expires_at ON p_user_refresh_token(expires_at);
+CREATE INDEX IF NOT EXISTS idx_refresh_token_user_id ON p_user_refresh_token(user_id);
+CREATE INDEX IF NOT EXISTS idx_refresh_token_token ON p_user_refresh_token(token);
+CREATE INDEX IF NOT EXISTS idx_refresh_token_expires_at ON p_user_refresh_token(expires_at);
 
 COMMENT ON TABLE p_user_refresh_token IS 'JWT Refresh Token 저장 테이블. 단일/멀티 디바이스 로그인 관리.';
 COMMENT ON COLUMN p_user_refresh_token.id IS 'UUID 기본 키.';
