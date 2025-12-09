@@ -5,23 +5,79 @@ metadata:
   labels:
     {{- include "customer-service.labels" . | nindent 4 }}
   annotations:
-    # 배포가 성공적으로 완료되면 Grafana에 알림 전송
-    notifications.argoproj.io/subscribe.on-rollout-completed.grafana: ""
-    # (선택) Blue-Green 전환이나 단계별 진행 상황도 보고 싶다면 추가
-    notifications.argoproj.io/subscribe.on-rollout-step-completed.grafana: ""
+    {{- if .Values.notifications.discord.enabled }}
+    # =======================================================================
+    # Discord 알림 구독 - Pre/Post Analysis + Blue-Green 전환 + 최종 상태
+    # =======================================================================
+    # Pre-Promotion Analysis (Preview 환경 검증)
+    notifications.argoproj.io/subscribe.on-pre-analysis-running.discord: ""
+    notifications.argoproj.io/subscribe.on-pre-analysis-success.discord: ""
+    notifications.argoproj.io/subscribe.on-pre-analysis-failed.discord: ""
+    # Blue-Green 전환
+    notifications.argoproj.io/subscribe.on-rollout-switch.discord: ""
+    # Post-Promotion Analysis (프로덕션 트래픽 검증)
+    notifications.argoproj.io/subscribe.on-post-analysis-running.discord: ""
+    notifications.argoproj.io/subscribe.on-post-analysis-success.discord: ""
+    notifications.argoproj.io/subscribe.on-post-analysis-failed.discord: ""
+    # 최종 상태
+    notifications.argoproj.io/subscribe.on-rollout-completed.discord: ""
+    notifications.argoproj.io/subscribe.on-rollout-aborted.discord: ""
+    {{- end }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
 
-  # Blue/Green 전략 (Analysis 비활성화 - 로컬 테스트용)
+  # Blue/Green 전략
   strategy:
     blueGreen:
       activeService: {{ include "customer-service.fullname" . }}
       previewService: {{ include "customer-service.fullname" . }}-preview
+      # 자동 승격 활성화 - prePromotionAnalysis 통과 후 자동으로 Green 전환
       autoPromotionEnabled: true
-      autoPromotionSeconds: 30      # 30초 후 자동 승격 (로컬 테스트용)
-      scaleDownDelaySeconds: 30     # 이전 버전 30초 후 삭제
+      scaleDownDelaySeconds: 300   # 이전 버전 5분 후 삭제
+      abortScaleDownDelaySeconds: 30  # 롤백 시 빠르게 정리
+
+      # =======================================================================
+      # PrePromotionAnalysis: 프로모션 전 검증 (Preview 서비스 대상)
+      # =======================================================================
+      # 목적: "이 버전이 프로덕션에 나갈 자격이 있는가?"
+      # 검증 내용:
+      #   - Health Check (Liveness/Readiness)
+      #   - 기본 API 응답 확인
+      # 실패 시: 프로모션 중단 (Green 전환 안 함)
+      prePromotionAnalysis:
+        templates:
+          - templateName: smoke-test-analysis
+        args:
+          - name: service-name
+            value: {{ include "customer-service.fullname" . }}
+          - name: namespace
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: port
+            value: "{{ .Values.service.port }}"
+
+      # =======================================================================
+      # PostPromotionAnalysis: 프로모션 후 검증 (실제 트래픽 대상)
+      # =======================================================================
+      # 목적: "실제 프로덕션 트래픽에서 문제가 있는가?"
+      # 검증 내용:
+      #   - Error Rate (5xx 비율)
+      #   - Latency (P95, P99)
+      #   - Business Metrics (선택적)
+      # 실패 시: 자동 롤백 + Discord 알림
+      postPromotionAnalysis:
+        templates:
+          - templateName: post-promotion-analysis
+        args:
+          - name: service-name
+            value: {{ include "customer-service.fullname" . }}
+          - name: namespace
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
   #이전 애플리케이션 리비전의 최대 보존 개수 (디폴트:10)
   #revisionHistoryLimit: 2
   selector:
@@ -88,7 +144,7 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: http
-            initialDelaySeconds: 45
+            initialDelaySeconds: 120
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 6
@@ -96,10 +152,10 @@ spec:
             httpGet:
               path: /actuator/health/readiness
               port: http
-            initialDelaySeconds: 30
+            initialDelaySeconds: 90
             periodSeconds: 5
             timeoutSeconds: 3
-            failureThreshold: 10
+            failureThreshold: 20
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
 

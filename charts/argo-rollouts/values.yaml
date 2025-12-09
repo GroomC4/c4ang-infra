@@ -22,11 +22,41 @@ argo-rollouts:
   # CRD 설치 (필수)
   installCRDs: true
 
-  # 알림 설정
+  # 알림 설정 - Notification Controller 활성화 필수
   notifications:
     secret:
       create: true
-    notifiers: {}
+    # webhook 서비스 설정 (controller가 인식하도록)
+    notifiers:
+      service.webhook.discord: |
+        url: https://discord.com/api/webhooks/1447770723887222855/H8QUSS2p9ZZrApzbhlsdFyjSuhFIjQUiNshZFRrnKUextrP9H2JYsl8arBLOjNmj8bBC
+        headers:
+        - name: Content-Type
+          value: application/json
+    # 템플릿 정의 - Discord Embed with Links
+    templates:
+      # 배포 성공 알림
+      template.rollout-completed: |
+        webhook:
+          discord:
+            method: POST
+            body: |
+              {"embeds":[{"title":"✅ 배포 완료","color":3066993,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{.rollout.status.currentPodHash}}","inline":true},{"name":"🔗 링크","value":"[ArgoCD](https://argocd.c4ang.com/applications/argocd/{{.rollout.metadata.name}}) | [Grafana](https://grafana.c4ang.com/d/rollouts/argo-rollouts?var-rollout={{.rollout.metadata.name}})","inline":false}],"description":"Pre/Post Analysis를 통과하여 배포가 성공적으로 완료되었습니다."}]}
+      # 자동 롤백 알림 (분석 실패로 인한)
+      template.rollout-aborted: |
+        webhook:
+          discord:
+            method: POST
+            body: |
+              {"embeds":[{"title":"🚨 자동 롤백 발생","color":15158332,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"사유","value":"{{.rollout.status.message}}","inline":false},{"name":"📊 원인 분석","value":"[Grafana 메트릭](https://grafana.c4ang.com/d/rollouts/argo-rollouts?var-rollout={{.rollout.metadata.name}}&var-namespace={{.rollout.metadata.namespace}})","inline":false},{"name":"🔗 상세 확인","value":"[ArgoCD](https://argocd.c4ang.com/applications/argocd/{{.rollout.metadata.name}}) | [Rollout 대시보드](https://rollouts.c4ang.com/rollout/{{.rollout.metadata.namespace}}/{{.rollout.metadata.name}})","inline":false}],"description":"PostPromotionAnalysis 실패로 자동 롤백되었습니다. 위 링크에서 원인을 확인해주세요."}]}
+    # 트리거 정의
+    triggers:
+      trigger.on-rollout-completed: |
+        - send: [rollout-completed]
+          when: rollout.status.phase == 'Healthy'
+      trigger.on-rollout-aborted: |
+        - send: [rollout-aborted]
+          when: rollout.status.phase == 'Degraded'
 
 # 추가 모니터링 설정 (커스텀 리소스)
 metrics:
@@ -39,3 +69,17 @@ prometheus:
   scrape: true
   path: /metrics
   port: 8090
+
+# =============================================================================
+# 알림 설정
+# =============================================================================
+notifications:
+  # Discord 알림
+  discord:
+    enabled: true  # Discord 알림 활성화
+    # Discord 서버 > 설정 > 연동 > 웹후크에서 URL 생성
+    # webhookUrl은 Secret에서 관리 (argo-rollouts-notification-secret)
+
+  # Grafana 알림
+  grafana:
+    enabled: true
