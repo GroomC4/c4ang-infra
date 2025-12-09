@@ -119,12 +119,12 @@ analysis:
     businessMetric: "1m"
 
   # 초기 지연 (JVM 웜업 시간)
-  initialDelay: "60s"
+  initialDelay: "30s"
 
-  # 분석 횟수
-  analysisCount: 5
+  # 분석 횟수 (30초 × 10회 = 5분 모니터링)
+  analysisCount: 10
 
-  # 실패 허용 횟수
+  # 실패 허용 횟수 (1회 실패 시 즉시 롤백 + 알림)
   failureLimit: 1
 
   # Webhook E2E 테스트 설정 (향후 사용)

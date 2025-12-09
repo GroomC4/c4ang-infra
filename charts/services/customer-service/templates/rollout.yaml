@@ -25,12 +25,12 @@ spec:
     blueGreen:
       activeService: {{ include "customer-service.fullname" . }}
       previewService: {{ include "customer-service.fullname" . }}-preview
-      # 자동 승격 비활성화 - 분석 실패 시 Slack 알림 후 수동 결정
-      autoPromotionEnabled: false
-      # autoPromotionSeconds: 300  # autoPromotionEnabled=true일 때만 적용
+      # 자동 승격 활성화 - prePromotionAnalysis 통과 후 자동으로 Green 전환
+      autoPromotionEnabled: true
+      # Green 전환 후 postPromotionAnalysis로 5분간 모니터링
+      # 문제 발생 시 Discord 알림 + 자동 롤백
       scaleDownDelaySeconds: 300   # 이전 버전 5분 후 삭제
-      # 분석 실패 시 자동 롤백 비활성화 (수동 결정)
-      abortScaleDownDelaySeconds: 300
+      abortScaleDownDelaySeconds: 30  # 롤백 시 빠르게 정리
 
       # 자동 검증 단계
       prePromotionAnalysis:
