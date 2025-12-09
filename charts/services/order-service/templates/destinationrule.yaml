@@ -8,6 +8,8 @@ metadata:
 spec:
   host: {{ include "order-service.fullname" . }}
   trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
     connectionPool:
       tcp:
         maxConnections: {{ .Values.istio.trafficPolicy.connectionPool.tcp.maxConnections | default 100 }}
