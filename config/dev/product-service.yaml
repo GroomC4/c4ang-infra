@@ -37,6 +37,8 @@ config:
   AWS_S3_ENABLED: "true"
   AWS_S3_BUCKET: "c4ang-product-images-dev"
   AWS_REGION: "ap-northeast-2"
+  # Feign Client 설정 (서비스 간 통신)
+  FEIGN_CLIENTS_STORE_SERVICE_URL: "http://store-api"
 # Sensitive data (injected via Secret)
 secrets:
   SPRING_DATASOURCE_MASTER_USERNAME: "postgres"
