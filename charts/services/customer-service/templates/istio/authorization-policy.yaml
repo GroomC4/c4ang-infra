@@ -133,7 +133,8 @@ spec:
       to:
         - operation:
             paths:
-              - "/api/v1/internal/*"
+              - "/internal/*"
+              - "/internal/v1/*"
 
     # ====== DEFAULT DENY ======
     # All other requests are denied by default (implicit)
