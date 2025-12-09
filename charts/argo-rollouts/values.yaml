@@ -22,17 +22,17 @@ argo-rollouts:
   # CRD 설치 (필수)
   installCRDs: true
 
-  # 알림 설정 - Notification Controller 활성화 필수
+  # 알림 설정 - Notification Controller 비활성화
   notifications:
     secret:
-      create: true
-    # webhook 서비스 설정 (controller가 인식하도록)
-    notifiers:
-      service.webhook.discord: |
-        url: https://discord.com/api/webhooks/1447770723887222855/H8QUSS2p9ZZrApzbhlsdFyjSuhFIjQUiNshZFRrnKUextrP9H2JYsl8arBLOjNmj8bBC
-        headers:
-        - name: Content-Type
-          value: application/json
+      create: false
+    # webhook 서비스 설정 (비활성화)
+    # notifiers:
+    #   service.webhook.discord: |
+    #     url: https://discord.com/api/webhooks/...
+    #     headers:
+    #     - name: Content-Type
+    #       value: application/json
     # 템플릿 정의 - Discord Embed with Links
     templates:
       # 배포 성공 알림
@@ -76,7 +76,7 @@ prometheus:
 notifications:
   # Discord 알림
   discord:
-    enabled: true  # Discord 알림 활성화
+    enabled: false  # Discord 알림 비활성화
     # Discord 서버 > 설정 > 연동 > 웹후크에서 URL 생성
     # webhookUrl은 Secret에서 관리 (argo-rollouts-notification-secret)
 

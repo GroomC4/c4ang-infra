@@ -20,14 +20,14 @@ argo-rollouts:
 
   notifications:
     secret:
-      create: true
-    # webhook 서비스 설정
-    notifiers:
-      service.webhook.discord: |
-        url: https://discord.com/api/webhooks/1447770723887222855/H8QUSS2p9ZZrApzbhlsdFyjSuhFIjQUiNshZFRrnKUextrP9H2JYsl8arBLOjNmj8bBC
-        headers:
-        - name: Content-Type
-          value: application/json
+      create: false
+    # webhook 서비스 설정 (비활성화)
+    # notifiers:
+    #   service.webhook.discord: |
+    #     url: https://discord.com/api/webhooks/...
+    #     headers:
+    #     - name: Content-Type
+    #       value: application/json
     # =======================================================================
     # 템플릿 정의 - Discord Embed
     # 버전 형식: v1.2.3(abc1234) - 이미지 태그 + Pod Hash
