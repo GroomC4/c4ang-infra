@@ -1,4 +1,13 @@
-{{- if .Values.istio.enabled }}
+{{- /*
+  Service-level RequestAuthentication is DISABLED by default.
+  JWT validation is now handled at the Gateway level only.
+
+  Gateway에서 JWT 검증 후 X-User-Id, X-User-Role 헤더를 백엔드로 전달합니다.
+  서비스는 이 헤더를 신뢰하고, 서비스 간 통신은 mTLS로 보호됩니다.
+
+  이 파일은 호환성을 위해 유지되며, 필요시 istio.requestAuthentication.enabled: true로 활성화할 수 있습니다.
+*/ -}}
+{{- if and .Values.istio.enabled (.Values.istio.requestAuthentication).enabled }}
 apiVersion: security.istio.io/v1
 kind: RequestAuthentication
 metadata:
@@ -12,17 +21,13 @@ spec:
       {{- include "customer-service.selectorLabels" . | nindent 6 }}
   jwtRules:
     - issuer: "ecommerce-service-api"
-      # Customer Service가 발급한 JWT를 검증하기 위한 JWKS URI
-      # Customer Service의 공개키를 제공하는 엔드포인트
       jwksUri: "http://{{ include "customer-service.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}/.well-known/jwks.json"
-      # JWT가 유효할 때만 클레임을 헤더로 변환
       forwardOriginalToken: true
-      # JWT 클레임을 HTTP 헤더로 매핑
       outputClaimToHeaders:
         - header: "X-User-Id"
-          claim: "sub"  # JWT subject (user ID)
+          claim: "sub"
         - header: "X-User-Role"
-          claim: "role" # User role (CUSTOMER or OWNER)
+          claim: "role"
         - header: "X-User-Email"
           claim: "email"
         - header: "X-User-Name"

@@ -13,6 +13,7 @@ metadata:
 spec:
   parentRefs:
     - name: {{ include "istio.gateway.main.name" $ }}
+      sectionName: https
     {{- /* 추가 호스트네임 리스너에 명시적으로 연결 (k3d/CI 테스트용) */}}
     {{- if $.Values.gateway.main.additionalHostnames }}
     {{- range $idx, $hostname := $.Values.gateway.main.additionalHostnames }}
