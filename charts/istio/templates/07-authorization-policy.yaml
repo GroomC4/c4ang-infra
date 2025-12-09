@@ -202,30 +202,25 @@ spec:
 
 ---
 # ====================================
-# 6. Internal API (서비스 간 통신)
-# /internal/v1/* 경로는 네임스페이스 내 서비스만 접근 가능
+# 6. 서비스 간 통신 (Service Mesh 내부)
+# Gateway → 서비스, 서비스 → 서비스 모든 경로 허용
 # ====================================
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
-  name: internal-api-access
+  name: allow-mesh-internal
   namespace: {{ include "istio.namespace" . }}
   labels:
     {{- include "istio.labels" . | nindent 4 }}
 spec:
-  # 모든 워크로드에 적용 (selector 없음)
+  # 모든 워크로드에 적용 (selector 없음 = mesh 전체)
   action: ALLOW
   rules:
-    # 같은 네임스페이스 내 서비스 간 internal API 호출 허용
+    # 같은 네임스페이스 내 서비스 간 모든 통신 허용
     - from:
         - source:
             principals:
               - "cluster.local/ns/{{ include "istio.namespace" . }}/sa/*"
-      to:
-        - operation:
-            paths:
-              - "/internal/*"
-              - "/internal/v1/*"
 
 {{- if .Values.gateway.webhook.enabled }}
 ---
