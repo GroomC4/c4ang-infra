@@ -1,11 +1,15 @@
 {{- if and .Values.security.jwt.enabled .Values.security.authorizationPolicy.enabled }}
 # ====================================
 # Gateway Authorization Policies
-# ALLOW-based pattern for better control
+# Role-based Access Control (경로 + 메서드 복합)
 # ====================================
 
-# 1. Allow public endpoints (no JWT required)
-# 공개 엔드포인트 허용 (회원가입, 로그인, 헬스체크 등)
+# Gateway selector 정의 (재사용)
+{{- $gatewaySelector := dict "gateway.networking.k8s.io/gateway-name" (include "istio.gateway.main.name" .) }}
+
+# ====================================
+# 1. Public endpoints (인증 불필요)
+# ====================================
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -16,10 +20,10 @@ metadata:
 spec:
   selector:
     matchLabels:
-      istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+      gateway.networking.k8s.io/gateway-name: {{ include "istio.gateway.main.name" . }}
   action: ALLOW
   rules:
-    # Public API endpoints (authentication)
+    # 인증 관련 엔드포인트
     {{- if .Values.security.publicEndpoints }}
     - to:
         - operation:
@@ -28,7 +32,7 @@ spec:
               - {{ . | quote }}
               {{- end }}
     {{- end }}
-    # Health and monitoring endpoints
+    # 헬스체크 및 모니터링
     - to:
         - operation:
             paths:
@@ -38,7 +42,7 @@ spec:
               - "/actuator/metrics"
               - "/actuator/info"
               - "/.well-known/*"
-    # API Documentation
+    # API 문서
     - to:
         - operation:
             paths:
@@ -46,30 +50,154 @@ spec:
               - "/v3/api-docs/*"
               - "/swagger-resources/*"
               - "/webjars/*"
+
 ---
-# 2. Allow protected API endpoints (JWT required)
-# JWT가 있는 요청만 보호된 API 허용
+# ====================================
+# 2. CUSTOMER 전용 엔드포인트
+# ====================================
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
-  name: require-jwt-for-api
+  name: customer-endpoints
   namespace: {{ include "istio.namespace" . }}
   labels:
     {{- include "istio.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      istio.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+      gateway.networking.k8s.io/gateway-name: {{ include "istio.gateway.main.name" . }}
   action: ALLOW
   rules:
-    # Protected API endpoints - requires valid JWT
+    # 주문: CUSTOMER만 접근 가능
     - from:
         - source:
             requestPrincipals: ["*"]
       to:
         - operation:
             paths:
-              - "/api/*"
+              - "/api/v1/orders"
+              - "/api/v1/orders/*"
+      when:
+        - key: request.auth.claims[role]
+          values: ["CUSTOMER"]
+    # 결제: CUSTOMER만 접근 가능
+    - from:
+        - source:
+            requestPrincipals: ["*"]
+      to:
+        - operation:
+            paths:
+              - "/api/v1/payments"
+              - "/api/v1/payments/*"
+      when:
+        - key: request.auth.claims[role]
+          values: ["CUSTOMER"]
+
+---
+# ====================================
+# 3. OWNER 전용 엔드포인트 (CUD 작업)
+# ====================================
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: owner-write-endpoints
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      gateway.networking.k8s.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  action: ALLOW
+  rules:
+    # 스토어 생성/수정/삭제: OWNER만
+    - from:
+        - source:
+            requestPrincipals: ["*"]
+      to:
+        - operation:
+            paths:
+              - "/api/v1/stores"
+              - "/api/v1/stores/*"
+            methods: ["POST", "PUT", "PATCH", "DELETE"]
+      when:
+        - key: request.auth.claims[role]
+          values: ["OWNER"]
+    # 상품 생성/수정/삭제: OWNER만
+    - from:
+        - source:
+            requestPrincipals: ["*"]
+      to:
+        - operation:
+            paths:
+              - "/api/v1/products"
+              - "/api/v1/products/*"
+            methods: ["POST", "PUT", "PATCH", "DELETE"]
+      when:
+        - key: request.auth.claims[role]
+          values: ["OWNER"]
+
+---
+# ====================================
+# 4. 조회는 모든 인증 사용자 허용
+# ====================================
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: authenticated-read-endpoints
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      gateway.networking.k8s.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  action: ALLOW
+  rules:
+    # 스토어/상품 조회: 모든 인증 사용자
+    - from:
+        - source:
+            requestPrincipals: ["*"]
+      to:
+        - operation:
+            paths:
+              - "/api/v1/stores"
+              - "/api/v1/stores/*"
+              - "/api/v1/products"
+              - "/api/v1/products/*"
+            methods: ["GET"]
+
+---
+# ====================================
+# 5. Saga Tracker (백오피스용)
+# ====================================
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: saga-tracker-endpoints
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      gateway.networking.k8s.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  action: ALLOW
+  rules:
+    # Saga 조회: OWNER만 (백오피스)
+    - from:
+        - source:
+            requestPrincipals: ["*"]
+      to:
+        - operation:
+            paths:
+              - "/api/v1/sagas"
+              - "/api/v1/sagas/*"
+            methods: ["GET"]
+      when:
+        - key: request.auth.claims[role]
+          values: ["OWNER"]
+
 {{- end }}
 
 {{- if .Values.gateway.webhook.enabled }}
@@ -88,7 +216,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      istio.io/gateway-name: {{ include "istio.gateway.webhook.name" . }}
+      gateway.networking.k8s.io/gateway-name: {{ include "istio.gateway.webhook.name" . }}
   action: ALLOW
   rules:
     {{- if .Values.security.webhook.ipWhitelist }}
