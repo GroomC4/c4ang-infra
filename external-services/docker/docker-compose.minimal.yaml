@@ -1,0 +1,76 @@
+# MSA 외부 데이터 서비스 (최소 구성 - customer-service 전용)
+# 사용법: docker-compose -f docker-compose.minimal.yaml up -d
+
+services:
+  # ============================================
+  # PostgreSQL - Customer DB만
+  # ============================================
+  customer-db:
+    image: postgres:15-alpine
+    container_name: customer-db
+    environment:
+      POSTGRES_DB: customer_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - customer-db-data:/var/lib/postgresql/data
+      - ./init-scripts/customer-db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - external-services
+
+  # ============================================
+  # Redis Instances (인증/세션에 필요)
+  # ============================================
+  cache-redis:
+    image: redis:7-alpine
+    container_name: cache-redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - cache-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - external-services
+
+  session-redis:
+    image: redis:7-alpine
+    container_name: session-redis
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy volatile-lru
+    ports:
+      - "6380:6379"
+    volumes:
+      - session-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - external-services
+
+# ============================================
+# Volumes
+# ============================================
+volumes:
+  customer-db-data:
+  cache-redis-data:
+  session-redis-data:
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  external-services:
+    driver: bridge

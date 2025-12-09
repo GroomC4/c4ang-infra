@@ -12,11 +12,12 @@ spec:
     - list:
         elements:
           - name: customer-service
-          - name: order-service
-          - name: payment-service
-          - name: product-service
-          - name: saga-tracker
-          - name: store-service
+          # 리소스 최적화를 위해 일시적으로 비활성화
+          # - name: order-service
+          # - name: payment-service
+          # - name: product-service
+          # - name: saga-tracker
+          # - name: store-service
 
   template:
     metadata:
