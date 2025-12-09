@@ -14,7 +14,7 @@ postgresql:
   databases:
     customer:
       enabled: true
-      externalName: "host.docker.internal"  # 로컬 Docker 호스트
+      externalName: "host.docker.internal"
       port: 5432
     product:
       enabled: true
