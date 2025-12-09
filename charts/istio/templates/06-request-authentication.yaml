@@ -5,6 +5,9 @@
 # Gateway Only: JWT 검증은 Gateway에서만 수행
 # 서비스는 X-User-Id, X-User-Role 헤더만 신뢰
 # 서비스 간 통신은 mTLS로 신뢰
+#
+# NOTE: STRICT mTLS 환경에서 istiod가 jwksUri를 fetch할 수 없으므로
+# inline jwks를 사용합니다. 키 로테이션 시 이 값도 업데이트해야 합니다.
 apiVersion: security.istio.io/v1
 kind: RequestAuthentication
 metadata:
@@ -19,7 +22,13 @@ spec:
       gateway.networking.k8s.io/gateway-name: {{ include "istio.gateway.main.name" . }}
   jwtRules:
     - issuer: "{{ .Values.security.jwt.issuer }}"
+      {{- if .Values.security.jwt.jwks }}
+      # Inline JWKS (STRICT mTLS 환경에서 권장)
+      jwks: {{ .Values.security.jwt.jwks | quote }}
+      {{- else }}
+      # jwksUri 사용 (PERMISSIVE mTLS 또는 네트워크 접근 가능한 경우)
       jwksUri: "{{ .Values.security.jwt.jwksUri }}"
+      {{- end }}
       {{- if .Values.security.jwt.audiences }}
       audiences:
         {{- range .Values.security.jwt.audiences }}
