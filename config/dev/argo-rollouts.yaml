@@ -21,6 +21,35 @@ argo-rollouts:
   notifications:
     secret:
       create: true
+    # webhook 서비스 설정 (controller가 인식하도록)
+    notifiers:
+      service.webhook.discord: |
+        url: https://discord.com/api/webhooks/1447770723887222855/H8QUSS2p9ZZrApzbhlsdFyjSuhFIjQUiNshZFRrnKUextrP9H2JYsl8arBLOjNmj8bBC
+        headers:
+        - name: Content-Type
+          value: application/json
+    # 템플릿 정의 - Discord Embed
+    templates:
+      template.rollout-completed: |
+        webhook:
+          discord:
+            method: POST
+            body: |
+              {"embeds":[{"title":"✅ 배포 완료","color":3066993,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{.rollout.status.currentPodHash}}","inline":true}],"description":"Pre/Post Analysis를 통과하여 배포가 성공적으로 완료되었습니다."}]}
+      template.rollout-aborted: |
+        webhook:
+          discord:
+            method: POST
+            body: |
+              {"embeds":[{"title":"🚨 자동 롤백 발생","color":15158332,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"사유","value":"{{.rollout.status.message}}","inline":false}],"description":"PostPromotionAnalysis 실패로 자동 롤백되었습니다."}]}
+    # 트리거 정의
+    triggers:
+      trigger.on-rollout-completed: |
+        - send: [rollout-completed]
+          when: rollout.status.phase == 'Healthy'
+      trigger.on-rollout-aborted: |
+        - send: [rollout-aborted]
+          when: rollout.status.phase == 'Degraded'
 
 # 개발 환경 모니터링 설정
 metrics:
