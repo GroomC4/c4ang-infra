@@ -1,6 +1,31 @@
 -- Saga Tracker DB Schema
 -- Combined from Flyway migrations V1-V4
 
+-- Flyway 스키마 히스토리 테이블 생성 (Flyway와 충돌 방지)
+CREATE TABLE IF NOT EXISTS flyway_schema_history (
+    installed_rank INTEGER NOT NULL PRIMARY KEY,
+    version VARCHAR(50),
+    description VARCHAR(200) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    script VARCHAR(1000) NOT NULL,
+    checksum INTEGER,
+    installed_by VARCHAR(100) NOT NULL,
+    installed_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    execution_time INTEGER NOT NULL,
+    success BOOLEAN NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS flyway_schema_history_s_idx ON flyway_schema_history(success);
+
+-- Flyway가 이미 실행된 것처럼 기록 추가
+INSERT INTO flyway_schema_history (installed_rank, version, description, type, script, checksum, installed_by, execution_time, success)
+VALUES
+    (1, '1', 'create saga instance table', 'SQL', 'V1__create_saga_instance_table.sql', 0, 'postgres', 0, true),
+    (2, '2', 'create saga steps table', 'SQL', 'V2__create_saga_steps_table.sql', 0, 'postgres', 0, true),
+    (3, '3', 'add indexes', 'SQL', 'V3__add_indexes.sql', 0, 'postgres', 0, true),
+    (4, '4', 'add metadata gin index', 'SQL', 'V4__add_metadata_gin_index.sql', 0, 'postgres', 0, true)
+ON CONFLICT (installed_rank) DO NOTHING;
+
 -- V1: Saga 인스턴스 메인 테이블 생성
 CREATE TABLE saga_instance (
     saga_id         VARCHAR(100)    PRIMARY KEY,
