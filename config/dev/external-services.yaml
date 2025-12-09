@@ -36,10 +36,6 @@ postgresql:
       enabled: true
       externalName: "host.docker.internal"
       port: 5437
-    recommendation:
-      enabled: true
-      externalName: "host.docker.internal"
-      port: 5438
 
 # -----------------------------------------------------------------------------
 # Redis Instances
