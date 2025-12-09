@@ -17,7 +17,7 @@ imagePullSecrets: []
 # 서비스 설정 (환경 무관)
 service:
   type: ClusterIP
-  port: 8081
+  port: 80
   targetPort: 8081
 
 # 기본 리소스 (환경별로 오버라이드 가능)
