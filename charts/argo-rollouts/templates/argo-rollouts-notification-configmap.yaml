@@ -4,6 +4,134 @@ metadata:
   name: argo-rollouts-notification-configmap
   namespace: argo-rollouts
 data:
+  # Grafana 알림 설정
   service.grafana: |
-    address: http://a68126f1f9e17476aa603b145e3adfcb-394715272.ap-northeast-2.elb.amazonaws.com/login #그라파나 주소
-    api-key: $grafana-api-key # Secret의 키 이름 참조
+    address: http://a68126f1f9e17476aa603b145e3adfcb-394715272.ap-northeast-2.elb.amazonaws.com/login
+    api-key: $grafana-api-key
+
+  # Discord Webhook 설정
+  # Secret에 discord-webhook-url 키로 Webhook URL 저장 필요
+  # Discord 서버 설정 > 연동 > 웹후크에서 생성
+  service.webhook.discord: |
+    url: $discord-webhook-url
+    headers:
+      - name: Content-Type
+        value: application/json
+
+  # ==========================================================================
+  # 알림 템플릿 정의 (Discord Embed 형식)
+  # ==========================================================================
+
+  # 분석 실패 시 Discord 알림 (수동 결정 요청)
+  template.analysis-failed: |
+    webhook:
+      discord:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "⚠️ 배포 분석 실패 - 검토 필요",
+              "color": 14495300,
+              "fields": [
+                {"name": "서비스", "value": "{{.rollout.metadata.name}}", "inline": true},
+                {"name": "네임스페이스", "value": "{{.rollout.metadata.namespace}}", "inline": true},
+                {"name": "상태", "value": "{{.rollout.status.phase}}", "inline": true},
+                {"name": "메시지", "value": "{{.rollout.status.message}}", "inline": false}
+              ],
+              "description": "분석 결과에 따라 배포가 일시 중지되었습니다.\n**수동으로 승격 또는 롤백을 결정해주세요.**\n\n[ArgoCD에서 확인](https://argocd.c4ang.com/applications/{{.rollout.metadata.namespace}}/{{.rollout.metadata.name}})",
+              "timestamp": "{{.rollout.status.pauseConditions | first | default dict | dig \"startTime\" time.Now | date \"2006-01-02T15:04:05Z07:00\"}}"
+            }]
+          }
+
+  # 배포 성공 알림
+  template.rollout-completed: |
+    webhook:
+      discord:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "✅ 배포 완료",
+              "color": 3066993,
+              "fields": [
+                {"name": "서비스", "value": "{{.rollout.metadata.name}}", "inline": true},
+                {"name": "네임스페이스", "value": "{{.rollout.metadata.namespace}}", "inline": true},
+                {"name": "버전", "value": "{{.rollout.status.currentPodHash}}", "inline": true}
+              ],
+              "timestamp": "{{time.Now | date \"2006-01-02T15:04:05Z07:00\"}}"
+            }]
+          }
+
+  # 롤백 발생 알림
+  template.rollout-aborted: |
+    webhook:
+      discord:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "🔄 배포 롤백 발생",
+              "color": 14495300,
+              "fields": [
+                {"name": "서비스", "value": "{{.rollout.metadata.name}}", "inline": true},
+                {"name": "네임스페이스", "value": "{{.rollout.metadata.namespace}}", "inline": true},
+                {"name": "사유", "value": "{{.rollout.status.message}}", "inline": false}
+              ],
+              "timestamp": "{{time.Now | date \"2006-01-02T15:04:05Z07:00\"}}"
+            }]
+          }
+
+  # 분석 시작 알림 (선택적)
+  template.analysis-started: |
+    webhook:
+      discord:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "🔍 배포 분석 시작",
+              "color": 3447003,
+              "fields": [
+                {"name": "서비스", "value": "{{.rollout.metadata.name}}", "inline": true},
+                {"name": "네임스페이스", "value": "{{.rollout.metadata.namespace}}", "inline": true}
+              ],
+              "description": "Pre/Post Promotion 분석이 시작되었습니다.",
+              "timestamp": "{{time.Now | date \"2006-01-02T15:04:05Z07:00\"}}"
+            }]
+          }
+
+  # ==========================================================================
+  # 트리거 정의
+  # ==========================================================================
+  trigger.on-analysis-run-failed: |
+    - send: [analysis-failed]
+      when: analysis.phase == 'Failed'
+
+  trigger.on-rollout-completed: |
+    - send: [rollout-completed]
+      when: rollout.status.phase == 'Healthy'
+
+  trigger.on-rollout-aborted: |
+    - send: [rollout-aborted]
+      when: rollout.status.phase == 'Degraded'
+
+  trigger.on-analysis-run-running: |
+    - send: [analysis-started]
+      when: analysis.phase == 'Running'
+
+  # ==========================================================================
+  # 기본 트리거 및 구독 설정
+  # ==========================================================================
+  defaultTriggers: |
+    - on-analysis-run-failed
+    - on-rollout-completed
+    - on-rollout-aborted
+
+  subscriptions: |
+    - recipients:
+        - webhook:discord
+      triggers:
+        - on-analysis-run-failed
+        - on-rollout-completed
+        - on-rollout-aborted
+        - on-analysis-run-running

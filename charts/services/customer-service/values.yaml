@@ -80,6 +80,54 @@ istio:
     hostnames:
       - api.c4ang.com
 
-# Argo Rollouts 분석
+# Argo Rollouts 분석 설정
 analysis:
   prometheusUrl: "http://prometheus.monitoring.svc.cluster.local:9090"
+
+  # 분석 전략 활성화/비활성화
+  strategies:
+    trafficDrop:
+      enabled: true
+    errorRate:
+      enabled: true
+    latency:
+      enabled: true
+    businessMetric:
+      enabled: true
+    webhookE2E:
+      enabled: false  # 나중에 E2E 테스트 서버 준비되면 활성화
+
+  # 임계값 설정 (환경별 오버라이드 가능)
+  thresholds:
+    # 트래픽 급감 감지: 이전 대비 이 비율 미만이면 롤백
+    trafficDropRatio: 0.5
+    # 에러율 임계치: 이 비율 초과 시 롤백
+    errorRateLimit: 0.05
+    # 최소 트래픽 (RPM): 이 미만이면 분석 스킵
+    minTrafficRPM: 10
+    # 비즈니스 메트릭 급감 비율
+    businessSuccessRatio: 0.7
+    # 레이턴시 임계값 (초)
+    latencyP95Limit: 2.0
+    latencyP99Limit: 5.0
+
+  # 분석 주기 설정
+  intervals:
+    trafficDrop: "1m"
+    errorRate: "30s"
+    latency: "30s"
+    businessMetric: "1m"
+
+  # 초기 지연 (JVM 웜업 시간)
+  initialDelay: "60s"
+
+  # 분석 횟수
+  analysisCount: 5
+
+  # 실패 허용 횟수
+  failureLimit: 1
+
+  # Webhook E2E 테스트 설정 (향후 사용)
+  webhook:
+    url: ""  # E2E 테스트 서버 URL (예: http://e2e-test-server.qa.svc.cluster.local/trigger)
+    timeout: "5m"

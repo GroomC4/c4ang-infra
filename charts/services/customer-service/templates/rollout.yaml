@@ -5,10 +5,14 @@ metadata:
   labels:
     {{- include "customer-service.labels" . | nindent 4 }}
   annotations:
-    # 배포가 성공적으로 완료되면 Grafana에 알림 전송
+    # Grafana 알림
     notifications.argoproj.io/subscribe.on-rollout-completed.grafana: ""
-    # (선택) Blue-Green 전환이나 단계별 진행 상황도 보고 싶다면 추가
     notifications.argoproj.io/subscribe.on-rollout-step-completed.grafana: ""
+    # Discord 알림 - 분석 실패 시 수동 결정을 위한 알림
+    notifications.argoproj.io/subscribe.on-analysis-run-failed.webhook: discord
+    notifications.argoproj.io/subscribe.on-analysis-run-running.webhook: discord
+    notifications.argoproj.io/subscribe.on-rollout-completed.webhook: discord
+    notifications.argoproj.io/subscribe.on-rollout-aborted.webhook: discord
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -19,9 +23,12 @@ spec:
     blueGreen:
       activeService: {{ include "customer-service.fullname" . }}
       previewService: {{ include "customer-service.fullname" . }}-preview
-      autoPromotionEnabled: true # 처음엔 false로 시작
-      autoPromotionSeconds: 300    # 5분 후 자동 승격
+      # 자동 승격 비활성화 - 분석 실패 시 Slack 알림 후 수동 결정
+      autoPromotionEnabled: false
+      # autoPromotionSeconds: 300  # autoPromotionEnabled=true일 때만 적용
       scaleDownDelaySeconds: 300   # 이전 버전 5분 후 삭제
+      # 분석 실패 시 자동 롤백 비활성화 (수동 결정)
+      abortScaleDownDelaySeconds: 300
 
       # 자동 검증 단계
       prePromotionAnalysis:
