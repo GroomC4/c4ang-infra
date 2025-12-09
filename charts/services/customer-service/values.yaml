@@ -139,4 +139,4 @@ analysis:
 # 알림 설정
 notifications:
   discord:
-    enabled: false  # true로 변경하여 Discord 알림 활성화
+    enabled: true  # Discord 알림 활성화

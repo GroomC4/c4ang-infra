@@ -1,7 +1,16 @@
 # =============================================================================
 # Argo Rollouts AnalysisTemplate - Post-Promotion Analysis
 # =============================================================================
-# 배포 승격 후 실행되는 분석 템플릿
+# 배포 승격(Green 전환) 후 실행되는 분석 템플릿
+# 실제 프로덕션 트래픽을 기반으로 서비스 상태를 모니터링
+#
+# 검증 항목:
+#   - Error Rate: 5xx 에러 비율 모니터링
+#   - Latency: P95/P99 응답 시간 모니터링
+#   - Business Metrics: 비즈니스 성공률 모니터링 (선택적)
+#
+# 분석 실패 시: 자동 롤백 + Discord 알림
+#
 # 각 전략은 values.yaml의 analysis.strategies에서 활성화/비활성화 가능
 # 임계값은 values.yaml의 analysis.thresholds에서 환경별 조정 가능
 
