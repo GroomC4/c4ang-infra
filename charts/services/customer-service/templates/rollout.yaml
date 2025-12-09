@@ -5,12 +5,21 @@ metadata:
   labels:
     {{- include "customer-service.labels" . | nindent 4 }}
   annotations:
-    # Grafana 알림
-    notifications.argoproj.io/subscribe.on-rollout-completed.grafana: ""
-    notifications.argoproj.io/subscribe.on-rollout-step-completed.grafana: ""
     {{- if .Values.notifications.discord.enabled }}
-    # Discord 알림 - webhook 서비스명(discord)을 직접 사용
-    notifications.argoproj.io/subscribe.on-analysis-failed.discord: ""
+    # =======================================================================
+    # Discord 알림 구독 - Pre/Post Analysis + Blue-Green 전환 + 최종 상태
+    # =======================================================================
+    # Pre-Promotion Analysis (Preview 환경 검증)
+    notifications.argoproj.io/subscribe.on-pre-analysis-running.discord: ""
+    notifications.argoproj.io/subscribe.on-pre-analysis-success.discord: ""
+    notifications.argoproj.io/subscribe.on-pre-analysis-failed.discord: ""
+    # Blue-Green 전환
+    notifications.argoproj.io/subscribe.on-rollout-switch.discord: ""
+    # Post-Promotion Analysis (프로덕션 트래픽 검증)
+    notifications.argoproj.io/subscribe.on-post-analysis-running.discord: ""
+    notifications.argoproj.io/subscribe.on-post-analysis-success.discord: ""
+    notifications.argoproj.io/subscribe.on-post-analysis-failed.discord: ""
+    # 최종 상태
     notifications.argoproj.io/subscribe.on-rollout-completed.discord: ""
     notifications.argoproj.io/subscribe.on-rollout-aborted.discord: ""
     {{- end }}

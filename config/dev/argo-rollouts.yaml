@@ -21,29 +21,105 @@ argo-rollouts:
   notifications:
     secret:
       create: true
-    # webhook 서비스 설정 (controller가 인식하도록)
+    # webhook 서비스 설정
     notifiers:
       service.webhook.discord: |
         url: https://discord.com/api/webhooks/1447770723887222855/H8QUSS2p9ZZrApzbhlsdFyjSuhFIjQUiNshZFRrnKUextrP9H2JYsl8arBLOjNmj8bBC
         headers:
         - name: Content-Type
           value: application/json
+    # =======================================================================
     # 템플릿 정의 - Discord Embed
+    # 버전 형식: v1.2.3(abc1234) - 이미지 태그 + Pod Hash
+    # =======================================================================
     templates:
+      # ----- Pre-Promotion Analysis -----
+      template.pre-analysis-running: |
+        webhook:
+          discord:
+            method: POST
+            body: |
+              {"embeds":[{"title":"🔍 Pre-Analysis 시작","color":3447003,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true}],"description":"Preview 환경에서 Smoke Test를 실행합니다.","timestamp":"{{ .rollout.metadata.creationTimestamp }}"}]}
+      template.pre-analysis-success: |
+        webhook:
+          discord:
+            method: POST
+            body: |
+              {"embeds":[{"title":"✅ Pre-Analysis 성공","color":3066993,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true}],"description":"Smoke Test 통과! Blue-Green 전환을 진행합니다."}]}
+      template.pre-analysis-failed: |
+        webhook:
+          discord:
+            method: POST
+            body: |
+              {"embeds":[{"title":"❌ Pre-Analysis 실패","color":15158332,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true},{"name":"사유","value":"{{.rollout.status.message}}","inline":false}],"description":"Smoke Test 실패로 배포가 중단되었습니다. Preview 환경을 확인해주세요."}]}
+      # ----- Blue-Green 전환 -----
+      template.rollout-switch: |
+        webhook:
+          discord:
+            method: POST
+            body: |
+              {"embeds":[{"title":"🔄 Blue-Green 전환","color":7506394,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true}],"description":"Active 서비스가 새 버전으로 전환되었습니다. Post-Analysis를 시작합니다."}]}
+      # ----- Post-Promotion Analysis -----
+      template.post-analysis-running: |
+        webhook:
+          discord:
+            method: POST
+            body: |
+              {"embeds":[{"title":"📊 Post-Analysis 시작","color":3447003,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true}],"description":"실제 트래픽 기반으로 Error Rate, Latency를 모니터링합니다."}]}
+      template.post-analysis-success: |
+        webhook:
+          discord:
+            method: POST
+            body: |
+              {"embeds":[{"title":"✅ Post-Analysis 성공","color":3066993,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true}],"description":"프로덕션 트래픽 검증 완료! 배포가 성공적으로 완료되었습니다."}]}
+      template.post-analysis-failed: |
+        webhook:
+          discord:
+            method: POST
+            body: |
+              {"embeds":[{"title":"🚨 Post-Analysis 실패","color":15158332,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true},{"name":"사유","value":"{{.rollout.status.message}}","inline":false}],"description":"프로덕션 트래픽 검증 실패! 자동 롤백을 진행합니다."}]}
+      # ----- 최종 상태 -----
       template.rollout-completed: |
         webhook:
           discord:
             method: POST
             body: |
-              {"embeds":[{"title":"✅ 배포 완료","color":3066993,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{.rollout.status.currentPodHash}}","inline":true}],"description":"Pre/Post Analysis를 통과하여 배포가 성공적으로 완료되었습니다."}]}
+              {"embeds":[{"title":"🎉 배포 완료","color":3066993,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true}],"description":"Pre/Post Analysis를 모두 통과하여 배포가 성공적으로 완료되었습니다."}]}
       template.rollout-aborted: |
         webhook:
           discord:
             method: POST
             body: |
-              {"embeds":[{"title":"🚨 자동 롤백 발생","color":15158332,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"사유","value":"{{.rollout.status.message}}","inline":false}],"description":"PostPromotionAnalysis 실패로 자동 롤백되었습니다."}]}
+              {"embeds":[{"title":"⛔ 배포 중단 (롤백 완료)","color":15158332,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true},{"name":"사유","value":"{{.rollout.status.message}}","inline":false}],"description":"Analysis 실패로 이전 버전으로 롤백되었습니다."}]}
+    # =======================================================================
     # 트리거 정의
+    # =======================================================================
     triggers:
+      # Pre-Promotion Analysis
+      trigger.on-pre-analysis-running: |
+        - send: [pre-analysis-running]
+          when: rollout.status.blueGreen.prePromotionAnalysisRunStatus.status == 'Running'
+      trigger.on-pre-analysis-success: |
+        - send: [pre-analysis-success]
+          when: rollout.status.blueGreen.prePromotionAnalysisRunStatus.status == 'Successful'
+      trigger.on-pre-analysis-failed: |
+        - send: [pre-analysis-failed]
+          when: rollout.status.blueGreen.prePromotionAnalysisRunStatus.status == 'Failed'
+      # Blue-Green 전환 (Active 서비스 변경)
+      trigger.on-rollout-switch: |
+        - send: [rollout-switch]
+          when: rollout.status.blueGreen.activeSelector != rollout.status.blueGreen.previousActiveSelector
+      # Post-Promotion Analysis
+      trigger.on-post-analysis-running: |
+        - send: [post-analysis-running]
+          when: rollout.status.blueGreen.postPromotionAnalysisRunStatus.status == 'Running'
+      trigger.on-post-analysis-success: |
+        - send: [post-analysis-success]
+          when: rollout.status.blueGreen.postPromotionAnalysisRunStatus.status == 'Successful'
+      trigger.on-post-analysis-failed: |
+        - send: [post-analysis-failed]
+          when: rollout.status.blueGreen.postPromotionAnalysisRunStatus.status == 'Failed'
+      # 최종 상태
       trigger.on-rollout-completed: |
         - send: [rollout-completed]
           when: rollout.status.phase == 'Healthy'
