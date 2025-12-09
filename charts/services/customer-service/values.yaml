@@ -87,7 +87,7 @@ analysis:
   # 분석 전략 활성화/비활성화
   strategies:
     trafficDrop:
-      enabled: true
+      enabled: false  # 토이프로젝트 특성상 트래픽 적어 오탐 가능성 높음
     errorRate:
       enabled: true
     latency:
