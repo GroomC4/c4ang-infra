@@ -71,8 +71,12 @@ security:
 
   jwt:
     enabled: true
-    # Customer Service가 발급한 JWT와 동일한 설정 (클러스터 내부 접근)
+    # Customer Service가 발급한 JWT와 동일한 설정
     issuer: "ecommerce-service-api"
+    # STRICT mTLS 환경에서는 istiod가 jwksUri를 fetch할 수 없으므로 inline jwks 사용
+    # 키 로테이션 시 이 값도 업데이트 필요
+    jwks: '{"keys":[{"kty":"RSA","e":"AQAB","use":"sig","kid":"ecommerce-key-1","alg":"RS256","n":"rw-UgxJKMS6oi4E3jW4y3tr6ZIAxBrRodZWDwfwAC3BBAtt7-hITIk8eNQwyMPV-qA_hv-xsGyqWvbMYb42LRgVLjD5lIV8EfTaNd5kV3nomnG57BUTFM6fYj_c9P7yUwhiDXEa2QOegem7gmw6v3dB-GHRPj8-_nDCLDBga6YN2DtptVw0Gg1rsX1y79Fn1Zr0XgL_oMkU-yjc87zHRnqg-3ojFmDpEan7zWPkqMeRHZUwePyUzllTtSVfH9iXBVnG_L8R94v_nGR9dbTou01nTORpc9uNp396RFin48rc39fvzoJFxTpvWvIvFIoAkvY83kaNMRWCt9vimL4Xx0Q"}]}'
+    # Fallback: jwks가 없으면 jwksUri 사용 (PERMISSIVE mTLS 환경)
     jwksUri: "http://customer-api.ecommerce.svc.cluster.local:80/.well-known/jwks.json"
     audiences:
       - "ecommerce-api"
