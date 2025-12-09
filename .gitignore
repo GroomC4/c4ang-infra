@@ -54,3 +54,6 @@ TEST*.md
 # 포트포워딩 PID 파일
 .port-forward/
 scripts/platform/kubeconfig.yaml
+
+# K3d kubeconfig (로컬 개발환경 - Git에 커밋하지 않음)
+k8s-dev-k3d/kubeconfig/

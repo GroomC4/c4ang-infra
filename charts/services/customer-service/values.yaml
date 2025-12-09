@@ -38,7 +38,8 @@ autoscaling:
   targetMemoryUtilizationPercentage: 80
 
 # 환경변수 - config/{env}/customer-service.yaml에서 정의
-config: {}
+config:
+  JWT_ACCESS_TOKEN_EXPIRATION_MINUTES: "4320"  # 3일 (테스트용)
 
 # 시크릿 - config/{env}/customer-service.yaml에서 정의
 secrets: {}
@@ -53,6 +54,9 @@ redis:
 # Istio 설정 (환경 무관한 공통 설정)
 istio:
   enabled: true
+  # Service-level RequestAuthentication은 비활성화 (Gateway에서 JWT 검증)
+  requestAuthentication:
+    enabled: false
   pathPrefix: /api/v1/customers
   timeout: 30s
   retries:

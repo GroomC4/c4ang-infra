@@ -15,30 +15,8 @@ spec:
       activeService: {{ include "product-service.fullname" . }}
       previewService: {{ include "product-service.fullname" . }}-preview
       autoPromotionEnabled: true
-      autoPromotionSeconds: 300
-      scaleDownDelaySeconds: 300
-      prePromotionAnalysis:
-        templates:
-          - templateName: smoke-test-analysis
-        args:
-          - name: service-name
-            value: {{ include "product-service.fullname" . }}
-          - name: namespace
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
-          - name: port
-            value: "{{ .Values.service.port }}"
-      postPromotionAnalysis:
-        templates:
-          - templateName: post-promotion-analysis
-        args:
-          - name: service-name
-            value: {{ include "product-service.fullname" . }}
-          - name: namespace
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
+      autoPromotionSeconds: 30
+      scaleDownDelaySeconds: 30
 
   selector:
     matchLabels:
@@ -74,10 +52,10 @@ spec:
           image: "{{ .Values.image.repository }}{{- if .Values.image.digest }}@{{ .Values.image.digest }}{{- else }}:{{ .Values.image.tag | default .Chart.AppVersion }}{{- end }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with .Values.command }}
-          command: {{- toYaml . | nindent 10 }}
+          command: {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- with .Values.args }}
-          args: {{- toYaml . | nindent 10 }}
+          args: {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
             - name: http
@@ -99,18 +77,22 @@ spec:
               mountPath: /var/log/product-service
           livenessProbe:
             httpGet:
-              path: /actuator/health
+              path: /actuator/health/liveness
               port: http
             initialDelaySeconds: 60
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
           readinessProbe:
             httpGet:
-              path: /actuator/health
+              path: /actuator/health/readiness
               port: http
             initialDelaySeconds: 30
-            periodSeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 10
           resources:
-            {{- toYaml .Values.resources | nindent 10 }}
+            {{- toYaml .Values.resources | nindent 12 }}
 
           # Graceful Shutdown
           lifecycle:

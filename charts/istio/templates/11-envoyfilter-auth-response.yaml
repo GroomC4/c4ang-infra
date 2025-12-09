@@ -1,0 +1,86 @@
+{{- if .Values.security.jwt.enabled }}
+# ====================================
+# Custom Authentication Error Response
+# ====================================
+# Istio 기본 인증 실패 응답을 도메인 서비스 에러 포맷으로 변환
+# 401 Unauthorized: JWT 누락 또는 유효하지 않음
+# 403 Forbidden: 권한 없음 (Role 불일치)
+#
+# 도메인 서비스 ErrorResponse 포맷:
+#   { "code": "ERROR_CODE", "message": "에러 메시지" }
+#
+# 보안: Istio/Envoy 정보를 노출하지 않고 일반적인 에러 메시지 반환
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: auth-error-response
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  workloadSelector:
+    labels:
+      gateway.networking.k8s.io/gateway-name: {{ include "istio.gateway.main.name" . }}
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.http_connection_manager"
+              subFilter:
+                name: "envoy.filters.http.router"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.lua
+          typed_config:
+            "@type": "type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua"
+            inlineCode: |
+              function envoy_on_response(response_handle)
+                local status = response_handle:headers():get(":status")
+                local content_type = response_handle:headers():get("content-type") or ""
+
+                -- 이미 JSON이면 변환하지 않음
+                if string.find(content_type, "application/json") then
+                  return
+                end
+
+                -- 401 Unauthorized - JWT 누락 또는 유효하지 않음
+                if status == "401" then
+                  local www_auth = response_handle:headers():get("www-authenticate") or ""
+                  local error_code = "AUTHENTICATION_REQUIRED"
+                  local message = "인증이 필요합니다."
+
+                  -- JWT 관련 오류 메시지 파싱
+                  if string.find(www_auth, "missing") then
+                    error_code = "TOKEN_MISSING"
+                    message = "액세스 토큰이 필요합니다. Authorization 헤더에 Bearer 토큰을 포함해주세요."
+                  elseif string.find(www_auth, "invalid") then
+                    error_code = "TOKEN_INVALID"
+                    message = "유효하지 않은 토큰입니다."
+                  elseif string.find(www_auth, "expired") then
+                    error_code = "TOKEN_EXPIRED"
+                    message = "토큰이 만료되었습니다. 토큰을 갱신해주세요."
+                  end
+
+                  local json_body = string.format(
+                    '{"code":"%s","message":"%s"}',
+                    error_code, message
+                  )
+
+                  response_handle:headers():replace("content-type", "application/json; charset=utf-8")
+                  response_handle:headers():replace("content-length", tostring(#json_body))
+                  response_handle:body():setBytes(json_body)
+
+                -- 403 Forbidden - 권한 없음
+                elseif status == "403" then
+                  local json_body = '{"code":"ACCESS_DENIED","message":"해당 리소스에 접근할 권한이 없습니다."}'
+
+                  response_handle:headers():replace("content-type", "application/json; charset=utf-8")
+                  response_handle:headers():replace("content-length", tostring(#json_body))
+                  response_handle:body():setBytes(json_body)
+                end
+              end
+{{- end }}
