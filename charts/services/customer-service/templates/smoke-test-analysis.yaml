@@ -16,6 +16,7 @@ spec:
       provider:
         job:
           spec:
+            backoffLimit: 1
             template:
               spec:
                 containers:
@@ -29,4 +30,3 @@ spec:
                         curl -f --connect-timeout 5 --max-time 10 --retry 3 --retry-delay 2 --retry-connrefused \
                         http://{{ "{{" }}args.service-name{{ "}}" }}-preview.{{ "{{" }}args.namespace{{ "}}" }}.svc.cluster.local:{{ "{{" }}args.port{{ "}}" }}/actuator/health
                 restartPolicy: Never
-          backoffLimit: 1
