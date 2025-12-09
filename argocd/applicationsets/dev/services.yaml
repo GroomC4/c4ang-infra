@@ -32,10 +32,10 @@ spec:
       project: applications
       sources:
         - repoURL: https://github.com/GroomC4/c4ang-infra.git
-          targetRevision: main
+          targetRevision: feature/scenario-test
           ref: values
         - repoURL: https://github.com/GroomC4/c4ang-infra.git
-          targetRevision: main
+          targetRevision: feature/scenario-test
           path: 'charts/services/{{.name}}'
           helm:
             valueFiles:
