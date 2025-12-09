@@ -135,12 +135,3 @@ topics:
     partitions: 3
     retentionMs: 604800000
 
-    # AI 추천 요청을 Kafka로 넘기는 방식(비동기 처리 강화) 먼지 잘 모르겠음
-  - name: recommendation.request
-    partitions: 3
-    retentionMs: 86400000     # 1일
-
-    # AI 서버가 추천 결과를 반환하는 Topic (선택적)
-  - name: recommendation.result
-    partitions: 3
-    retentionMs: 86400000

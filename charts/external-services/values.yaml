@@ -38,10 +38,6 @@ postgresql:
       enabled: true
       externalName: "payment-db"
       port: 5432
-    recommendation:
-      enabled: true
-      externalName: "recommendation-db"
-      port: 5432
 
 # -----------------------------------------------------------------------------
 # Redis Instances
