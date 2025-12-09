@@ -9,6 +9,8 @@ spec:
   # Active Service 호스트로 변경
   host: {{ include "payment-service.fullname" . }}
   trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
     connectionPool:
       tcp:
         maxConnections: {{ .Values.istio.trafficPolicy.connectionPool.tcp.maxConnections | default 100 }}
