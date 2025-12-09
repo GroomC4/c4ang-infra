@@ -12,11 +12,12 @@ spec:
     - list:
         elements:
           - name: customer-service
-          - name: order-service
-          - name: payment-service
-          - name: product-service
-          - name: saga-tracker
-          - name: store-service
+          # Discord 알림 테스트를 위해 임시로 다른 서비스 비활성화
+          # - name: order-service
+          # - name: payment-service
+          # - name: product-service
+          # - name: saga-tracker
+          # - name: store-service
 
   template:
     metadata:
