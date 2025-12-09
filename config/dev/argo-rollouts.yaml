@@ -39,58 +39,58 @@ argo-rollouts:
           discord:
             method: POST
             body: |
-              {"embeds":[{"title":"🔍 Pre-Analysis 시작","color":3447003,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true}],"description":"Preview 환경에서 Smoke Test를 실행합니다.","timestamp":"{{ .rollout.metadata.creationTimestamp }}"}]}
+              {"embeds":[{"title":"🔍 Pre-Analysis 시작","color":3447003,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{.rollout.status.currentPodHash}}","inline":true}],"description":"Preview 환경에서 Smoke Test를 실행합니다."}]}
       template.pre-analysis-success: |
         webhook:
           discord:
             method: POST
             body: |
-              {"embeds":[{"title":"✅ Pre-Analysis 성공","color":3066993,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true}],"description":"Smoke Test 통과! Blue-Green 전환을 진행합니다."}]}
+              {"embeds":[{"title":"✅ Pre-Analysis 성공","color":3066993,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{.rollout.status.currentPodHash}}","inline":true}],"description":"Smoke Test 통과! Blue-Green 전환을 진행합니다."}]}
       template.pre-analysis-failed: |
         webhook:
           discord:
             method: POST
             body: |
-              {"embeds":[{"title":"❌ Pre-Analysis 실패","color":15158332,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true},{"name":"실패 원인","value":"{{ if .rollout.status.blueGreen.prePromotionAnalysisRunStatus.message }}{{.rollout.status.blueGreen.prePromotionAnalysisRunStatus.message}}{{ else }}{{.rollout.status.message}}{{ end }}","inline":false},{"name":"AnalysisRun","value":"{{.rollout.status.blueGreen.prePromotionAnalysisRun}}","inline":false}],"description":"Smoke Test 실패로 배포가 중단되었습니다. Preview 환경을 확인해주세요."}]}
+              {"embeds":[{"title":"❌ Pre-Analysis 실패","color":15158332,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{.rollout.status.currentPodHash}}","inline":true},{"name":"실패 원인","value":"{{.rollout.status.message}}","inline":false}],"description":"Smoke Test 실패로 배포가 중단되었습니다."}]}
       # ----- Blue-Green 전환 -----
       template.rollout-switch: |
         webhook:
           discord:
             method: POST
             body: |
-              {"embeds":[{"title":"🔄 Blue-Green 전환","color":7506394,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true}],"description":"Active 서비스가 새 버전으로 전환되었습니다. Post-Analysis를 시작합니다."}]}
+              {"embeds":[{"title":"🔄 Blue-Green 전환","color":7506394,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{.rollout.status.currentPodHash}}","inline":true}],"description":"Active 서비스가 새 버전으로 전환되었습니다. Post-Analysis를 시작합니다."}]}
       # ----- Post-Promotion Analysis -----
       template.post-analysis-running: |
         webhook:
           discord:
             method: POST
             body: |
-              {"embeds":[{"title":"📊 Post-Analysis 시작","color":3447003,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true}],"description":"실제 트래픽 기반으로 Error Rate, Latency를 모니터링합니다."}]}
+              {"embeds":[{"title":"📊 Post-Analysis 시작","color":3447003,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{.rollout.status.currentPodHash}}","inline":true}],"description":"실제 트래픽 기반으로 Error Rate, Latency를 모니터링합니다."}]}
       template.post-analysis-success: |
         webhook:
           discord:
             method: POST
             body: |
-              {"embeds":[{"title":"✅ Post-Analysis 성공","color":3066993,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true}],"description":"프로덕션 트래픽 검증 완료! 배포가 성공적으로 완료되었습니다."}]}
+              {"embeds":[{"title":"✅ Post-Analysis 성공","color":3066993,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{.rollout.status.currentPodHash}}","inline":true}],"description":"프로덕션 트래픽 검증 완료! 배포가 성공적으로 완료되었습니다."}]}
       template.post-analysis-failed: |
         webhook:
           discord:
             method: POST
             body: |
-              {"embeds":[{"title":"🚨 Post-Analysis 실패","color":15158332,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true},{"name":"실패 원인","value":"{{ if .rollout.status.blueGreen.postPromotionAnalysisRunStatus.message }}{{.rollout.status.blueGreen.postPromotionAnalysisRunStatus.message}}{{ else }}{{.rollout.status.message}}{{ end }}","inline":false},{"name":"AnalysisRun","value":"{{.rollout.status.blueGreen.postPromotionAnalysisRun}}","inline":false}],"description":"프로덕션 트래픽 검증 실패! 자동 롤백을 진행합니다."}]}
+              {"embeds":[{"title":"🚨 Post-Analysis 실패","color":15158332,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{.rollout.status.currentPodHash}}","inline":true},{"name":"실패 원인","value":"{{.rollout.status.message}}","inline":false}],"description":"프로덕션 트래픽 검증 실패! 자동 롤백을 진행합니다."}]}
       # ----- 최종 상태 -----
       template.rollout-completed: |
         webhook:
           discord:
             method: POST
             body: |
-              {"embeds":[{"title":"🎉 배포 완료","color":3066993,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true}],"description":"Pre/Post Analysis를 모두 통과하여 배포가 성공적으로 완료되었습니다."}]}
+              {"embeds":[{"title":"🎉 배포 완료","color":3066993,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{.rollout.status.currentPodHash}}","inline":true}],"description":"Pre/Post Analysis를 모두 통과하여 배포가 성공적으로 완료되었습니다."}]}
       template.rollout-aborted: |
         webhook:
           discord:
             method: POST
             body: |
-              {"embeds":[{"title":"⛔ 배포 중단 (롤백 완료)","color":15158332,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{ (index .rollout.spec.template.spec.containers 0).image | splitList \":\" | last }}({{.rollout.status.currentPodHash}})","inline":true},{"name":"롤백 사유","value":"{{.rollout.status.message}}","inline":false}],"description":"Analysis 실패로 이전 버전으로 롤백되었습니다."}]}
+              {"embeds":[{"title":"⛔ 배포 중단 (롤백 완료)","color":15158332,"fields":[{"name":"서비스","value":"{{.rollout.metadata.name}}","inline":true},{"name":"네임스페이스","value":"{{.rollout.metadata.namespace}}","inline":true},{"name":"버전","value":"{{.rollout.status.currentPodHash}}","inline":true},{"name":"롤백 사유","value":"{{.rollout.status.message}}","inline":false}],"description":"Analysis 실패로 이전 버전으로 롤백되었습니다."}]}
     # =======================================================================
     # 트리거 정의
     # =======================================================================
