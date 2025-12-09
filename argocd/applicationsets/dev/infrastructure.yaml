@@ -44,7 +44,7 @@ spec:
       project: infrastructure
       source:
         repoURL: https://github.com/GroomC4/c4ang-infra.git
-        targetRevision: feature/argocd-analysis-template-enhancement
+        targetRevision: main
         path: '{{.chart}}'
         helm:
           valueFiles:
