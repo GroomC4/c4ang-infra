@@ -507,7 +507,14 @@ variable "create_s3_buckets" {
 variable "airflow_logs_bucket_name" {
   description = "S3 bucket name for Airflow logs"
   type        = string
-  default     = "c4-airflow-logs"
+  default     = ""
+}
+
+# Tracking log용 S3 버킷 이름
+variable "tracking_log_bucket_name" {
+  description = "S3 bucket name for tracking logs"
+  type        = string
+  default     = ""
 }
 
 # S3 버킷 버전 관리
@@ -538,6 +545,46 @@ variable "s3_log_retention_days" {
   default     = 30
 }
 
+# =============================================================================
+# MSK (Amazon Managed Streaming for Apache Kafka) 설정
+# =============================================================================
+
+# MSK 생성 여부
+variable "create_msk" {
+  description = "Whether to create MSK cluster"
+  type        = bool
+  default     = true
+}
+
+# MSK 인스턴스 타입
+variable "msk_instance_type" {
+  description = "MSK broker instance type"
+  type        = string
+  default     = "kafka.m7g.large"  # KRaft 모드 최소 사양 (Graviton)
+}
+
+# MSK Kafka 버전
+variable "msk_kafka_version" {
+  description = "Kafka version for MSK"
+  type        = string
+  default     = "3.7.x.kraft"  # KRaft 모드
+}
+
+# MSK KRaft 모드 사용 여부
+variable "msk_use_kraft" {
+  description = "Use KRaft mode (Zookeeper-less) for MSK"
+  type        = bool
+  default     = true
+}
+
+# MSK EBS 볼륨 크기
+variable "msk_ebs_volume_size" {
+  description = "EBS volume size per broker (GB)"
+  type        = number
+  default     = 100
+}
+
+# =============================================================================
 # Kubernetes 리소스 설정
 # =============================================================================
 

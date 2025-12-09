@@ -262,6 +262,16 @@ output "airflow_logs_bucket_arn" {
   value       = var.create_s3_buckets ? aws_s3_bucket.airflow_logs[0].arn : null
 }
 
+output "tracking_log_bucket_name" {
+  description = "Tracking log S3 bucket name"
+  value       = var.create_s3_buckets ? aws_s3_bucket.tracking_log[0].bucket : null
+}
+
+output "tracking_log_bucket_arn" {
+  description = "Tracking log S3 bucket ARN"
+  value       = var.create_s3_buckets ? aws_s3_bucket.tracking_log[0].arn : null
+}
+
 output "s3_buckets_info" {
   description = "S3 buckets information for Airflow workloads"
   value = var.create_s3_buckets ? {
@@ -270,6 +280,12 @@ output "s3_buckets_info" {
       bucket_arn = aws_s3_bucket.airflow_logs[0].arn
       s3_url = "s3://${aws_s3_bucket.airflow_logs[0].bucket}/log"
       purpose = "Airflow logs storage"
+    }
+    tracking_log = {
+      bucket_name = aws_s3_bucket.tracking_log[0].bucket
+      bucket_arn = aws_s3_bucket.tracking_log[0].arn
+      s3_url = "s3://${aws_s3_bucket.tracking_log[0].bucket}/log"
+      purpose = "Tracking log storage"
     }
   } : null
 }
