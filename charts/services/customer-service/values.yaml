@@ -17,7 +17,7 @@ imagePullSecrets: []
 # 서비스 설정 (환경 무관)
 service:
   type: ClusterIP
-  port: 80
+  port: 8081
   targetPort: 8081
 
 # 기본 리소스 (환경별로 오버라이드 가능)
@@ -38,7 +38,8 @@ autoscaling:
   targetMemoryUtilizationPercentage: 80
 
 # 환경변수 - config/{env}/customer-service.yaml에서 정의
-config: {}
+config:
+  JWT_ACCESS_TOKEN_EXPIRATION_MINUTES: "4320"  # 3일 (테스트용)
 
 # 시크릿 - config/{env}/customer-service.yaml에서 정의
 secrets: {}

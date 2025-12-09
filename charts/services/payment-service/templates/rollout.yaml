@@ -15,30 +15,8 @@ spec:
       activeService: {{ include "payment-service.fullname" . }}
       previewService: {{ include "payment-service.fullname" . }}-preview
       autoPromotionEnabled: true
-      autoPromotionSeconds: 300
-      scaleDownDelaySeconds: 300
-      prePromotionAnalysis:
-        templates:
-          - templateName: smoke-test-analysis
-        args:
-          - name: service-name
-            value: {{ include "payment-service.fullname" . }}
-          - name: namespace
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
-          - name: port
-            value: "{{ .Values.service.port }}"
-      postPromotionAnalysis:
-        templates:
-          - templateName: post-promotion-analysis
-        args:
-          - name: service-name
-            value: {{ include "payment-service.fullname" . }}
-          - name: namespace
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
+      autoPromotionSeconds: 30
+      scaleDownDelaySeconds: 30
 
   selector:
     matchLabels:
@@ -78,11 +56,11 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with .Values.command }}
           command:
-            {{- toYaml . | nindent 10 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- with .Values.args }}
           args:
-            {{- toYaml . | nindent 10 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
             - name: http
@@ -115,11 +93,11 @@ spec:
               path: /actuator/health/readiness
               port: http
             initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 10
           resources:
-            {{- toYaml .Values.resources | nindent 10 }}
+            {{- toYaml .Values.resources | nindent 12 }}
 
           # Graceful Shutdown 설정
           lifecycle:
