@@ -79,18 +79,18 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: http
-            initialDelaySeconds: 60
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 5
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds | default 60 }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds | default 5 }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold | default 5 }}
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
               port: http
-            initialDelaySeconds: 30
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 10
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds | default 30 }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds | default 5 }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds | default 3 }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold | default 10 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
 
