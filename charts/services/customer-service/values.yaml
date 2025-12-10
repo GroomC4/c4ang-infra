@@ -54,6 +54,9 @@ redis:
 # Istio 설정 (환경 무관한 공통 설정)
 istio:
   enabled: true
+  # Ambient 모드: sidecar 없이 ztunnel이 L4 mTLS 처리
+  # config/dev/istio.yaml의 ambient.enabled와 동기화 필요
+  ambient: false  # true면 sidecar injection 비활성화
   # Service-level RequestAuthentication은 비활성화 (Gateway에서 JWT 검증)
   requestAuthentication:
     enabled: false

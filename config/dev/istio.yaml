@@ -2,6 +2,20 @@
 # k3d 환경에 최적화된 Istio 설정
 # Helm 차트: helm/management-base/istio
 
+# =============================================================================
+# Ambient Mesh 설정 (Dev 환경)
+# =============================================================================
+# Dev 환경에서 Ambient 모드 활성화하여 리소스 절약
+# - Sidecar 없음 → Pod당 ~100MB 메모리 절약
+# - ztunnel이 노드 레벨에서 L4 mTLS 처리
+ambient:
+  enabled: true  # Dev 환경에서 Ambient 모드 활성화
+  waypoint:
+    # L7 기능은 Gateway에서 처리하므로 waypoint 불필요
+    # JWT, AuthZ 등 모두 Gateway 레벨에서 처리 중
+    enabled: false
+    name: ecommerce-waypoint
+
 # Namespace 설정
 namespace:
   name: ecommerce

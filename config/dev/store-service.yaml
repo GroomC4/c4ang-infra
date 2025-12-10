@@ -41,4 +41,6 @@ secrets:
   SPRING_DATASOURCE_REPLICA_PASSWORD: "postgres"
   SPRING_REDIS_PASSWORD: ""
   SPRING_REDISSON_PASSWORD: ""
-# Istio 설정 (기본값 사용)
+# Istio 설정 (Dev 환경: Ambient 모드)
+istio:
+  ambient: true  # Sidecar 없이 ztunnel 사용

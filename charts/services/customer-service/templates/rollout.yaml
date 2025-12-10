@@ -87,9 +87,11 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        {{- if .Values.istio.enabled }}
+        {{- if and .Values.istio.enabled (not .Values.istio.ambient) }}
+        # Sidecar 모드: Envoy sidecar 주입
         sidecar.istio.io/inject: "true"
         {{- else }}
+        # Ambient 모드 또는 Istio 비활성화: sidecar 불필요
         sidecar.istio.io/inject: "false"
         {{- end }}
         # Prometheus 메트릭 수집 설정
@@ -98,9 +100,9 @@ spec:
         prometheus.io/path: "/actuator/prometheus"
       labels:
         {{- include "customer-service.selectorLabels" . | nindent 8 }}
-        {{ if .Values.istio.enabled }}
+        {{- if .Values.istio.enabled }}
         version: {{ .Values.image.tag | default .Chart.AppVersion }}
-        {{ end }}
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

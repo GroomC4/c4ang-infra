@@ -51,4 +51,6 @@ secrets:
   # AWS 자격증명 (실제 값은 별도 관리)
   AWS_ACCESS_KEY_ID: ""
   AWS_SECRET_ACCESS_KEY: ""
-# Istio 설정 (기본값 사용)
+# Istio 설정 (Dev 환경: Ambient 모드)
+istio:
+  ambient: true  # Sidecar 없이 ztunnel 사용

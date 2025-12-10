@@ -47,6 +47,7 @@ redis:
 
 istio:
   enabled: true
+  ambient: false  # true면 sidecar injection 비활성화 (ztunnel 사용)
   pathPrefix: /api/v1/sagas
   timeout: 30s
   retries:

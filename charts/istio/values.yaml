@@ -2,6 +2,28 @@
 # 이 Helm 차트는 Istio 설정 리소스들(Gateway, HTTPRoute 등)을 관리합니다.
 # Istio Control Plane은 별도로 istioctl로 설치해야 합니다.
 
+# =============================================================================
+# Ambient Mesh 설정
+# =============================================================================
+# Ambient 모드 활성화 시:
+# - Sidecar injection 비활성화
+# - ztunnel (DaemonSet)이 L4 mTLS 처리
+# - L7 기능 필요시 waypoint proxy 배포
+ambient:
+  enabled: false  # true: Ambient 모드, false: Sidecar 모드
+  waypoint:
+    # L7 기능(JWT내부검증, L7 AuthZ, Retry 등) 필요시 배포
+    enabled: false
+    name: ecommerce-waypoint
+    # 리소스 설정 (waypoint는 공유 프록시이므로 적절히 설정)
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+
 # CRD 설치 설정
 crds:
   install: false  # CRD는 PreSync Hook으로 자동 설치됩니다
@@ -13,7 +35,9 @@ crds:
 namespace:
   name: ecommerce
   create: true
-  istioInjection: enabled  # Sidecar 자동 주입 활성화 (istio-injection=enabled 라벨)
+  # Sidecar 모드: istio-injection=enabled
+  # Ambient 모드: istio.io/dataplane-mode=ambient
+  istioInjection: enabled  # ambient.enabled=true일 때 무시됨
 
 # Gateway 설정
 gateway:

@@ -32,4 +32,6 @@ config:
 secrets:
   SPRING_DATASOURCE_USERNAME: "postgres"
   SPRING_DATASOURCE_PASSWORD: "postgres"
-# Istio 설정 (기본값 사용)
+# Istio 설정 (Dev 환경: Ambient 모드)
+istio:
+  ambient: true  # Sidecar 없이 ztunnel 사용
