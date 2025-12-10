@@ -5,7 +5,7 @@ replicaCount: 2
 image:
   repository: 963403601423.dkr.ecr.ap-northeast-2.amazonaws.com/c4ang-order-service
   pullPolicy: IfNotPresent
-  tag: "v1.2.5"
+  tag: "v1.2.6"
 # ECR 이미지 pull을 위한 secret
 imagePullSecrets:
   - name: ecr-secret
