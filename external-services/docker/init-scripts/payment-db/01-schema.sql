@@ -1,134 +1,99 @@
+-- Payment Service DDL
 -- PostgreSQL dialect
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 
--- Core user tables
-CREATE TABLE IF NOT EXISTS p_user (
-    id                UUID PRIMARY KEY,
-    username          VARCHAR(10) NOT NULL,
-    email             TEXT NOT NULL,
-    password_hash     TEXT NOT NULL,
-    role              TEXT NOT NULL CHECK (role IN ('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')),
-    is_active         BOOLEAN NOT NULL DEFAULT TRUE,
-    last_login_at     TIMESTAMPTZ,
-    created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
-    deleted_at        TIMESTAMPTZ,
-    UNIQUE (email, role),
-    CHECK (char_length(username) BETWEEN 2 AND 10)
+-- Payment domain tables (matching Payment.kt entity with user_id)
+CREATE TABLE IF NOT EXISTS p_payment (
+    id                    UUID PRIMARY KEY,
+    version               BIGINT NOT NULL DEFAULT 0,
+    order_id              UUID NOT NULL,
+    user_id               UUID NOT NULL,
+    total_amount          NUMERIC(12, 2),
+    payment_amount        NUMERIC(12, 2),
+    discount_amount       NUMERIC(12, 2),
+    delivery_fee          NUMERIC(12, 2),
+    method                TEXT CHECK (method IN ('CARD', 'TOSS_PAY')),
+    status                TEXT NOT NULL DEFAULT 'PAYMENT_WAIT' CHECK (status IN ('PAYMENT_WAIT', 'PAYMENT_REQUEST', 'PAYMENT_COMPLETED', 'PAYMENT_FAILED', 'PAYMENT_CANCELLED', 'REFUND_REQUESTED', 'REFUND_COMPLETED')),
+    requested_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    completed_at          TIMESTAMPTZ,
+    cancelled_at          TIMESTAMPTZ,
+    refunded_at           TIMESTAMPTZ,
+    pg_transaction_id     TEXT,
+    pg_approval_number    TEXT,
+    refund_transaction_id TEXT,
+    created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-COMMENT ON TABLE p_user IS '인증, 권한, 라이프사이클을 관리하는 사용자 계정 테이블.';
-COMMENT ON COLUMN p_user.id IS 'UUID 기본 키.';
-COMMENT ON COLUMN p_user.username IS '4~10자 영문 소문자와 숫자로 구성된 로그인 아이디.';
-COMMENT ON COLUMN p_user.email IS '알림과 로그인에 사용하는 고유 이메일 주소.';
-COMMENT ON COLUMN p_user.password_hash IS 'BCrypt로 암호화된 비밀번호 해시.';
-COMMENT ON COLUMN p_user.role IS 'CUSTOMER/OWNER/MANAGER/MASTER 등 사용자 권한 역할.';
-COMMENT ON COLUMN p_user.is_active IS '계정 삭제 없이 로그인을 비활성화할 때 사용하는 플래그.';
-COMMENT ON COLUMN p_user.last_login_at IS '마지막 로그인 성공 시각.';
-COMMENT ON COLUMN p_user.created_at IS '사용자 레코드 생성 시각.';
-COMMENT ON COLUMN p_user.updated_at IS '사용자 레코드 마지막 수정 시각.';
-COMMENT ON COLUMN p_user.deleted_at IS '소프트 삭제 시각(NULL이면 사용 중).';
+COMMENT ON TABLE p_payment IS '주문 결제 내역을 저장하는 테이블.';
+COMMENT ON COLUMN p_payment.id IS '결제 레코드의 UUID 기본 키.';
+COMMENT ON COLUMN p_payment.version IS 'Optimistic locking을 위한 버전 필드.';
+COMMENT ON COLUMN p_payment.order_id IS '결제와 연결된 주문 ID.';
+COMMENT ON COLUMN p_payment.user_id IS '결제를 요청한 사용자 ID.';
+COMMENT ON COLUMN p_payment.total_amount IS '총 주문금액';
+COMMENT ON COLUMN p_payment.payment_amount IS '실제 결제된 금액.';
+COMMENT ON COLUMN p_payment.discount_amount IS '할인 및 쿠폰 적용 금액.';
+COMMENT ON COLUMN p_payment.delivery_fee IS '배송비 금액.';
+COMMENT ON COLUMN p_payment.status IS 'PAYMENT_WAIT, PAYMENT_COMPLETED 등 현재 결제 상태.';
+COMMENT ON COLUMN p_payment.method IS 'CARD, TOSS_PAY 등 결제 수단.';
+COMMENT ON COLUMN p_payment.requested_at IS '결제 요청 시각.';
+COMMENT ON COLUMN p_payment.completed_at IS '결제 완료 시각.';
+COMMENT ON COLUMN p_payment.cancelled_at IS '결제 취소 시각.';
+COMMENT ON COLUMN p_payment.refunded_at IS '환불 완료 시각.';
+COMMENT ON COLUMN p_payment.pg_transaction_id IS 'PG사 거래 ID.';
+COMMENT ON COLUMN p_payment.pg_approval_number IS 'PG사 승인 번호.';
+COMMENT ON COLUMN p_payment.refund_transaction_id IS '환불 거래 ID.';
+COMMENT ON COLUMN p_payment.created_at IS '결제 레코드 생성 시각.';
+COMMENT ON COLUMN p_payment.updated_at IS '결제 레코드 최종 수정 시각.';
 
-CREATE TABLE IF NOT EXISTS p_user_refresh_token (
-    id              UUID PRIMARY KEY,
-    user_id         UUID NOT NULL,
-    token           TEXT NULL,
-    client_ip       TEXT,
-    expires_at      TIMESTAMPTZ NOT NULL,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-
-    -- 단일 디바이스 로그인 제약 (향후 제거 가능)
-    UNIQUE (user_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_refresh_token_user_id ON p_user_refresh_token(user_id);
-CREATE INDEX IF NOT EXISTS idx_refresh_token_token ON p_user_refresh_token(token);
-CREATE INDEX IF NOT EXISTS idx_refresh_token_expires_at ON p_user_refresh_token(expires_at);
-
-COMMENT ON TABLE p_user_refresh_token IS 'JWT Refresh Token 저장 테이블. 단일/멀티 디바이스 로그인 관리.';
-COMMENT ON COLUMN p_user_refresh_token.id IS 'UUID 기본 키.';
-COMMENT ON COLUMN p_user_refresh_token.user_id IS 'p_user.id를 논리적으로 참조하는 사용자 ID.';
-COMMENT ON COLUMN p_user_refresh_token.token IS 'JWT Refresh Token 문자열.';
-COMMENT ON COLUMN p_user_refresh_token.client_ip IS '토큰 발급 시 클라이언트 IP 주소.';
-COMMENT ON COLUMN p_user_refresh_token.expires_at IS 'Refresh Token 만료 시각.';
-COMMENT ON COLUMN p_user_refresh_token.created_at IS '토큰 최초 생성 시각.';
-COMMENT ON COLUMN p_user_refresh_token.updated_at IS '토큰 갱신 시각 (로그인 시 덮어쓰기).';
-
-CREATE TABLE IF NOT EXISTS p_user_profile (
+CREATE TABLE IF NOT EXISTS p_payment_history (
     id                UUID PRIMARY KEY,
-    user_id           UUID NOT NULL,
-    full_name         TEXT NOT NULL,
-    phone_number      TEXT NOT NULL,
-    contact_email     TEXT,
-    default_address   TEXT,
-    created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
-    deleted_at        TIMESTAMPTZ,
-    UNIQUE (user_id)
-);
-
-COMMENT ON TABLE p_user_profile IS 'p_user와 1:1로 매핑되는 확장 프로필 정보 테이블.';
-COMMENT ON COLUMN p_user_profile.id IS '프로필 레코드의 UUID 기본 키.';
-COMMENT ON COLUMN p_user_profile.user_id IS 'FK 없이 논리적으로 연결하는 사용자 식별자.';
-COMMENT ON COLUMN p_user_profile.full_name IS '주문 및 커뮤니케이션에 노출되는 실명.';
-COMMENT ON COLUMN p_user_profile.phone_number IS '대표 연락처 전화번호.';
-COMMENT ON COLUMN p_user_profile.contact_email IS '선택 입력 가능한 보조 이메일.';
-COMMENT ON COLUMN p_user_profile.default_address IS '기본 배송지 스냅샷 문자열.';
-COMMENT ON COLUMN p_user_profile.created_at IS '프로필 생성 시각.';
-COMMENT ON COLUMN p_user_profile.updated_at IS '프로필 최종 수정 시각.';
-COMMENT ON COLUMN p_user_profile.deleted_at IS '소프트 삭제 시각.';
-
-CREATE TABLE IF NOT EXISTS p_user_address (
-    id                UUID PRIMARY KEY,
-    user_id           UUID NOT NULL,
-    label             TEXT NOT NULL,
-    recipient_name    TEXT NOT NULL,
-    phone_number      TEXT NOT NULL,
-    postal_code       TEXT NOT NULL,
-    address_line1     TEXT NOT NULL,
-    address_line2     TEXT,
-    is_default        BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
-    deleted_at        TIMESTAMPTZ,
-    UNIQUE (user_id, label)
-);
-
-COMMENT ON TABLE p_user_address IS '사용자별 배송/결제 주소 목록을 관리하는 테이블.';
-COMMENT ON COLUMN p_user_address.id IS '주소 레코드의 UUID 기본 키.';
-COMMENT ON COLUMN p_user_address.user_id IS '주소를 소유한 사용자 식별자.';
-COMMENT ON COLUMN p_user_address.label IS '사용자가 부여한 주소 별칭(예: 집, 회사).';
-COMMENT ON COLUMN p_user_address.recipient_name IS '배송 수취인 이름.';
-COMMENT ON COLUMN p_user_address.phone_number IS '수취인 연락처 전화번호.';
-COMMENT ON COLUMN p_user_address.postal_code IS '주소의 우편번호.';
-COMMENT ON COLUMN p_user_address.address_line1 IS '기본 도로명 또는 지번 주소.';
-COMMENT ON COLUMN p_user_address.address_line2 IS '동/호 등 추가 상세 주소.';
-COMMENT ON COLUMN p_user_address.is_default IS '기본 배송지 여부 플래그.';
-COMMENT ON COLUMN p_user_address.created_at IS '주소 생성 시각.';
-COMMENT ON COLUMN p_user_address.updated_at IS '주소 최종 수정 시각.';
-COMMENT ON COLUMN p_user_address.deleted_at IS '소프트 삭제 시각.';
-
-CREATE TABLE IF NOT EXISTS p_user_audit (
-    id                UUID PRIMARY KEY,
-    user_id           UUID NOT NULL,
-    event_type        TEXT NOT NULL CHECK (event_type IN ('USER_REGISTERED', 'PROFILE_UPDATED')),
+    payment_id        UUID NOT NULL,
+    event_type        TEXT NOT NULL CHECK (event_type IN (
+        'PAYMENT_REQUESTED',
+        'PAYMENT_COMPLETED',
+        'PAYMENT_FAILED',
+        'PAYMENT_CANCELLED',
+        'REFUND_REQUESTED',
+        'REFUND_COMPLETED'
+    )),
     change_summary    TEXT,
-    recorded_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-    metadata          JSONB
+    recorded_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-COMMENT ON TABLE p_user_audit IS '사용자 계정의 주요 변경 이력을 남기는 감사 로그.';
-COMMENT ON COLUMN p_user_audit.id IS '감사 레코드의 UUID 기본 키.';
-COMMENT ON COLUMN p_user_audit.user_id IS '감사 이벤트의 대상 사용자 식별자.';
-COMMENT ON COLUMN p_user_audit.event_type IS '회원가입, 프로필 변경 등 이벤트 유형.';
-COMMENT ON COLUMN p_user_audit.change_summary IS '변경 내용을 요약한 설명.';
-COMMENT ON COLUMN p_user_audit.recorded_at IS '감사 이벤트가 기록된 시각.';
-COMMENT ON COLUMN p_user_audit.metadata IS '추가 메타 정보를 담는 JSON 데이터.';
+COMMENT ON TABLE p_payment_history IS '결제 및 환불 처리 이력을 기록하는 감사 로그.';
+COMMENT ON COLUMN p_payment_history.id IS '결제 이력 레코드의 UUID 기본 키.';
+COMMENT ON COLUMN p_payment_history.payment_id IS '이벤트가 속한 결제 ID.';
+COMMENT ON COLUMN p_payment_history.event_type IS '결제 이벤트 유형.';
+COMMENT ON COLUMN p_payment_history.change_summary IS '처리 내역 요약 설명.';
+COMMENT ON COLUMN p_payment_history.recorded_at IS '이력이 기록된 시각.';
 
--- Helpful indexes for query patterns (no foreign keys per requirements)
-CREATE INDEX IF NOT EXISTS idx_p_user_role ON p_user (role);
-CREATE INDEX IF NOT EXISTS idx_p_user_deleted_at ON p_user (deleted_at);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_p_user_address_default ON p_user_address (user_id) WHERE is_default;
+CREATE TABLE IF NOT EXISTS p_payment_gateway_log (
+    id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    payment_id            UUID NOT NULL,
+    pg_code               TEXT NOT NULL,
+    status                TEXT NOT NULL CHECK (status IN ('REQUEST', 'APPROVED', 'FAILED')),
+    external_payment_data TEXT NOT NULL,
+    created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at            TIMESTAMPTZ
+);
+
+COMMENT ON TABLE p_payment_gateway_log IS '외부 PG사와 통신한 이력을 저장하는 테이블.';
+COMMENT ON COLUMN p_payment_gateway_log.id IS '외부 결제 통신 이력 UUID.';
+COMMENT ON COLUMN p_payment_gateway_log.payment_id IS '연결된 결제(p_payment) ID.';
+COMMENT ON COLUMN p_payment_gateway_log.pg_code IS 'PG사 식별 코드.';
+COMMENT ON COLUMN p_payment_gateway_log.status IS '결제요청, 승인, 실패 상태 값.';
+COMMENT ON COLUMN p_payment_gateway_log.external_payment_data IS '요청/응답 전문 원문을 저장한 텍스트.';
+COMMENT ON COLUMN p_payment_gateway_log.created_at IS '레코드 생성 시각.';
+COMMENT ON COLUMN p_payment_gateway_log.updated_at IS '레코드 최종 수정 시각.';
+COMMENT ON COLUMN p_payment_gateway_log.deleted_at IS '소프트 삭제 시각.';
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_p_payment_order ON p_payment (order_id);
+CREATE INDEX IF NOT EXISTS idx_p_payment_user ON p_payment (user_id);
+CREATE INDEX IF NOT EXISTS idx_p_payment_method ON p_payment (method);
+CREATE INDEX IF NOT EXISTS idx_p_payment_status ON p_payment (status);
+CREATE INDEX IF NOT EXISTS idx_p_payment_history_payment ON p_payment_history (payment_id);
+CREATE INDEX IF NOT EXISTS idx_p_payment_gateway_log_payment ON p_payment_gateway_log (payment_id);
