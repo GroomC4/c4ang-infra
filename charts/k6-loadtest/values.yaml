@@ -1,0 +1,212 @@
+# K6 Load Test Configuration for C4ang
+
+# ========================================
+# Common Settings
+# ========================================
+namespace: loadtest
+
+image:
+  repository: grafana/k6
+  tag: "0.50.0"
+  pullPolicy: IfNotPresent
+
+# Test environment
+environment:
+  # API Gateway URL (Istio Gateway)
+  baseUrl: "http://ecommerce-gateway.ecommerce.svc.cluster.local"
+  # Kafka Bootstrap Servers
+  kafkaBootstrap: "c4-kafka-kafka-backplane-bootstrap.kafka:9095"
+
+# ========================================
+# Test Data (pre-created for load testing)
+# ========================================
+testData:
+  # Test Owner account
+  owner:
+    email: "loadtest-owner@c4ang.com"
+    password: "LoadTest123!"
+    username: "loadtest-owner"
+  # Test Customer account
+  customer:
+    email: "loadtest-customer@c4ang.com"
+    password: "LoadTest123!"
+    username: "loadtest-customer"
+  # Pre-created store/product IDs (will be created by setup job)
+  storeId: ""
+  productId: ""
+  # Product settings for setup
+  product:
+    name: "Load Test Product"
+    price: 10000
+    stockQuantity: 1000000  # Large stock for load testing
+
+# ========================================
+# Test Scenarios
+# ========================================
+scenarios:
+  # Scenario 1: API Throughput Test (1,000 RPS)
+  apiThroughput:
+    enabled: true
+    name: "api-throughput-test"
+    description: "Validate 1,000 RPS API capacity"
+    duration: "18m"
+    targetRps: 1000
+    stages:
+      - duration: "2m"
+        target: 200
+      - duration: "2m"
+        target: 400
+      - duration: "2m"
+        target: 600
+      - duration: "2m"
+        target: 800
+      - duration: "4m"
+        target: 1000   # Peak - hold for 4 minutes
+      - duration: "2m"
+        target: 1200   # Over-provision test
+      - duration: "2m"
+        target: 500
+      - duration: "2m"
+        target: 0
+    thresholds:
+      p95Latency: 300    # ms
+      p99Latency: 500    # ms
+      errorRate: 0.01    # 1%
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "512Mi"
+      limits:
+        cpu: "2000m"
+        memory: "2Gi"
+
+  # Scenario 2: Kafka Event Throughput Test (800 events/sec)
+  kafkaThroughput:
+    enabled: true
+    name: "kafka-throughput-test"
+    description: "Validate 800 events/sec Kafka capacity"
+    duration: "10m"
+    targetEventsPerSec: 800
+    thresholds:
+      maxLag: 2000
+      recoveryTime: 30   # seconds
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "256Mi"
+      limits:
+        cpu: "1000m"
+        memory: "1Gi"
+
+  # Scenario 3: Order Completion E2E Test (200 orders/sec)
+  orderCompletion:
+    enabled: true
+    name: "order-completion-test"
+    description: "Validate 200 orders/sec with SAGA completion"
+    duration: "5m"
+    targetOrdersPerSec: 200
+    maxSagaWaitTime: 30  # seconds
+    thresholds:
+      sagaP95: 5000      # ms
+      completionRate: 0.99  # 99%
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "512Mi"
+      limits:
+        cpu: "2000m"
+        memory: "2Gi"
+
+  # Scenario 4: Stress Test (Find breaking point)
+  stress:
+    enabled: true
+    name: "stress-test"
+    description: "Find system breaking point"
+    duration: "20m"
+    stages:
+      - duration: "2m"
+        target: 600
+      - duration: "2m"
+        target: 800
+      - duration: "2m"
+        target: 1000
+      - duration: "2m"
+        target: 1200
+      - duration: "2m"
+        target: 1400
+      - duration: "2m"
+        target: 1600
+      - duration: "2m"
+        target: 1800
+      - duration: "2m"
+        target: 2000
+      - duration: "2m"
+        target: 0
+    thresholds:
+      p99Latency: 1000   # ms
+      errorRate: 0.05    # 5%
+    resources:
+      requests:
+        cpu: "1000m"
+        memory: "1Gi"
+      limits:
+        cpu: "4000m"
+        memory: "4Gi"
+
+  # Scenario 5: Broker Failure Test
+  brokerFailure:
+    enabled: true
+    name: "broker-failure-test"
+    description: "Test resilience during Kafka broker failure"
+    duration: "10m"
+    targetRps: 500       # Moderate load during failure test
+    thresholds:
+      maxUrp: 0          # Under-replicated partitions should recover to 0
+      recoveryTime: 20   # seconds
+      messageLeakRate: 0 # No message loss
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "256Mi"
+      limits:
+        cpu: "1000m"
+        memory: "1Gi"
+
+# ========================================
+# Setup Job Configuration
+# ========================================
+setupJob:
+  enabled: true
+  name: "loadtest-setup"
+  # Will create: owner account, customer account, store, product
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 3600  # Clean up after 1 hour
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+# ========================================
+# Result Export
+# ========================================
+results:
+  # Export results to InfluxDB for Grafana visualization
+  influxdb:
+    enabled: false
+    url: "http://influxdb.monitoring:8086"
+    database: "k6"
+  # Export summary to ConfigMap
+  configmap:
+    enabled: true
+    name: "k6-results"
+
+# ========================================
+# Service Account
+# ========================================
+serviceAccount:
+  create: true
+  name: "k6-loadtest"
+  annotations: {}

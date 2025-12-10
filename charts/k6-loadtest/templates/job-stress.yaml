@@ -1,0 +1,56 @@
+{{- if .Values.scenarios.stress.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "k6-loadtest.fullname" . }}-stress
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "k6-loadtest.labels" . | nindent 4 }}
+    k6-test: stress
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 7200
+  template:
+    metadata:
+      labels:
+        {{- include "k6-loadtest.selectorLabels" . | nindent 8 }}
+        k6-test: stress
+        sidecar.istio.io/inject: "false"
+      annotations:
+        description: {{ .Values.scenarios.stress.description | quote }}
+    spec:
+      serviceAccountName: {{ include "k6-loadtest.serviceAccountName" . }}
+      restartPolicy: Never
+      containers:
+        - name: k6
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - k6
+            - run
+            - --out
+            - json=/results/stress-results.json
+            - /scripts/stress-test.js
+          env:
+            - name: STAGES
+              value: {{ .Values.scenarios.stress.stages | toJson | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "k6-loadtest.fullname" . }}-env
+            - secretRef:
+                name: {{ include "k6-loadtest.fullname" . }}-credentials
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: results
+              mountPath: /results
+          resources:
+            {{- toYaml .Values.scenarios.stress.resources | nindent 12 }}
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ include "k6-loadtest.fullname" . }}-scripts
+        - name: results
+          emptyDir: {}
+{{- end }}

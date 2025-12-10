@@ -1,0 +1,50 @@
+{{- if .Values.setupJob.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "k6-loadtest.fullname" . }}-setup
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "k6-loadtest.labels" . | nindent 4 }}
+    k6-test: setup
+  annotations:
+    # This job should run first before any test jobs
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: {{ .Values.setupJob.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.setupJob.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        {{- include "k6-loadtest.selectorLabels" . | nindent 8 }}
+        k6-test: setup
+        sidecar.istio.io/inject: "false"
+    spec:
+      serviceAccountName: {{ include "k6-loadtest.serviceAccountName" . }}
+      restartPolicy: Never
+      containers:
+        - name: k6-setup
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - k6
+            - run
+            - /scripts/setup-test-data.js
+          envFrom:
+            - configMapRef:
+                name: {{ include "k6-loadtest.fullname" . }}-env
+            - secretRef:
+                name: {{ include "k6-loadtest.fullname" . }}-credentials
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+          resources:
+            {{- toYaml .Values.setupJob.resources | nindent 12 }}
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ include "k6-loadtest.fullname" . }}-scripts
+{{- end }}

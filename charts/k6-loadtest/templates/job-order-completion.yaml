@@ -1,0 +1,60 @@
+{{- if .Values.scenarios.orderCompletion.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "k6-loadtest.fullname" . }}-order-completion
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "k6-loadtest.labels" . | nindent 4 }}
+    k6-test: order-completion
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 7200
+  template:
+    metadata:
+      labels:
+        {{- include "k6-loadtest.selectorLabels" . | nindent 8 }}
+        k6-test: order-completion
+        sidecar.istio.io/inject: "false"
+      annotations:
+        description: {{ .Values.scenarios.orderCompletion.description | quote }}
+    spec:
+      serviceAccountName: {{ include "k6-loadtest.serviceAccountName" . }}
+      restartPolicy: Never
+      containers:
+        - name: k6
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - k6
+            - run
+            - --out
+            - json=/results/order-completion-results.json
+            - /scripts/order-completion-test.js
+          env:
+            - name: TARGET_ORDERS_PER_SEC
+              value: {{ .Values.scenarios.orderCompletion.targetOrdersPerSec | quote }}
+            - name: DURATION
+              value: {{ .Values.scenarios.orderCompletion.duration | quote }}
+            - name: MAX_SAGA_WAIT_TIME
+              value: {{ .Values.scenarios.orderCompletion.maxSagaWaitTime | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "k6-loadtest.fullname" . }}-env
+            - secretRef:
+                name: {{ include "k6-loadtest.fullname" . }}-credentials
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: results
+              mountPath: /results
+          resources:
+            {{- toYaml .Values.scenarios.orderCompletion.resources | nindent 12 }}
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ include "k6-loadtest.fullname" . }}-scripts
+        - name: results
+          emptyDir: {}
+{{- end }}

@@ -1,0 +1,58 @@
+{{- if .Values.scenarios.brokerFailure.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "k6-loadtest.fullname" . }}-broker-failure
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "k6-loadtest.labels" . | nindent 4 }}
+    k6-test: broker-failure
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 7200
+  template:
+    metadata:
+      labels:
+        {{- include "k6-loadtest.selectorLabels" . | nindent 8 }}
+        k6-test: broker-failure
+        sidecar.istio.io/inject: "false"
+      annotations:
+        description: {{ .Values.scenarios.brokerFailure.description | quote }}
+    spec:
+      serviceAccountName: {{ include "k6-loadtest.serviceAccountName" . }}
+      restartPolicy: Never
+      containers:
+        - name: k6
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - k6
+            - run
+            - --out
+            - json=/results/broker-failure-results.json
+            - /scripts/broker-failure-test.js
+          env:
+            - name: TARGET_RPS
+              value: {{ .Values.scenarios.brokerFailure.targetRps | quote }}
+            - name: DURATION
+              value: {{ .Values.scenarios.brokerFailure.duration | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "k6-loadtest.fullname" . }}-env
+            - secretRef:
+                name: {{ include "k6-loadtest.fullname" . }}-credentials
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: results
+              mountPath: /results
+          resources:
+            {{- toYaml .Values.scenarios.brokerFailure.resources | nindent 12 }}
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ include "k6-loadtest.fullname" . }}-scripts
+        - name: results
+          emptyDir: {}
+{{- end }}

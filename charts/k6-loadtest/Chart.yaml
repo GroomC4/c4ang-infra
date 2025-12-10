@@ -1,0 +1,16 @@
+apiVersion: v2
+name: k6-loadtest
+description: K6 Load Testing Chart for C4ang MSA System
+type: application
+version: 1.0.0
+appVersion: "0.50.0"
+
+keywords:
+  - k6
+  - load-testing
+  - performance
+  - kafka
+  - stress-test
+
+maintainers:
+  - name: C4ang Team

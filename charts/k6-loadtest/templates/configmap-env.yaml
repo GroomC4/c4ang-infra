@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "k6-loadtest.fullname" . }}-env
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "k6-loadtest.labels" . | nindent 4 }}
+data:
+  # Environment configuration
+  BASE_URL: {{ .Values.environment.baseUrl | quote }}
+  KAFKA_BOOTSTRAP: {{ .Values.environment.kafkaBootstrap | quote }}
+
+  # Test data IDs (populated after setup job)
+  {{- if .Values.testData.storeId }}
+  STORE_ID: {{ .Values.testData.storeId | quote }}
+  {{- end }}
+  {{- if .Values.testData.productId }}
+  PRODUCT_ID: {{ .Values.testData.productId | quote }}
+  {{- end }}
+
+  # Product configuration
+  PRODUCT_NAME: {{ .Values.testData.product.name | quote }}
+  PRODUCT_PRICE: {{ .Values.testData.product.price | quote }}
+  PRODUCT_STOCK: {{ .Values.testData.product.stockQuantity | quote }}
+
+  # Test scenarios configuration
+  {{- with .Values.scenarios.apiThroughput }}
+  API_THROUGHPUT_STAGES: {{ .stages | toJson | quote }}
+  API_THROUGHPUT_DURATION: {{ .duration | quote }}
+  {{- end }}
+
+  {{- with .Values.scenarios.orderCompletion }}
+  TARGET_ORDERS_PER_SEC: {{ .targetOrdersPerSec | quote }}
+  MAX_SAGA_WAIT_TIME: {{ .maxSagaWaitTime | quote }}
+  ORDER_COMPLETION_DURATION: {{ .duration | quote }}
+  {{- end }}
+
+  {{- with .Values.scenarios.stress }}
+  STRESS_STAGES: {{ .stages | toJson | quote }}
+  STRESS_DURATION: {{ .duration | quote }}
+  {{- end }}
+
+  {{- with .Values.scenarios.brokerFailure }}
+  BROKER_FAILURE_TARGET_RPS: {{ .targetRps | quote }}
+  BROKER_FAILURE_DURATION: {{ .duration | quote }}
+  {{- end }}

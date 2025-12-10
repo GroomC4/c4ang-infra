@@ -1,0 +1,56 @@
+{{- if .Values.scenarios.apiThroughput.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "k6-loadtest.fullname" . }}-api-throughput
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "k6-loadtest.labels" . | nindent 4 }}
+    k6-test: api-throughput
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 7200  # Keep for 2 hours
+  template:
+    metadata:
+      labels:
+        {{- include "k6-loadtest.selectorLabels" . | nindent 8 }}
+        k6-test: api-throughput
+        sidecar.istio.io/inject: "false"
+      annotations:
+        description: {{ .Values.scenarios.apiThroughput.description | quote }}
+    spec:
+      serviceAccountName: {{ include "k6-loadtest.serviceAccountName" . }}
+      restartPolicy: Never
+      containers:
+        - name: k6
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - k6
+            - run
+            - --out
+            - json=/results/api-throughput-results.json
+            - /scripts/api-throughput-test.js
+          env:
+            - name: STAGES
+              value: {{ .Values.scenarios.apiThroughput.stages | toJson | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "k6-loadtest.fullname" . }}-env
+            - secretRef:
+                name: {{ include "k6-loadtest.fullname" . }}-credentials
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: results
+              mountPath: /results
+          resources:
+            {{- toYaml .Values.scenarios.apiThroughput.resources | nindent 12 }}
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ include "k6-loadtest.fullname" . }}-scripts
+        - name: results
+          emptyDir: {}
+{{- end }}
