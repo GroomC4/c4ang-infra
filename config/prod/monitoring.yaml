@@ -20,10 +20,10 @@ prometheus:
 
   replicas: 1
 
-  # EKS GP3 스토리지 사용
+  # EKS GP2 스토리지 사용
   storage:
     size: 50Gi
-    storageClassName: "gp3"
+    storageClassName: "gp2"
 
   # 운영 환경 보존 기간
   retention:
@@ -55,7 +55,7 @@ loki:
 
   storage:
     size: 20Gi
-    storageClassName: "gp3"
+    storageClassName: "gp2"
 
   retention:
     enabled: true
@@ -90,7 +90,7 @@ tempo:
 
   storage:
     size: 20Gi
-    storageClassName: "gp3"
+    storageClassName: "gp2"
 
   retention:
     period: 720h  # 30일
@@ -128,11 +128,11 @@ grafana:
     user: admin
     password: "Grafana2025!"
     existingSecret: ""
-    secretKey: ""
+    secretKey: "admin-user"
 
   storage:
     size: 5Gi
-    storageClassName: "gp3"
+    storageClassName: "gp2"
 
   resources:
     limits:
