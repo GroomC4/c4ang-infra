@@ -1,10 +1,15 @@
 # =============================================================================
 # External Services - Dev Environment (k3d + Docker Compose)
 # =============================================================================
-# Docker Desktop for Mac/Windows에서 host.k3d.internal 사용
-# Linux에서는 172.17.0.1 또는 host network 사용
+# k3d에서 호스트 네트워크 접근: host.k3d.internal (IP: 192.168.107.1)
+# targetIP 사용 시 ClusterIP + Endpoints 패턴 (A 레코드 반환, DNS 해석 빠름)
+# targetIP 미사용 시 ExternalName 패턴 (CNAME 반환, Netty DNS resolver 타임아웃 가능)
 
 namespace: ecommerce
+
+# k3d 호스트 IP (host.k3d.internal 해석 결과)
+# 클러스터 재생성 시 변경될 수 있음
+hostIP: &hostIP "192.168.107.1"
 
 # -----------------------------------------------------------------------------
 # PostgreSQL Databases
@@ -14,27 +19,27 @@ postgresql:
   databases:
     customer:
       enabled: true
-      externalName: "host.k3d.internal"
+      targetIP: *hostIP
       port: 5432
     product:
       enabled: true
-      externalName: "host.k3d.internal"
+      targetIP: *hostIP
       port: 5433
     order:
       enabled: true
-      externalName: "host.k3d.internal"
+      targetIP: *hostIP
       port: 5434
     store:
       enabled: true
-      externalName: "host.k3d.internal"
+      targetIP: *hostIP
       port: 5435
     saga:
       enabled: true
-      externalName: "host.k3d.internal"
+      targetIP: *hostIP
       port: 5436
     payment:
       enabled: true
-      externalName: "host.k3d.internal"
+      targetIP: *hostIP
       port: 5437
 
 # -----------------------------------------------------------------------------
@@ -45,11 +50,11 @@ redis:
   instances:
     cache:
       enabled: true
-      externalName: "host.k3d.internal"
+      targetIP: *hostIP
       port: 6379
     session:
       enabled: true
-      externalName: "host.k3d.internal"
+      targetIP: *hostIP
       port: 6380
 
 # -----------------------------------------------------------------------------
@@ -57,7 +62,7 @@ redis:
 # -----------------------------------------------------------------------------
 kafka:
   enabled: true
-  externalName: "host.k3d.internal"
+  targetIP: *hostIP
   port: 9092
   additionalPorts:
     - name: external
@@ -69,5 +74,5 @@ kafka:
 # -----------------------------------------------------------------------------
 schemaRegistry:
   enabled: true
-  externalName: "host.k3d.internal"
+  targetIP: *hostIP
   port: 8081

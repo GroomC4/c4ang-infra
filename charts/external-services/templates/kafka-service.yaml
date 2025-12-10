@@ -10,6 +10,22 @@ metadata:
     app.kubernetes.io/component: messaging
     service-type: kafka
 spec:
+  {{- if .Values.kafka.targetIP }}
+  # ClusterIP 서비스 + Endpoints (A 레코드 반환)
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.kafka.port }}
+      targetPort: {{ .Values.kafka.port }}
+      protocol: TCP
+      name: kafka
+    {{- range .Values.kafka.additionalPorts }}
+    - port: {{ .port }}
+      targetPort: {{ .targetPort }}
+      protocol: TCP
+      name: {{ .name }}
+    {{- end }}
+  {{- else }}
+  # ExternalName 서비스 (CNAME 반환)
   type: ExternalName
   externalName: {{ .Values.kafka.externalName }}
   ports:
@@ -23,4 +39,29 @@ spec:
       protocol: TCP
       name: {{ .name }}
     {{- end }}
+  {{- end }}
+{{- if .Values.kafka.targetIP }}
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: kafka
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "external-services.serviceLabels" . | nindent 4 }}
+    app.kubernetes.io/name: kafka
+    app.kubernetes.io/component: messaging
+subsets:
+  - addresses:
+      - ip: {{ .Values.kafka.targetIP }}
+    ports:
+      - port: {{ .Values.kafka.port }}
+        protocol: TCP
+        name: kafka
+      {{- range .Values.kafka.additionalPorts }}
+      - port: {{ .port }}
+        protocol: TCP
+        name: {{ .name }}
+      {{- end }}
+{{- end }}
 {{- end }}

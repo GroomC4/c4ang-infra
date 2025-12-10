@@ -10,6 +10,16 @@ metadata:
     app.kubernetes.io/component: schema-registry
     service-type: schema-registry
 spec:
+  {{- if .Values.schemaRegistry.targetIP }}
+  # ClusterIP 서비스 + Endpoints (A 레코드 반환)
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.schemaRegistry.port }}
+      targetPort: {{ .Values.schemaRegistry.port }}
+      protocol: TCP
+      name: http
+  {{- else }}
+  # ExternalName 서비스 (CNAME 반환)
   type: ExternalName
   externalName: {{ .Values.schemaRegistry.externalName }}
   ports:
@@ -17,4 +27,24 @@ spec:
       targetPort: {{ .Values.schemaRegistry.port }}
       protocol: TCP
       name: http
+  {{- end }}
+{{- if .Values.schemaRegistry.targetIP }}
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: schema-registry
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "external-services.serviceLabels" . | nindent 4 }}
+    app.kubernetes.io/name: schema-registry
+    app.kubernetes.io/component: schema-registry
+subsets:
+  - addresses:
+      - ip: {{ .Values.schemaRegistry.targetIP }}
+    ports:
+      - port: {{ .Values.schemaRegistry.port }}
+        protocol: TCP
+        name: http
+{{- end }}
 {{- end }}

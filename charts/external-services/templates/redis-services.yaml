@@ -13,6 +13,16 @@ metadata:
     app.kubernetes.io/component: cache
     service-type: redis
 spec:
+  {{- if $instance.targetIP }}
+  # ClusterIP 서비스 + Endpoints (A 레코드 반환)
+  type: ClusterIP
+  ports:
+    - port: {{ $instance.port }}
+      targetPort: {{ $instance.port }}
+      protocol: TCP
+      name: redis
+  {{- else }}
+  # ExternalName 서비스 (CNAME 반환)
   type: ExternalName
   externalName: {{ $instance.externalName }}
   ports:
@@ -20,6 +30,26 @@ spec:
       targetPort: {{ $instance.port }}
       protocol: TCP
       name: redis
+  {{- end }}
+{{- if $instance.targetIP }}
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: {{ $name }}-redis
+  namespace: {{ $.Values.namespace }}
+  labels:
+    {{- include "external-services.serviceLabels" $ | nindent 4 }}
+    app.kubernetes.io/name: {{ $name }}-redis
+    app.kubernetes.io/component: cache
+subsets:
+  - addresses:
+      - ip: {{ $instance.targetIP }}
+    ports:
+      - port: {{ $instance.port }}
+        protocol: TCP
+        name: redis
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

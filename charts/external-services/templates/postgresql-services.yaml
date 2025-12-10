@@ -13,6 +13,16 @@ metadata:
     app.kubernetes.io/component: database
     service-type: postgresql
 spec:
+  {{- if $db.targetIP }}
+  # ClusterIP 서비스 + Endpoints (A 레코드 반환)
+  type: ClusterIP
+  ports:
+    - port: {{ $db.port }}
+      targetPort: {{ $db.port }}
+      protocol: TCP
+      name: postgresql
+  {{- else }}
+  # ExternalName 서비스 (CNAME 반환)
   type: ExternalName
   externalName: {{ $db.externalName }}
   ports:
@@ -20,6 +30,26 @@ spec:
       targetPort: {{ $db.port }}
       protocol: TCP
       name: postgresql
+  {{- end }}
+{{- if $db.targetIP }}
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: {{ $name }}-db
+  namespace: {{ $.Values.namespace }}
+  labels:
+    {{- include "external-services.serviceLabels" $ | nindent 4 }}
+    app.kubernetes.io/name: {{ $name }}-db
+    app.kubernetes.io/component: database
+subsets:
+  - addresses:
+      - ip: {{ $db.targetIP }}
+    ports:
+      - port: {{ $db.port }}
+        protocol: TCP
+        name: postgresql
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
