@@ -7,11 +7,13 @@ set -euo pipefail
 
 # 설정 변수
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CLUSTER_NAME="${CLUSTER_NAME:-c4ang-e2e}"
+CLUSTER_NAME="${CLUSTER_NAME:-msa-quality-cluster}"
 K3D_REGISTRY_NAME="k3d-registry.localhost"
 K3D_REGISTRY_PORT="${K3D_REGISTRY_PORT:-5050}"
 KUBECONFIG_DIR="${SCRIPT_DIR}/kubeconfig"
 KUBECONFIG_FILE="${KUBECONFIG_DIR}/config"
+# 메모리 설정 (Blue-Green 배포를 위해 10GB 필요)
+SERVER_MEMORY="${SERVER_MEMORY:-10g}"
 
 # 색상 정의
 RED='\033[0;31m'
@@ -75,11 +77,14 @@ create_cluster() {
     mkdir -p "${KUBECONFIG_DIR}"
 
     # K3d 클러스터 생성
+    # 메모리: Blue-Green 배포 시 기존+신규 Pod 동시 실행 필요
     k3d cluster create "${CLUSTER_NAME}" \
         --servers 1 \
-        --agents 2 \
-        --port "8080:80@loadbalancer" \
-        --port "8443:443@loadbalancer" \
+        --agents 0 \
+        --servers-memory "${SERVER_MEMORY}" \
+        --port "80:80@loadbalancer" \
+        --port "443:443@loadbalancer" \
+        --port "6443:6443@loadbalancer" \
         --port "30000-30100:30000-30100@server:0" \
         --k3s-arg "--disable=traefik@server:0" \
         --wait
