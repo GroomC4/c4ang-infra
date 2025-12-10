@@ -205,6 +205,25 @@ spec:
 # 6. 서비스 간 통신 (Service Mesh 내부)
 # Gateway → 서비스, 서비스 → 서비스 모든 경로 허용
 # ====================================
+{{- if .Values.ambient.enabled }}
+# Ambient 모드: ztunnel은 L4만 처리하므로 L7 AuthZ 불가
+# Gateway 레벨 정책만 사용하고, 서비스간 통신은 mTLS로 보호
+# 모든 트래픽 허용 (L4 레벨)
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-mesh-internal
+  namespace: {{ include "istio.namespace" . }}
+  labels:
+    {{- include "istio.labels" . | nindent 4 }}
+spec:
+  # 모든 워크로드에 적용
+  action: ALLOW
+  rules:
+    # Ambient 모드: mTLS로 인증된 모든 트래픽 허용
+    - {}
+{{- else }}
+# Sidecar 모드: L7 AuthZ 정책 사용 가능
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -221,6 +240,7 @@ spec:
         - source:
             principals:
               - "cluster.local/ns/{{ include "istio.namespace" . }}/sa/*"
+{{- end }}
 
 {{- if .Values.gateway.webhook.enabled }}
 ---
