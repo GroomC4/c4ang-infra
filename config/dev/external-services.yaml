@@ -1,7 +1,7 @@
 # =============================================================================
 # External Services - Dev Environment (k3d + Docker Compose)
 # =============================================================================
-# Docker Desktop for Mac/Windows에서 host.docker.internal 사용
+# Docker Desktop for Mac/Windows에서 host.k3d.internal 사용
 # Linux에서는 172.17.0.1 또는 host network 사용
 
 namespace: ecommerce
@@ -14,27 +14,27 @@ postgresql:
   databases:
     customer:
       enabled: true
-      externalName: "host.docker.internal"
+      externalName: "host.k3d.internal"
       port: 5432
     product:
       enabled: true
-      externalName: "host.docker.internal"
+      externalName: "host.k3d.internal"
       port: 5433
     order:
       enabled: true
-      externalName: "host.docker.internal"
+      externalName: "host.k3d.internal"
       port: 5434
     store:
       enabled: true
-      externalName: "host.docker.internal"
+      externalName: "host.k3d.internal"
       port: 5435
     saga:
       enabled: true
-      externalName: "host.docker.internal"
+      externalName: "host.k3d.internal"
       port: 5436
     payment:
       enabled: true
-      externalName: "host.docker.internal"
+      externalName: "host.k3d.internal"
       port: 5437
 
 # -----------------------------------------------------------------------------
@@ -45,11 +45,11 @@ redis:
   instances:
     cache:
       enabled: true
-      externalName: "host.docker.internal"
+      externalName: "host.k3d.internal"
       port: 6379
     session:
       enabled: true
-      externalName: "host.docker.internal"
+      externalName: "host.k3d.internal"
       port: 6380
 
 # -----------------------------------------------------------------------------
@@ -57,7 +57,7 @@ redis:
 # -----------------------------------------------------------------------------
 kafka:
   enabled: true
-  externalName: "host.docker.internal"
+  externalName: "host.k3d.internal"
   port: 9092
   additionalPorts:
     - name: external
@@ -69,5 +69,5 @@ kafka:
 # -----------------------------------------------------------------------------
 schemaRegistry:
   enabled: true
-  externalName: "host.docker.internal"
+  externalName: "host.k3d.internal"
   port: 8081

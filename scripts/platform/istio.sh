@@ -96,6 +96,51 @@ install_gateway_api() {
     log_success "Gateway API CRD 설치 완료"
 }
 
+# ecommerce 네임스페이스에 Istio sidecar injection 라벨 추가
+setup_namespace_injection() {
+    local namespace="${1:-ecommerce}"
+
+    log_info "네임스페이스 '$namespace'에 Istio sidecar injection 라벨 추가 중..."
+
+    # 네임스페이스가 없으면 생성
+    kubectl create namespace "$namespace" 2>/dev/null || true
+
+    # istio-injection 라벨 추가
+    kubectl label namespace "$namespace" istio-injection=enabled --overwrite
+
+    log_success "네임스페이스 '$namespace' Istio injection 활성화됨"
+}
+
+# Istio CRD 설치 확인
+verify_istio_crds() {
+    log_info "Istio CRD 설치 확인 중..."
+
+    local required_crds=(
+        "virtualservices.networking.istio.io"
+        "destinationrules.networking.istio.io"
+        "authorizationpolicies.security.istio.io"
+        "requestauthentications.security.istio.io"
+        "peerauthentications.security.istio.io"
+        "envoyfilters.networking.istio.io"
+        "telemetries.telemetry.istio.io"
+    )
+
+    local missing_crds=()
+    for crd in "${required_crds[@]}"; do
+        if ! kubectl get crd "$crd" &>/dev/null; then
+            missing_crds+=("$crd")
+        fi
+    done
+
+    if [ ${#missing_crds[@]} -gt 0 ]; then
+        log_error "누락된 Istio CRD: ${missing_crds[*]}"
+        return 1
+    fi
+
+    log_success "모든 Istio CRD 설치 확인됨"
+    return 0
+}
+
 # Istio 설치
 install_istio() {
     log_info "=== Istio 설치 시작 ==="
@@ -109,19 +154,36 @@ install_istio() {
     # 네임스페이스 생성
     kubectl create namespace "$ISTIO_NS" 2>/dev/null || true
 
-    # Istio 설치 (demo 프로필 사용, 프로덕션에서는 변경 필요)
-    log_info "Istio Control Plane 설치 중..."
-    istioctl install --set profile=demo -y
+    # Istio 설치 (minimal 프로필 사용)
+    # - minimal: istiod + CRD만 설치
+    # - Gateway는 Kubernetes Gateway API 사용 (ArgoCD Helm 차트가 관리)
+    # - ingressgateway/egressgateway 설치 안함 (리소스 절약)
+    log_info "Istio Control Plane 설치 중... (profile: minimal)"
+    istioctl install --set profile=minimal -y
 
     # 설치 확인
-    log_info "Istio 설치 확인 중..."
+    log_info "Istio Control Plane 배포 대기 중..."
     kubectl wait --for=condition=available --timeout=300s deployment/istiod -n "$ISTIO_NS"
 
-    # 참고: Istio Helm 차트(Gateway, HTTPRoute 등)는 ArgoCD가 관리합니다.
-    # 이 스크립트는 Istio Control Plane만 설치합니다.
+    # Istio CRD 설치 확인
+    verify_istio_crds
+
+    # ecommerce 네임스페이스 sidecar injection 설정
+    setup_namespace_injection "ecommerce"
 
     log_success "=== Istio Control Plane 설치 완료 ==="
-    log_info "Gateway, HTTPRoute 등 추가 리소스는 ArgoCD가 관리합니다."
+    echo ""
+    log_info "설치된 컴포넌트:"
+    echo "  - istiod (Control Plane)"
+    echo "  - Istio CRD (VirtualService, DestinationRule, AuthorizationPolicy 등)"
+    echo "  - Gateway API CRD (Gateway, HTTPRoute)"
+    echo ""
+    log_info "ArgoCD가 관리하는 리소스:"
+    echo "  - Gateway (Kubernetes Gateway API)"
+    echo "  - HTTPRoute"
+    echo "  - AuthorizationPolicy, RequestAuthentication"
+    echo "  - VirtualService, DestinationRule (서비스별)"
+
     show_status
 }
 
@@ -174,7 +236,24 @@ show_status() {
     fi
     echo ""
 
-    echo "Gateway API:"
+    echo "Istio CRDs:"
+    local istio_crds
+    istio_crds=$(kubectl get crd 2>/dev/null | grep -E "istio\.io" | wc -l | tr -d ' ')
+    local gateway_crds
+    gateway_crds=$(kubectl get crd 2>/dev/null | grep -E "gateway\.networking\.k8s\.io" | wc -l | tr -d ' ')
+    echo "  Istio CRDs: ${istio_crds}개"
+    echo "  Gateway API CRDs: ${gateway_crds}개"
+    echo ""
+
+    echo "Namespace Injection Labels:"
+    for ns in ecommerce monitoring; do
+        local label
+        label=$(kubectl get namespace "$ns" -o jsonpath='{.metadata.labels.istio-injection}' 2>/dev/null) || label="(namespace not found)"
+        echo "  $ns: ${label:-disabled}"
+    done
+    echo ""
+
+    echo "Gateway API Resources:"
     local gateways
     gateways=$(kubectl get gateways.gateway.networking.k8s.io -A --no-headers 2>/dev/null) || true
     if [ -n "$gateways" ]; then

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ArgoCD 설치 및 관리 스크립트
-# App of Apps 패턴을 사용한 GitOps 부트스트랩
+# ApplicationSet 패턴을 사용한 GitOps 부트스트랩
 #
 # 사용법:
 #   ./argocd.sh                    # ArgoCD 설치 및 부트스트랩
@@ -96,6 +96,18 @@ install_argocd() {
     kubectl apply -n "$ARGOCD_NS" \
         -f "https://raw.githubusercontent.com/argoproj/argo-cd/${ARGOCD_VERSION}/manifests/install.yaml"
 
+    # Pod 생성 대기 (라벨이 있는 Pod가 생성될 때까지)
+    log_info "ArgoCD Pod 생성 대기 중..."
+    local max_attempts=30
+    local attempt=0
+    while [ $attempt -lt $max_attempts ]; do
+        if kubectl get pods -l app.kubernetes.io/name=argocd-server -n "$ARGOCD_NS" --no-headers 2>/dev/null | grep -q .; then
+            break
+        fi
+        sleep 2
+        attempt=$((attempt + 1))
+    done
+
     # Pod 준비 대기
     log_info "ArgoCD Pod 준비 대기 중..."
     kubectl wait --for=condition=ready pod \
@@ -108,8 +120,8 @@ install_argocd() {
     # Projects 적용
     apply_projects
 
-    # Root Application 적용
-    apply_root_application "$env"
+    # ApplicationSet 적용 (환경별)
+    apply_applicationsets "$env"
 
     # 초기 비밀번호 출력
     show_password
@@ -137,20 +149,32 @@ apply_projects() {
     fi
 }
 
-# Root Application 적용
-apply_root_application() {
+# ApplicationSet 적용 (환경별)
+apply_applicationsets() {
     local env=${1:-dev}
-    log_info "Root Application 적용 중 (App of Apps 패턴)..."
+    log_info "ApplicationSet 적용 중 (환경: $env)..."
 
-    local root_app="${PROJECT_ROOT}/bootstrap/root-application.yaml"
+    # Namespaces 적용
+    local namespaces_file="${PROJECT_ROOT}/argocd/manifests/namespaces.yaml"
+    if [ -f "$namespaces_file" ]; then
+        log_info "네임스페이스 매니페스트 적용 중..."
+        kubectl apply -f "$namespaces_file"
+    fi
 
-    if [ -f "$root_app" ]; then
-        kubectl apply -f "$root_app" -n "$ARGOCD_NS"
-        log_success "Root Application 적용 완료"
+    # 환경별 ApplicationSet 적용
+    local appset_dir="${PROJECT_ROOT}/argocd/applicationsets/${env}"
+
+    if [ -d "$appset_dir" ]; then
+        for file in "$appset_dir"/*.yaml; do
+            if [ -f "$file" ]; then
+                log_info "적용 중: $(basename "$file")"
+                kubectl apply -f "$file" -n "$ARGOCD_NS"
+            fi
+        done
+        log_success "ApplicationSet 적용 완료 (환경: $env)"
     else
-        log_warn "Root Application 파일을 찾을 수 없습니다: $root_app"
-        log_info "수동으로 ApplicationSet을 적용하세요:"
-        echo "  kubectl apply -f ${PROJECT_ROOT}/argocd/applicationsets/ -n $ARGOCD_NS"
+        log_warn "ApplicationSet 디렉토리를 찾을 수 없습니다: $appset_dir"
+        log_info "사용 가능한 환경: dev, prod"
     fi
 }
 

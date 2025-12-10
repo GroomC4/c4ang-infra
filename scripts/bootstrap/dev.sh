@@ -6,7 +6,9 @@
 # 전체 플로우:
 #   1. External Services 시작 (Docker Compose)
 #   2. K3D 클러스터 생성/시작
-#   3. ArgoCD Bootstrap (App of Apps)
+#   3. ECR Secret 설정
+#   4. Istio Control Plane 설치
+#   5. ArgoCD Bootstrap (ApplicationSet 패턴)
 #
 # 사용법:
 #   ./dev.sh              # 전체 환경 초기화
@@ -269,7 +271,7 @@ setup_istio() {
 # =============================================================================
 
 bootstrap_argocd() {
-    log_step "Phase 5: ArgoCD Bootstrap (App of Apps)"
+    log_step "Phase 5: ArgoCD Bootstrap (ApplicationSet 패턴)"
 
     export KUBECONFIG="${KUBECONFIG_FILE}"
 
@@ -553,8 +555,8 @@ usage() {
      - 서비스 메시 기반 트래픽 관리
 
   5. ArgoCD Bootstrap
-     - App of Apps 패턴
-     - ApplicationSet으로 환경별 자동 배포
+     - ApplicationSet 패턴 (Multi-source Helm)
+     - 환경별 자동 배포
 
 예시:
   $0                 # 처음 환경 구축
