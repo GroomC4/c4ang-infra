@@ -19,6 +19,11 @@ spec:
     - name: {{ include "istio.gateway.webhook.name" $ }}
   hostnames:
     - "{{ $.Values.gateway.webhook.hostname }}"
+    {{- if $.Values.gateway.webhook.additionalHostnames }}
+    {{- range $.Values.gateway.webhook.additionalHostnames }}
+    - {{ . | quote }}
+    {{- end }}
+    {{- end }}
   rules:
     - matches:
         - path:

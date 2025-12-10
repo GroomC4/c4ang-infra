@@ -2,6 +2,11 @@
 # 이 Helm 차트는 Istio 설정 리소스들(Gateway, HTTPRoute 등)을 관리합니다.
 # Istio Control Plane은 별도로 istioctl로 설치해야 합니다.
 
+# Ambient Mesh 설정
+# Sidecar 대신 ztunnel(L4) + waypoint(L7, optional) 사용
+ambient:
+  enabled: false  # config/dev|prod/istio.yaml에서 오버라이드
+
 # CRD 설치 설정
 crds:
   install: false  # CRD는 PreSync Hook으로 자동 설치됩니다
@@ -48,6 +53,9 @@ gateway:
     enabled: true
     name: webhook-gateway
     hostname: webhook.ecommerce.com
+    # 추가 호스트네임 (로컬 개발, CI 테스트용)
+    additionalHostnames:
+      - "localhost"
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-prod
       service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
@@ -62,6 +70,10 @@ gateway:
           certificateRefs:
             - name: webhook-tls-cert
               kind: Secret
+      # HTTP 리스너 (로컬/개발 환경용 - TLS 인증서 없이 테스트)
+      http:
+        enabled: true
+        port: 80
 
 # Security 설정
 security:
@@ -112,6 +124,15 @@ security:
 # HTTPRoute 설정 (Main Gateway)
 httpRoute:
   enabled: true
+  # VirtualService에서 마이그레이션한 기본 설정
+  # Ambient 모드에서는 Gateway 레벨에서 L7 정책 처리
+  defaults:
+    timeout: 30s
+    retry:
+      enabled: true
+      attempts: "3"
+      perTryTimeout: "10s"
+      retryOn: "5xx,reset,connect-failure,refused-stream"
   services:
     # 각 서비스별 라우팅 설정
     # 실제 K8s 서비스명과 포트에 맞춤 (xxx-api:80)

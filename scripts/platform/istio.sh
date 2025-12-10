@@ -2,7 +2,8 @@
 # Istio 서비스 메시 설치/제거 스크립트
 #
 # 사용법:
-#   ./istio.sh                    # 설치
+#   ./istio.sh                    # 설치 (Ambient 모드, 기본)
+#   ./istio.sh --sidecar          # 설치 (Sidecar 모드)
 #   ./istio.sh --uninstall        # 제거
 #   ./istio.sh --status           # 상태 확인
 
@@ -23,8 +24,9 @@ CONFIG_DIR="${PROJECT_ROOT}/config"
 
 # 설정
 ISTIO_NS="istio-system"
-ISTIO_VERSION="${ISTIO_VERSION:-1.20.0}"
+ISTIO_VERSION="${ISTIO_VERSION:-1.28.0}"
 GATEWAY_API_VERSION="${GATEWAY_API_VERSION:-v1.2.0}"
+ISTIO_MODE="${ISTIO_MODE:-ambient}"  # ambient 또는 sidecar
 
 # 로그 함수
 log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
@@ -96,19 +98,27 @@ install_gateway_api() {
     log_success "Gateway API CRD 설치 완료"
 }
 
-# ecommerce 네임스페이스에 Istio sidecar injection 라벨 추가
+# ecommerce 네임스페이스에 Istio 라벨 추가 (모드에 따라 다름)
 setup_namespace_injection() {
     local namespace="${1:-ecommerce}"
+    local mode="${2:-$ISTIO_MODE}"
 
-    log_info "네임스페이스 '$namespace'에 Istio sidecar injection 라벨 추가 중..."
+    log_info "네임스페이스 '$namespace'에 Istio $mode 모드 라벨 추가 중..."
 
     # 네임스페이스가 없으면 생성
     kubectl create namespace "$namespace" 2>/dev/null || true
 
-    # istio-injection 라벨 추가
-    kubectl label namespace "$namespace" istio-injection=enabled --overwrite
-
-    log_success "네임스페이스 '$namespace' Istio injection 활성화됨"
+    if [ "$mode" = "ambient" ]; then
+        # Ambient 모드: ztunnel(L4)이 mTLS 자동 처리, sidecar 없음
+        kubectl label namespace "$namespace" istio-injection- 2>/dev/null || true
+        kubectl label namespace "$namespace" istio.io/dataplane-mode=ambient --overwrite
+        log_success "네임스페이스 '$namespace' Ambient 모드 활성화됨"
+    else
+        # Sidecar 모드: 각 Pod에 Envoy sidecar 주입
+        kubectl label namespace "$namespace" istio.io/dataplane-mode- 2>/dev/null || true
+        kubectl label namespace "$namespace" istio-injection=enabled --overwrite
+        log_success "네임스페이스 '$namespace' Sidecar injection 활성화됨"
+    fi
 }
 
 # Istio CRD 설치 확인
@@ -143,7 +153,7 @@ verify_istio_crds() {
 
 # Istio 설치
 install_istio() {
-    log_info "=== Istio 설치 시작 ==="
+    log_info "=== Istio 설치 시작 (모드: $ISTIO_MODE) ==="
 
     check_prerequisites
     ensure_istioctl
@@ -154,35 +164,65 @@ install_istio() {
     # 네임스페이스 생성
     kubectl create namespace "$ISTIO_NS" 2>/dev/null || true
 
-    # Istio 설치 (minimal 프로필 사용)
-    # - minimal: istiod + CRD만 설치
-    # - Gateway는 Kubernetes Gateway API 사용 (ArgoCD Helm 차트가 관리)
-    # - ingressgateway/egressgateway 설치 안함 (리소스 절약)
-    log_info "Istio Control Plane 설치 중... (profile: minimal)"
-    istioctl install --set profile=minimal -y
+    if [ "$ISTIO_MODE" = "ambient" ]; then
+        # Ambient 프로필: istiod + ztunnel + istio-cni
+        # - Sidecar 없이 L4 mTLS 자동 처리
+        # - Gateway는 Kubernetes Gateway API 사용 (ArgoCD Helm 차트가 관리)
+        log_info "Istio Control Plane 설치 중... (profile: ambient)"
+        istioctl install --set profile=ambient -y
 
-    # 설치 확인
-    log_info "Istio Control Plane 배포 대기 중..."
-    kubectl wait --for=condition=available --timeout=300s deployment/istiod -n "$ISTIO_NS"
+        # 설치 확인
+        log_info "Istio Ambient 컴포넌트 배포 대기 중..."
+        kubectl wait --for=condition=available --timeout=300s deployment/istiod -n "$ISTIO_NS" || true
+        kubectl rollout status daemonset/ztunnel -n "$ISTIO_NS" --timeout=300s || true
+        kubectl rollout status daemonset/istio-cni-node -n "$ISTIO_NS" --timeout=300s || true
+    else
+        # Minimal 프로필: istiod + CRD만 설치
+        # - Sidecar injection 사용
+        # - Gateway는 Kubernetes Gateway API 사용 (ArgoCD Helm 차트가 관리)
+        log_info "Istio Control Plane 설치 중... (profile: minimal)"
+        istioctl install --set profile=minimal -y
+
+        # 설치 확인
+        log_info "Istio Control Plane 배포 대기 중..."
+        kubectl wait --for=condition=available --timeout=300s deployment/istiod -n "$ISTIO_NS"
+    fi
 
     # Istio CRD 설치 확인
     verify_istio_crds
 
-    # ecommerce 네임스페이스 sidecar injection 설정
-    setup_namespace_injection "ecommerce"
+    # ecommerce 네임스페이스 설정
+    setup_namespace_injection "ecommerce" "$ISTIO_MODE"
 
-    log_success "=== Istio Control Plane 설치 완료 ==="
+    log_success "=== Istio 설치 완료 (모드: $ISTIO_MODE) ==="
     echo ""
-    log_info "설치된 컴포넌트:"
-    echo "  - istiod (Control Plane)"
-    echo "  - Istio CRD (VirtualService, DestinationRule, AuthorizationPolicy 등)"
-    echo "  - Gateway API CRD (Gateway, HTTPRoute)"
+    if [ "$ISTIO_MODE" = "ambient" ]; then
+        log_info "설치된 컴포넌트:"
+        echo "  - istiod (Control Plane)"
+        echo "  - ztunnel (L4 mTLS, DaemonSet)"
+        echo "  - istio-cni (CNI Plugin, DaemonSet)"
+        echo "  - Istio CRD"
+        echo "  - Gateway API CRD (Gateway, HTTPRoute)"
+        echo ""
+        log_info "Ambient 모드 특징:"
+        echo "  - Sidecar 없음 (Pod당 ~128MB 메모리 절감)"
+        echo "  - ztunnel이 L4 mTLS 자동 처리"
+        echo "  - Gateway 레벨에서 L7 정책 처리 (HTTPRoute)"
+    else
+        log_info "설치된 컴포넌트:"
+        echo "  - istiod (Control Plane)"
+        echo "  - Istio CRD (VirtualService, DestinationRule, AuthorizationPolicy 등)"
+        echo "  - Gateway API CRD (Gateway, HTTPRoute)"
+        echo ""
+        log_info "Sidecar 모드 특징:"
+        echo "  - Pod별 Envoy sidecar 주입"
+        echo "  - L7 정책 처리 (VirtualService, DestinationRule)"
+    fi
     echo ""
     log_info "ArgoCD가 관리하는 리소스:"
     echo "  - Gateway (Kubernetes Gateway API)"
     echo "  - HTTPRoute"
     echo "  - AuthorizationPolicy, RequestAuthentication"
-    echo "  - VirtualService, DestinationRule (서비스별)"
 
     show_status
 }
@@ -245,11 +285,20 @@ show_status() {
     echo "  Gateway API CRDs: ${gateway_crds}개"
     echo ""
 
-    echo "Namespace Injection Labels:"
+    echo "Namespace Istio Labels:"
     for ns in ecommerce monitoring; do
-        local label
-        label=$(kubectl get namespace "$ns" -o jsonpath='{.metadata.labels.istio-injection}' 2>/dev/null) || label="(namespace not found)"
-        echo "  $ns: ${label:-disabled}"
+        local sidecar_label ambient_label mode_info
+        sidecar_label=$(kubectl get namespace "$ns" -o jsonpath='{.metadata.labels.istio-injection}' 2>/dev/null) || sidecar_label=""
+        ambient_label=$(kubectl get namespace "$ns" -o jsonpath='{.metadata.labels.istio\.io/dataplane-mode}' 2>/dev/null) || ambient_label=""
+
+        if [ -n "$ambient_label" ]; then
+            mode_info="ambient ($ambient_label)"
+        elif [ -n "$sidecar_label" ]; then
+            mode_info="sidecar ($sidecar_label)"
+        else
+            mode_info="disabled"
+        fi
+        echo "  $ns: $mode_info"
     done
     echo ""
 
@@ -275,19 +324,27 @@ usage() {
 사용법: $0 [옵션]
 
 옵션:
-  (없음)         Istio 설치
+  (없음)         Istio 설치 (Ambient 모드, 기본)
+  --sidecar      Istio 설치 (Sidecar 모드)
+  --ambient      Istio 설치 (Ambient 모드, 명시적)
   --uninstall    Istio 제거
   --status       상태 확인만
   --help         도움말
 
 예시:
-  $0                    # Istio 설치
+  $0                    # Istio Ambient 모드 설치 (기본)
+  $0 --sidecar          # Istio Sidecar 모드 설치
   $0 --uninstall        # Istio 제거
   $0 --status           # 상태 확인
 
 환경 변수:
-  ISTIO_VERSION         Istio 버전 (기본: 1.20.0)
-  GATEWAY_API_VERSION   Gateway API 버전 (기본: v1.0.0)
+  ISTIO_VERSION         Istio 버전 (기본: 1.28.0)
+  GATEWAY_API_VERSION   Gateway API 버전 (기본: v1.2.0)
+  ISTIO_MODE            설치 모드 (기본: ambient, 옵션: sidecar)
+
+Ambient vs Sidecar:
+  Ambient:  ztunnel(L4 mTLS) + istio-cni, Sidecar 없음, 리소스 효율적
+  Sidecar:  Pod별 Envoy sidecar 주입, L7 정책 처리
 
 EOF
 }
@@ -300,6 +357,8 @@ main() {
         case $1 in
             --uninstall) action="uninstall"; shift ;;
             --status) action="status"; shift ;;
+            --sidecar) ISTIO_MODE="sidecar"; shift ;;
+            --ambient) ISTIO_MODE="ambient"; shift ;;
             --help|-h) usage; exit 0 ;;
             *) log_error "알 수 없는 옵션: $1"; usage; exit 1 ;;
         esac

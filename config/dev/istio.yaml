@@ -2,10 +2,16 @@
 # k3d 환경에 최적화된 Istio 설정
 # Helm 차트: helm/management-base/istio
 
+# Ambient Mesh 설정
+# Sidecar 대신 ztunnel(L4)로 mTLS 자동 처리
+ambient:
+  enabled: true
+
 # Namespace 설정
 namespace:
   name: ecommerce
   create: false  # install-istio.sh 스크립트가 생성
+  istioInjection: ambient  # enabled → ambient (sidecar 제거)
 
 # Gateway 설정
 gateway:

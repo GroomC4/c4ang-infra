@@ -23,5 +23,14 @@ spec:
         - name: {{ include "payment-service.fullname" . }}
           port: {{ .Values.service.port }}
           weight: 100
+    # External PG callback route for payment completion
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /external/pg/callback/payment
+      backendRefs:
+        - name: {{ include "payment-service.fullname" . }}
+          port: {{ .Values.service.port }}
+          weight: 100
 {{- end }}
 

@@ -34,5 +34,29 @@ spec:
         namespaces:
           from: Same
     {{- end }}
+    {{- /* HTTP Listener (로컬/개발 환경용) */}}
+    {{- if .Values.gateway.webhook.listeners.http }}
+    {{- if .Values.gateway.webhook.listeners.http.enabled }}
+    - name: http-webhook
+      hostname: "{{ .Values.gateway.webhook.hostname }}"
+      port: {{ .Values.gateway.webhook.listeners.http.port | default 80 }}
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Same
+    {{- end }}
+    {{- end }}
+    {{- /* 추가 호스트네임 (로컬/CI 테스트용) */}}
+    {{- if .Values.gateway.webhook.additionalHostnames }}
+    {{- range $idx, $hostname := .Values.gateway.webhook.additionalHostnames }}
+    - name: http-webhook-{{ $hostname | replace "." "-" }}
+      hostname: {{ $hostname | quote }}
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Same
+    {{- end }}
+    {{- end }}
 {{- end }}
 

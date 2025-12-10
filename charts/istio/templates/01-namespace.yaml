@@ -6,8 +6,12 @@ metadata:
   labels:
     {{- include "istio.labels" . | nindent 4 }}
     {{- if eq .Values.namespace.istioInjection "enabled" }}
+    # Sidecar 모드: 각 Pod에 Envoy sidecar 주입
     istio-injection: enabled
     istio.io/rev: default
+    {{- else if eq .Values.namespace.istioInjection "ambient" }}
+    # Ambient 모드: ztunnel(L4)이 mTLS 자동 처리, sidecar 없음
+    istio.io/dataplane-mode: ambient
     {{- end }}
 {{- end }}
 
