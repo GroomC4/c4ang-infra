@@ -103,8 +103,8 @@ variable "high_traffic_node_group" {
   default = {
     instance_types = ["t3.large"]
     min_size       = 1
-    desired_size   = 1
-    max_size       = 1
+    desired_size   = 3
+    max_size       = 5
     disk_size      = 40
   }
 }
@@ -122,7 +122,7 @@ variable "low_traffic_node_group" {
     instance_types = ["t3.medium"]
     min_size       = 1
     desired_size   = 1
-    max_size       = 1
+    max_size       = 3
     disk_size      = 40
   }
 }
