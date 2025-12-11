@@ -125,6 +125,40 @@ setup_namespaces() {
     log_info "네임스페이스 생성 완료"
 }
 
+# Istio Ambient Mesh 설치
+install_istio() {
+    log_info "Istio Ambient Mesh 설치 중..."
+    export KUBECONFIG="${KUBECONFIG_FILE}"
+
+    # istioctl 설치 확인
+    if ! command -v istioctl &> /dev/null; then
+        log_error "istioctl이 설치되어 있지 않습니다."
+        log_info "istioctl 설치: curl -L https://istio.io/downloadIstio | sh -"
+        exit 1
+    fi
+    log_info "istioctl 버전: $(istioctl version --remote=false 2>/dev/null || echo 'unknown')"
+
+    # Istio default 프로필 설치 (k3d 환경)
+    # RequestAuthentication CRD를 포함하려면 default 프로필 필요
+    # Ambient 모드는 k3d에서 CNI/ztunnel 이슈로 사용하지 않음
+    istioctl install --set profile=default -y
+
+    # 설치 확인
+    log_info "Istio 설치 확인 중..."
+    kubectl wait --for=condition=available --timeout=120s deployment/istiod -n istio-system || {
+        log_warn "istiod 대기 시간 초과, 계속 진행합니다..."
+    }
+
+    # ecommerce 네임스페이스에 Ambient 모드 라벨 적용
+    kubectl create namespace ecommerce --dry-run=client -o yaml | kubectl apply -f -
+    kubectl label namespace ecommerce istio.io/dataplane-mode=ambient --overwrite
+
+    log_info "Istio Ambient Mesh 설치 완료"
+    echo ""
+    echo "=== Istio 상태 ==="
+    kubectl get pods -n istio-system
+}
+
 # 메인 함수
 main() {
     log_info "=== K3d 클러스터 설치 시작 ==="
@@ -136,6 +170,7 @@ main() {
     create_cluster
     verify_cluster
     setup_namespaces
+    install_istio
 
     log_info "=== K3d 클러스터 설치 완료 ==="
     echo ""

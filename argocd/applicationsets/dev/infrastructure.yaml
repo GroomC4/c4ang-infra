@@ -15,12 +15,9 @@ spec:
             namespace: ecommerce
             chart: charts/external-services
             syncWave: "1"
-          # Istio Configuration (Gateway, HTTPRoute, AuthorizationPolicy 등)
-          # Istio Control Plane은 istioctl로 별도 설치, 라우팅 규칙만 ArgoCD로 관리
-          - name: istio
-            namespace: ecommerce
-            chart: charts/istio
-            syncWave: "2"
+          # Istio Configuration은 별도 Application으로 분리 (prune 비활성화 필요)
+          # charts/istio는 설정만 관리, Control Plane은 istioctl로 설치
+          # 참조: argocd/applications/dev/istio.yaml
           - name: monitoring
             namespace: monitoring
             chart: charts/monitoring

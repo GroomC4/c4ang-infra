@@ -1,0 +1,48 @@
+# ArgoCD Application - Istio Configuration (Dev)
+# Istio Control Plane은 istioctl로 별도 설치
+# 이 Application은 Gateway, HTTPRoute, AuthorizationPolicy 등 설정만 관리
+# prune을 비활성화하여 istioctl로 설치한 리소스를 보호
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: istio
+  namespace: argocd
+  labels:
+    app.kubernetes.io/component: istio
+    app.kubernetes.io/env: dev
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: infrastructure
+  source:
+    repoURL: https://github.com/GroomC4/c4ang-infra.git
+    targetRevision: feature/scenario-test
+    path: charts/istio
+    helm:
+      valueFiles:
+        - values.yaml
+        - ../../config/dev/istio.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+  syncPolicy:
+    automated:
+      # prune 비활성화: istioctl로 설치한 CRD, istiod 등을 보호
+      prune: false
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+    - group: ""
+      kind: Secret
+      jsonPointers:
+        - /data

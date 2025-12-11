@@ -88,6 +88,10 @@ security:
     - /api/v1/auth/owners/signup
     - /api/v1/auth/owners/login
     - /api/v1/auth/owners/refresh
+    # Manager 인증 엔드포인트 (테스트/개발 환경용)
+    - /api/v1/auth/managers/signup
+    - /api/v1/auth/managers/login
+    - /api/v1/auth/managers/refresh
     # 공통 토큰 갱신 엔드포인트 (TokenRefreshController)
     - /api/v1/auth/refresh
     # Legacy endpoints (if exists)
