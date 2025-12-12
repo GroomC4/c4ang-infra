@@ -170,9 +170,9 @@ grafana:
     type: ClusterIP
     port: 3000
   
-  # 로컬에서는 대시보드 비활성화 (ConfigMap 문제 회피)
+  # 대시보드 활성화
   dashboards:
-    enabled: false
+    enabled: true
   
   # 기본 데이터소스만 활성화
   datasources:

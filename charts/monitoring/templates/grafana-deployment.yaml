@@ -104,6 +104,8 @@ spec:
               mountPath: /var/lib/grafana/dashboards/kafka-comprehensive
             - name: dashboard-kafka-broker-failure-test
               mountPath: /var/lib/grafana/dashboards/kafka-broker-failure-test
+            - name: dashboard-saga-tracker
+              mountPath: /var/lib/grafana/dashboards/saga-tracker
             {{- end }}
 
       volumes:
@@ -138,6 +140,9 @@ spec:
         - name: dashboard-kafka-broker-failure-test
           configMap:
             name: grafana-dashboard-kafka-broker-failure-test
+        - name: dashboard-saga-tracker
+          configMap:
+            name: grafana-dashboard-saga-tracker
         {{- end }}
       
       {{- with .Values.nodeSelector }}

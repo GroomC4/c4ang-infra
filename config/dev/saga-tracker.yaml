@@ -32,4 +32,18 @@ config:
 secrets:
   SPRING_DATASOURCE_USERNAME: "postgres"
   SPRING_DATASOURCE_PASSWORD: "postgres"
+
+# Probes - 개발 환경에서는 시작 시간이 오래 걸리므로 여유있게 설정
+livenessProbe:
+  initialDelaySeconds: 120
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 5
+
+readinessProbe:
+  initialDelaySeconds: 90
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 10
+
 # Istio 설정 (기본값 사용)
